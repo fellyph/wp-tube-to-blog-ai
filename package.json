@@ -1,0 +1,17 @@
+{
+	"name": "wp-tube-to-blog-ai",
+	"version": "1.0.0",
+	"description": "Convert YouTube videos into WordPress blog post drafts using AI.",
+	"private": true,
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"lint:js": "wp-scripts lint-js",
+		"lint:css": "wp-scripts lint-style",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0"
+	}
+}
