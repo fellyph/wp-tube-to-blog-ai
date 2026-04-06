@@ -72,10 +72,10 @@ class REST_Controller {
 
 		register_rest_route(
 			self::NAMESPACE,
-			'/generate',
+			'/preview',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'generate_post' ),
+				'callback'            => array( $this, 'preview_post' ),
 				'permission_callback' => array( $this, 'can_edit_posts' ),
 				'args'                => array(
 					'video_id' => array(
@@ -102,7 +102,73 @@ class REST_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/save-draft',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'save_draft' ),
+				'permission_callback' => array( $this, 'can_edit_posts' ),
+				'args'                => array(
+					'video_id' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => function ( $value ) {
+							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+						},
+					),
+					'title'    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'content'  => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'wp_kses_post',
+					),
+				),
+			)
+		);
 	}
+
+	/**
+	 * HTTP status code mapping for known error codes.
+	 */
+	private const ERROR_STATUS_MAP = array(
+		'wttba_not_configured'      => 422,
+		'wttba_ai_client_missing'   => 422,
+		'wttba_rate_limited'        => 429,
+		'wttba_video_not_found'     => 404,
+		'wttba_no_captions'         => 404,
+		'wttba_no_tracks'           => 404,
+		'wttba_no_track_url'        => 404,
+		'wttba_empty_transcript'    => 404,
+		'wttba_captions_parse_error' => 502,
+		'wttba_xml_parse_error'     => 502,
+		'wttba_ai_parse_error'      => 502,
+		'wttba_youtube_api_error'   => 502,
+	);
+
+	/**
+	 * Error category mapping for known error codes.
+	 */
+	private const ERROR_CATEGORY_MAP = array(
+		'wttba_not_configured'      => 'configuration',
+		'wttba_ai_client_missing'   => 'configuration',
+		'wttba_rate_limited'        => 'rate_limit',
+		'wttba_video_not_found'     => 'not_found',
+		'wttba_no_captions'         => 'not_found',
+		'wttba_no_tracks'           => 'not_found',
+		'wttba_no_track_url'        => 'not_found',
+		'wttba_empty_transcript'    => 'not_found',
+		'wttba_captions_parse_error' => 'upstream',
+		'wttba_xml_parse_error'     => 'upstream',
+		'wttba_ai_parse_error'      => 'upstream',
+		'wttba_youtube_api_error'   => 'upstream',
+	);
 
 	/**
 	 * Permission check: current user can edit posts.
@@ -111,6 +177,34 @@ class REST_Controller {
 	 */
 	public function can_edit_posts(): bool {
 		return current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Enrich a WP_Error with HTTP status code and error category for the REST response.
+	 *
+	 * @param \WP_Error $error The original error.
+	 * @return \WP_Error The enriched error.
+	 */
+	private function prepare_error_response( \WP_Error $error ): \WP_Error {
+		$code = $error->get_error_code();
+		$data = $error->get_error_data( $code );
+
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
+
+		// Preserve existing status if already set (e.g., YouTube API errors).
+		if ( empty( $data['status'] ) ) {
+			$data['status'] = self::ERROR_STATUS_MAP[ $code ] ?? 500;
+		}
+
+		if ( empty( $data['error_category'] ) ) {
+			$data['error_category'] = self::ERROR_CATEGORY_MAP[ $code ] ?? 'internal';
+		}
+
+		$error->add_data( $data, $code );
+
+		return $error;
 	}
 
 	/**
@@ -127,7 +221,7 @@ class REST_Controller {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			return $result;
+			return $this->prepare_error_response( $result );
 		}
 
 		return new \WP_REST_Response( $result, 200 );
@@ -144,19 +238,19 @@ class REST_Controller {
 		$result  = $youtube->get_video( $request->get_param( 'id' ) );
 
 		if ( is_wp_error( $result ) ) {
-			return $result;
+			return $this->prepare_error_response( $result );
 		}
 
 		return new \WP_REST_Response( $result, 200 );
 	}
 
 	/**
-	 * POST /generate — Generate a blog post from a video.
+	 * POST /preview — Generate a blog post preview without creating a draft.
 	 *
 	 * @param \WP_REST_Request $request The request object.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	public function generate_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+	public function preview_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$video_id = $request->get_param( 'video_id' );
 		$language = $request->get_param( 'language' );
 		$persona  = $request->get_param( 'persona' );
@@ -167,10 +261,31 @@ class REST_Controller {
 		}
 
 		$generator = new Post_Generator();
-		$result    = $generator->generate( $video_id, $language, $persona );
+		$result    = $generator->preview( $video_id, $language, $persona );
 
 		if ( is_wp_error( $result ) ) {
-			return $result;
+			return $this->prepare_error_response( $result );
+		}
+
+		return new \WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * POST /save-draft — Save AI-generated content as a WordPress draft.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function save_draft( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$video_id = $request->get_param( 'video_id' );
+		$title    = $request->get_param( 'title' );
+		$content  = $request->get_param( 'content' );
+
+		$generator = new Post_Generator();
+		$result    = $generator->save_draft( $video_id, $title, $content );
+
+		if ( is_wp_error( $result ) ) {
+			return $this->prepare_error_response( $result );
 		}
 
 		return new \WP_REST_Response( $result, 201 );
