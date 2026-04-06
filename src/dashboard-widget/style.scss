@@ -117,4 +117,24 @@
 		gap: 8px;
 		justify-content: flex-end;
 	}
+
+	&--preview {
+		max-width: 720px;
+	}
+
+	&__preview-title {
+		margin: 0 0 12px;
+		font-size: 16px;
+		line-height: 1.4;
+	}
+
+	&__preview-content {
+		max-height: 400px;
+		overflow-y: auto;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		padding: 16px;
+		margin-bottom: 20px;
+		background: #fafafa;
+	}
 }
