@@ -17,13 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Post_Generator {
 
 	/**
-	 * Generate a blog post draft from a YouTube video.
+	 * Generate a preview of the blog post content without creating a WordPress draft.
 	 *
 	 * @param string $video_id The YouTube video ID.
 	 * @param string $language The target language code.
-	 * @return array{post_id: int, edit_url: string}|\WP_Error
+	 * @param string $persona  Optional writing style persona.
+	 * @return array{title: string, content: string, video_id: string}|\WP_Error
 	 */
-	public function generate( string $video_id, string $language, string $persona = '' ): array|\WP_Error {
+	public function preview( string $video_id, string $language, string $persona = '' ): array|\WP_Error {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return new \WP_Error(
 				'wttba_ai_client_missing',
@@ -70,19 +71,46 @@ class Post_Generator {
 			return $ai_result;
 		}
 
-		// Step 4: Create the WordPress draft post.
-		$post_id = $this->create_draft( $ai_result, $video_id, $video );
-
-		if ( is_wp_error( $post_id ) ) {
-			delete_transient( $lock_key );
-			return $post_id;
-		}
-
 		delete_transient( $lock_key );
 
 		return array(
-			'post_id'  => $post_id,
-			'edit_url' => get_edit_post_link( $post_id, 'raw' ),
+			'title'    => $ai_result['title'],
+			'content'  => $ai_result['content'],
+			'video_id' => $video_id,
+		);
+	}
+
+	/**
+	 * Save AI-generated content as a WordPress draft post.
+	 *
+	 * @param string $video_id The YouTube video ID.
+	 * @param string $title    The generated post title.
+	 * @param string $content  The generated post content (HTML).
+	 * @return array{post_id: int, edit_url: string, warnings: string[]}|\WP_Error
+	 */
+	public function save_draft( string $video_id, string $title, string $content ): array|\WP_Error {
+		$youtube = new YouTube_API();
+		$video   = $youtube->get_video( $video_id );
+
+		if ( is_wp_error( $video ) ) {
+			return $video;
+		}
+
+		$ai_result = array(
+			'title'   => $title,
+			'content' => $content,
+		);
+
+		$draft_result = $this->create_draft( $ai_result, $video_id, $video );
+
+		if ( is_wp_error( $draft_result ) ) {
+			return $draft_result;
+		}
+
+		return array(
+			'post_id'  => $draft_result['post_id'],
+			'edit_url' => get_edit_post_link( $draft_result['post_id'], 'raw' ),
+			'warnings' => $draft_result['warnings'],
 		);
 	}
 
@@ -153,15 +181,17 @@ class Post_Generator {
 			->generate_text();
 
 		if ( is_wp_error( $result ) ) {
+			error_log( sprintf( '[WP Tube-to-Blog AI] AI call failed — %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		$parsed = json_decode( $result, true );
 
 		if ( ! is_array( $parsed ) || empty( $parsed['title'] ) || empty( $parsed['content'] ) ) {
+			error_log( '[WP Tube-to-Blog AI] AI parse error — response could not be decoded or is missing required fields.' );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
-				__( 'Failed to parse the AI response. Please try again.', 'wp-tube-to-blog-ai' )
+				__( 'The AI returned an unexpected response format. Please try generating again.', 'wp-tube-to-blog-ai' )
 			);
 		}
 
@@ -174,9 +204,9 @@ class Post_Generator {
 	 * @param array  $ai_result The parsed AI response with title and content.
 	 * @param string $video_id  The YouTube video ID.
 	 * @param array  $video     The video details from YouTube API.
-	 * @return int|\WP_Error The post ID or error.
+	 * @return array{post_id: int, warnings: string[]}|\WP_Error
 	 */
-	private function create_draft( array $ai_result, string $video_id, array $video ): int|\WP_Error {
+	private function create_draft( array $ai_result, string $video_id, array $video ): array|\WP_Error {
 		// Build the YouTube embed block.
 		$embed_block = sprintf(
 			'<!-- wp:embed {"url":"https://www.youtube.com/watch?v=%1$s","type":"video","providerNameSlug":"youtube","responsive":true,"className":"wp-embed-aspect-16-9 wp-has-aspect-ratio"} -->
@@ -205,12 +235,21 @@ https://www.youtube.com/watch?v=%1$s
 			return $post_id;
 		}
 
+		$warnings = array();
+
 		// Set featured image from YouTube thumbnail.
 		if ( ! empty( $video['thumbnail'] ) ) {
-			$this->set_featured_image( $post_id, $video['thumbnail'], $ai_result['title'] );
+			$image_error = $this->set_featured_image( $post_id, $video['thumbnail'], $ai_result['title'] );
+
+			if ( null !== $image_error ) {
+				$warnings[] = $image_error->get_error_message();
+			}
 		}
 
-		return $post_id;
+		return array(
+			'post_id'  => $post_id,
+			'warnings' => $warnings,
+		);
 	}
 
 	/**
@@ -219,16 +258,24 @@ https://www.youtube.com/watch?v=%1$s
 	 * @param int    $post_id   The post ID.
 	 * @param string $image_url The image URL.
 	 * @param string $title     The image title/alt text.
+	 * @return \WP_Error|null Error on failure, null on success.
 	 */
-	private function set_featured_image( int $post_id, string $image_url, string $title ): void {
+	private function set_featured_image( int $post_id, string $image_url, string $title ): ?\WP_Error {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
 		$attachment_id = media_sideload_image( $image_url, $post_id, $title, 'id' );
 
-		if ( ! is_wp_error( $attachment_id ) ) {
-			set_post_thumbnail( $post_id, $attachment_id );
+		if ( is_wp_error( $attachment_id ) ) {
+			error_log( sprintf( '[WP Tube-to-Blog AI] Featured image failed for post %d: %s', $post_id, $attachment_id->get_error_message() ) );
+			return new \WP_Error(
+				'wttba_featured_image_failed',
+				__( 'The post was created, but the featured image could not be set from the video thumbnail.', 'wp-tube-to-blog-ai' )
+			);
 		}
+
+		set_post_thumbnail( $post_id, $attachment_id );
+		return null;
 	}
 }
