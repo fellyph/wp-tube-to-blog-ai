@@ -155,7 +155,10 @@ class YouTube_API {
 		}
 
 		if ( empty( $body['items'] ) ) {
-			return new \WP_Error( 'wttba_video_not_found', __( 'Video not found.', 'wp-tube-to-blog-ai' ) );
+			return new \WP_Error(
+				'wttba_video_not_found',
+				__( 'The video could not be found. Please check the video ID and ensure it is publicly accessible.', 'wp-tube-to-blog-ai' )
+			);
 		}
 
 		$item   = $body['items'][0];
