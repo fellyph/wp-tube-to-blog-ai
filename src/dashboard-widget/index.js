@@ -3,8 +3,11 @@
  */
 import { createElement, render, useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { fetchVideos, generatePost } from '../shared/api';
+import { fetchVideos, previewPost, saveDraft, parseError } from '../shared/api';
 import LanguageModal from '../shared/language-modal';
+import PreviewModal from '../shared/preview-modal';
+import ErrorNotice from '../shared/error-notice';
+import WarningNotice from '../shared/warning-notice';
 import './style.scss';
 
 /**
@@ -35,6 +38,11 @@ function DashboardWidget() {
 	const [ modalVideo, setModalVideo ] = useState( null );
 	const [ generating, setGenerating ] = useState( null );
 	const [ success, setSuccess ] = useState( null );
+	const [ failedVideo, setFailedVideo ] = useState( null );
+	const [ preview, setPreview ] = useState( null );
+	const [ saving, setSaving ] = useState( false );
+	const [ regenerating, setRegenerating ] = useState( false );
+	const [ lastGenParams, setLastGenParams ] = useState( null );
 
 	useEffect( () => {
 		if ( ! config.isConfigured ) {
@@ -48,28 +56,81 @@ function DashboardWidget() {
 				setLoading( false );
 			} )
 			.catch( ( err ) => {
-				setError( err.message || __( 'Failed to load videos.', 'wp-tube-to-blog-ai' ) );
+				setError( parseError( err ) );
 				setLoading( false );
 			} );
 	}, [] );
 
 	const handleGenerate = ( language, persona ) => {
-		if ( ! modalVideo ) return;
+		if ( ! modalVideo ) {
+			return;
+		}
 
-		setGenerating( modalVideo.id );
+		const videoToGenerate = modalVideo;
+		setGenerating( videoToGenerate.id );
 		setModalVideo( null );
 		setSuccess( null );
 		setError( null );
+		setFailedVideo( null );
+		setLastGenParams( { videoId: videoToGenerate.id, language, persona } );
 
-		generatePost( modalVideo.id, language, persona )
+		previewPost( videoToGenerate.id, language, persona )
 			.then( ( result ) => {
 				setGenerating( null );
-				setSuccess( result );
+				setPreview( result );
 			} )
 			.catch( ( err ) => {
 				setGenerating( null );
-				setError( err.message || __( 'Generation failed.', 'wp-tube-to-blog-ai' ) );
+				setFailedVideo( videoToGenerate );
+				setError( parseError( err ) );
 			} );
+	};
+
+	const handleSaveDraft = () => {
+		if ( ! preview ) {
+			return;
+		}
+
+		setSaving( true );
+
+		saveDraft( preview.video_id, preview.title, preview.content )
+			.then( ( result ) => {
+				setSaving( false );
+				setPreview( null );
+				setSuccess( result );
+			} )
+			.catch( ( err ) => {
+				setSaving( false );
+				setPreview( null );
+				setError( parseError( err ) );
+			} );
+	};
+
+	const handleRegenerate = () => {
+		if ( ! lastGenParams ) {
+			return;
+		}
+
+		setRegenerating( true );
+
+		previewPost(
+			lastGenParams.videoId,
+			lastGenParams.language,
+			lastGenParams.persona
+		)
+			.then( ( result ) => {
+				setRegenerating( false );
+				setPreview( result );
+			} )
+			.catch( ( err ) => {
+				setRegenerating( false );
+				setPreview( null );
+				setError( parseError( err ) );
+			} );
+	};
+
+	const handleCancelPreview = () => {
+		setPreview( null );
 	};
 
 	if ( ! config.isConfigured ) {
@@ -79,11 +140,17 @@ function DashboardWidget() {
 			createElement(
 				'p',
 				null,
-				__( 'Please configure your YouTube API settings.', 'wp-tube-to-blog-ai' )
+				__(
+					'Please configure your YouTube API settings.',
+					'wp-tube-to-blog-ai'
+				)
 			),
 			createElement(
 				'a',
-				{ href: config.settingsUrl, className: 'button button-primary' },
+				{
+					href: config.settingsUrl,
+					className: 'button button-primary',
+				},
 				__( 'Go to Settings', 'wp-tube-to-blog-ai' )
 			)
 		);
@@ -102,11 +169,19 @@ function DashboardWidget() {
 		'div',
 		{ className: 'wttba-widget' },
 		error &&
-			createElement(
-				'div',
-				{ className: 'notice notice-error inline' },
-				createElement( 'p', null, error )
-			),
+			createElement( ErrorNotice, {
+				message: error.message,
+				category: error.category,
+				onDismiss: () => setError( null ),
+				onRetry: failedVideo
+					? () => {
+							setError( null );
+							setModalVideo( failedVideo );
+							setFailedVideo( null );
+					  }
+					: null,
+				settingsUrl: config.settingsUrl,
+			} ),
 		success &&
 			createElement(
 				'div',
@@ -123,6 +198,13 @@ function DashboardWidget() {
 					)
 				)
 			),
+		success &&
+			success.warnings &&
+			success.warnings.length > 0 &&
+			createElement( WarningNotice, {
+				messages: success.warnings,
+				onDismiss: () => setSuccess( { ...success, warnings: [] } ),
+			} ),
 		createElement(
 			'ul',
 			{ className: 'wttba-widget__list' },
@@ -181,6 +263,16 @@ function DashboardWidget() {
 			onConfirm: handleGenerate,
 			onCancel: () => setModalVideo( null ),
 			videoTitle: modalVideo?.title || '',
+		} ),
+		createElement( PreviewModal, {
+			isOpen: preview !== null,
+			title: preview?.title || '',
+			content: preview?.content || '',
+			isRegenerating: regenerating,
+			isSaving: saving,
+			onSaveAsDraft: handleSaveDraft,
+			onRegenerate: handleRegenerate,
+			onCancel: handleCancelPreview,
 		} )
 	);
 }
