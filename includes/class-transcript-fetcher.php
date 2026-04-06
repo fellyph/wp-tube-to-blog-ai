@@ -74,6 +74,7 @@ class Transcript_Fetcher {
 		if ( ! preg_match( '/"captions"\s*:\s*(\{.*?"captionTracks".*?\})\s*,\s*"videoDetails"/s', $html, $matches ) ) {
 			// Try alternative pattern.
 			if ( ! preg_match( '/"captionTracks"\s*:\s*(\[.*?\])/s', $html, $matches ) ) {
+				error_log( '[WP Tube-to-Blog AI] No captions found in YouTube page HTML.' );
 				return new \WP_Error(
 					'wttba_no_captions',
 					__( 'No captions found for this video. The video may not have subtitles available.', 'wp-tube-to-blog-ai' )
@@ -82,7 +83,11 @@ class Transcript_Fetcher {
 
 			$tracks = json_decode( $matches[1], true );
 			if ( ! is_array( $tracks ) ) {
-				return new \WP_Error( 'wttba_captions_parse_error', __( 'Failed to parse caption data.', 'wp-tube-to-blog-ai' ) );
+				error_log( '[WP Tube-to-Blog AI] Failed to parse caption JSON data from YouTube page.' );
+				return new \WP_Error(
+					'wttba_captions_parse_error',
+					__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'wp-tube-to-blog-ai' )
+				);
 			}
 
 			return array( 'captionTracks' => $tracks );
@@ -164,7 +169,11 @@ class Transcript_Fetcher {
 		$xml = simplexml_load_string( $xml_body );
 
 		if ( false === $xml ) {
-			return new \WP_Error( 'wttba_xml_parse_error', __( 'Failed to parse transcript XML.', 'wp-tube-to-blog-ai' ) );
+			error_log( '[WP Tube-to-Blog AI] Failed to parse transcript XML from YouTube timedtext endpoint.' );
+			return new \WP_Error(
+				'wttba_xml_parse_error',
+				__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'wp-tube-to-blog-ai' )
+			);
 		}
 
 		$lines = array();
@@ -177,7 +186,10 @@ class Transcript_Fetcher {
 		}
 
 		if ( empty( $lines ) ) {
-			return new \WP_Error( 'wttba_empty_transcript', __( 'The transcript is empty.', 'wp-tube-to-blog-ai' ) );
+			return new \WP_Error(
+				'wttba_empty_transcript',
+				__( 'The transcript for this video appears to be empty. Try selecting a video with captions enabled.', 'wp-tube-to-blog-ai' )
+			);
 		}
 
 		$transcript = implode( ' ', $lines );
