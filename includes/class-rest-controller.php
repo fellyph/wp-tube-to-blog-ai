@@ -119,6 +119,11 @@ class REST_Controller {
 						'sanitize_callback' => 'sanitize_textarea_field',
 						'default'           => '',
 					),
+					'manual_transcript' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_textarea_field',
+						'default'           => '',
+					),
 				),
 			)
 		);
@@ -230,6 +235,7 @@ class REST_Controller {
 		'wttba_ai_not_supported'    => 422,
 		'wttba_rate_limited'        => 429,
 		'wttba_invalid_video_id'    => 400,
+		'wttba_manual_transcript_too_short' => 400,
 		'wttba_video_not_found'     => 404,
 		'wttba_no_captions'         => 404,
 		'wttba_no_tracks'           => 404,
@@ -269,6 +275,7 @@ class REST_Controller {
 		'wttba_ai_not_supported'    => 'configuration',
 		'wttba_rate_limited'        => 'rate_limit',
 		'wttba_invalid_video_id'    => 'validation',
+		'wttba_manual_transcript_too_short' => 'validation',
 		'wttba_video_not_found'     => 'not_found',
 		'wttba_no_captions'         => 'not_found',
 		'wttba_no_tracks'           => 'not_found',
@@ -496,6 +503,7 @@ class REST_Controller {
 		$video_id = (string) ( $request->get_param( 'video_id' ) ?? '' );
 		$language = (string) ( $request->get_param( 'language' ) ?? '' );
 		$persona  = (string) ( $request->get_param( 'persona' ) ?? '' );
+		$manual_transcript = (string) ( $request->get_param( 'manual_transcript' ) ?? '' );
 
 		if ( '' === $video_id || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $video_id ) ) {
 			return $this->prepare_error_response(
@@ -512,7 +520,7 @@ class REST_Controller {
 		}
 
 		$generator = new Post_Generator();
-		$result    = $generator->preview( $video_id, $language, $persona );
+		$result    = $generator->preview( $video_id, $language, $persona, $manual_transcript );
 
 		if ( is_wp_error( $result ) ) {
 			return $this->prepare_error_response( $result );
