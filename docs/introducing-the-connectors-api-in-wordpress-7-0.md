@@ -43,7 +43,7 @@ array(
         'setting_name'    => 'connectors_ai_anthropic_api_key',
     ),
     'plugin'         => array(
-        'slug' => 'ai-provider-for-anthropic',
+        'file' => 'ai-provider-for-anthropic/plugin.php',
     ),
 )
 ```
@@ -66,7 +66,7 @@ Here's what happens during initialization:
 Registered connectors appear on a new **Settings > Connectors** admin screen. The screen renders each connector as a card, and the registry data drives what's displayed:
 
 * **`name`**, **`description`**, and **`logo_url`** are shown on the card.
-* **`plugin.slug`** enables install/activate controls — the screen checks whether the associated plugin is installed and active, and shows the appropriate action button.
+* **`plugin.file`** enables install/activate controls. The value is the plugin's main file path relative to the plugins directory, and the screen checks whether the associated plugin is installed and active.
 * **`authentication.credentials_url`** is rendered as a link directing users to the provider's site to obtain API credentials.
 * For **`api_key`** connectors, the screen shows the current key source (environment variable, PHP constant, or database) and connection status.
 

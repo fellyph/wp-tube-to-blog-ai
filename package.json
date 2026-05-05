@@ -9,9 +9,14 @@
 		"lint:js": "wp-scripts lint-js",
 		"lint:css": "wp-scripts lint-style",
 		"packages-update": "wp-scripts packages-update",
-		"plugin-zip": "wp-scripts plugin-zip"
+		"plugin-zip": "wp-scripts plugin-zip",
+		"test:e2e": "npm run build && playwright test",
+		"test:e2e:ui": "npm run build && playwright test --ui",
+		"test:e2e:debug": "npm run build && playwright test --debug"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^30.0.0"
+		"@playwright/test": "^1.59.0",
+		"@wordpress/scripts": "^30.0.0",
+		"@wp-playground/cli": "^3.1.0"
 	}
 }

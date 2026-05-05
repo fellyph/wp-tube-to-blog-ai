@@ -12,18 +12,20 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 
 *   **Automate Content Creation:** Convert YouTube videos into readable, well-formatted blog posts with one click.
 *   **Centralized Workflow:** Manage your video-to-text pipeline directly from the WordPress dashboard.
-*   **AI Flexibility:** Leverage the **WordPress AI Client** to seamlessly switch between cloud AI (Gemini, Claude) and local privacy-first models (Ollama).
+*   **AI Flexibility:** Leverage the **WordPress AI Client** and **Connectors API** to use whichever text-generation provider the site owner configures.
 *   **Global Reach:** Automated internationalization (i18n) by generating blog posts in the video's native language or translating them into a selected target language.
 *   **SEO Friendly:** Generates cohesive blog posts including Title, Headings, and Paragraphs.
 *   **Visual Integration:** Automatically sets the YouTube thumbnail as the featured image and embeds the original video in the draft.
 
 ## 🛠️ Requirements
 
-*   **WordPress:** 6.7 or higher.
+*   **WordPress:** 6.7 or higher (7.0+ recommended for built-in AI Client support).
 *   **PHP:** 8.1 or higher.
 *   **YouTube Data API Key:** Required to fetch video information and channel data.
-*   **AI Provider API Key:** Google Gemini, Anthropic Claude, or a local Ollama endpoint.
-*   **WordPress AI Client:** The plugin depends on the `wordpress/wp-ai-client` package.
+*   **AI Provider:** A text-generation provider configured through the WordPress AI Client and Connectors API.
+*   **WordPress AI Client:**
+    *   **WordPress 7.0+:** The AI Client and Connectors API are built into Core. Configure provider plugins and credentials via **Settings > Connectors**.
+    *   **WordPress < 7.0:** Requires the `wordpress/wp-ai-client` Composer package (installed automatically via `composer install`).
 
 ## 🚀 Installation
 
@@ -52,8 +54,11 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 
 1.  Navigate to **Settings > Tube-to-Blog AI** in your WordPress dashboard.
 2.  Enter your **YouTube Data API Key** and **Channel ID**.
-3.  Configure your preferred AI Provider (Gemini, Claude, or Ollama) within the WordPress AI Client settings.
-4.  Select your default output language.
+3.  Configure your preferred AI Provider:
+    *   **WordPress 7.0+:** Go to **Settings > Connectors** to install, activate, and configure an AI provider connector.
+    *   **WordPress < 7.0:** Configure the provider within the WordPress AI Client plugin settings.
+    *   Connector API keys can be supplied by environment variable, PHP constant, or the database; WordPress checks them in that order.
+4.  Select your default output language and optional writing persona.
 5.  Save the settings.
 
 ## 📝 Usage
@@ -68,7 +73,8 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 
 *   **Backend Prompting:** All AI prompts and system instructions are handled securely on the backend (PHP).
 *   **Access Control:** Settings are restricted to users with `manage_options` capability (Admins), and generation is restricted to `edit_posts` (Authors/Editors/Admins).
-*   **Data Protection:** API keys are stored securely using the WordPress Options API.
+*   **Provider Credentials:** AI provider keys are managed by WordPress Connectors, not by this plugin.
+*   **Data Protection:** YouTube settings are stored with the WordPress Options API. Connector API keys stored in the database are masked by WordPress, while environment variables or PHP constants can be used to avoid database storage.
 
 ## 📄 License
 

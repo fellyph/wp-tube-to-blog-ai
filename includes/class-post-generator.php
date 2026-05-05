@@ -22,13 +22,25 @@ class Post_Generator {
 	 * @param string $video_id The YouTube video ID.
 	 * @param string $language The target language code.
 	 * @param string $persona  Optional writing style persona.
-	 * @return array{title: string, content: string, video_id: string}|\WP_Error
+	 * @return array{title: string, content: string, video_id: string, ai_metadata: array<string, mixed>}|\WP_Error
 	 */
-	public function preview( string $video_id, string $language, string $persona = '' ): array|\WP_Error {
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+	public function preview( ?string $video_id, ?string $language, ?string $persona = '' ): array|\WP_Error {
+		$video_id = (string) $video_id;
+		$language = (string) $language;
+		$persona  = (string) $persona;
+
+		if ( '' === $video_id || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $video_id ) ) {
 			return new \WP_Error(
-				'wttba_ai_client_missing',
-				__( 'The WordPress AI Client plugin is required to generate posts. Please install and activate it.', 'wp-tube-to-blog-ai' )
+				'wttba_invalid_video_id',
+				__( 'A valid YouTube video ID is required.', 'wp-tube-to-blog-ai' )
+			);
+		}
+
+		if ( ! AI_Provider_Status::is_text_generation_supported() ) {
+			return new \WP_Error(
+				'wttba_ai_not_supported',
+				AI_Provider_Status::get_unavailable_message(),
+				AI_Provider_Status::get_configuration_error_data()
 			);
 		}
 
@@ -45,39 +57,41 @@ class Post_Generator {
 
 		set_transient( $lock_key, true, 120 );
 
-		// Step 1: Fetch video details.
-		$youtube = new YouTube_API();
-		$video   = $youtube->get_video( $video_id );
+		try {
+			// Step 1: Fetch video details.
+			$youtube = new YouTube_API();
+			$video   = $youtube->get_video( $video_id );
 
-		if ( is_wp_error( $video ) ) {
+			if ( is_wp_error( $video ) ) {
+				return $video;
+			}
+
+			// Step 2: Fetch transcript.
+			$fetcher    = new Transcript_Fetcher();
+			$transcript = $fetcher->fetch( $video_id, $language );
+
+			if ( is_wp_error( $transcript ) ) {
+				return $transcript;
+			}
+
+			// Step 3: Generate content via AI.
+			$generator = new Content_Generator();
+			$ai_result = $generator->generate_from_text( $transcript, $language, $video['title'], $persona, 'youtube_video' );
+
+			if ( is_wp_error( $ai_result ) ) {
+				Generation_Logger::record( null, Generation_Logger::metadata_from_error( 'youtube_video', $ai_result ) );
+				return $ai_result;
+			}
+
+			return array(
+				'title'       => $ai_result['title'],
+				'content'     => $ai_result['content'],
+				'video_id'    => $video_id,
+				'ai_metadata' => $ai_result['ai_metadata'],
+			);
+		} finally {
 			delete_transient( $lock_key );
-			return $video;
 		}
-
-		// Step 2: Fetch transcript.
-		$fetcher    = new Transcript_Fetcher();
-		$transcript = $fetcher->fetch( $video_id, $language );
-
-		if ( is_wp_error( $transcript ) ) {
-			delete_transient( $lock_key );
-			return $transcript;
-		}
-
-		// Step 3: Generate content via AI.
-		$ai_result = $this->call_ai( $transcript, $language, $video['title'], $persona );
-
-		if ( is_wp_error( $ai_result ) ) {
-			delete_transient( $lock_key );
-			return $ai_result;
-		}
-
-		delete_transient( $lock_key );
-
-		return array(
-			'title'    => $ai_result['title'],
-			'content'  => $ai_result['content'],
-			'video_id' => $video_id,
-		);
 	}
 
 	/**
@@ -86,9 +100,10 @@ class Post_Generator {
 	 * @param string $video_id The YouTube video ID.
 	 * @param string $title    The generated post title.
 	 * @param string $content  The generated post content (HTML).
+	 * @param array  $metadata AI generation metadata.
 	 * @return array{post_id: int, edit_url: string, warnings: string[]}|\WP_Error
 	 */
-	public function save_draft( string $video_id, string $title, string $content ): array|\WP_Error {
+	public function save_draft( string $video_id, string $title, string $content, array $metadata = array() ): array|\WP_Error {
 		$youtube = new YouTube_API();
 		$video   = $youtube->get_video( $video_id );
 
@@ -101,7 +116,7 @@ class Post_Generator {
 			'content' => $content,
 		);
 
-		$draft_result = $this->create_draft( $ai_result, $video_id, $video );
+		$draft_result = $this->create_draft( $ai_result, $video_id, $video, $metadata );
 
 		if ( is_wp_error( $draft_result ) ) {
 			return $draft_result;
@@ -115,98 +130,15 @@ class Post_Generator {
 	}
 
 	/**
-	 * Construct the prompt and call the AI client.
-	 *
-	 * @param string $transcript  The video transcript.
-	 * @param string $language    Target language code.
-	 * @param string $video_title Original video title.
-	 * @return array{title: string, content: string}|\WP_Error
-	 */
-	private function call_ai( string $transcript, string $language, string $video_title, string $persona = '' ): array|\WP_Error {
-		$language_name = Settings::LANGUAGES[ $language ] ?? 'English';
-
-		// Fall back to the saved default persona if none provided per-request.
-		if ( empty( $persona ) ) {
-			$persona = get_option( 'wttba_default_persona', '' );
-		}
-
-		$persona_section = '';
-		if ( ! empty( $persona ) ) {
-			$persona_section = sprintf(
-				"\n\n## Writing Style:\n%s",
-				$persona
-			);
-		}
-
-		$prompt = sprintf(
-			'You are a professional blog writer. Analyze the following YouTube video transcript and create a well-structured, SEO-friendly blog post.
-
-## Instructions:
-- Write the blog post in %1$s.
-- The original video title is: "%2$s"
-- Create an engaging, descriptive title (do not just copy the video title).
-- Structure the content with proper HTML headings (h2, h3), paragraphs, and lists where appropriate.
-- Write in a clear, informative tone suitable for a blog audience.
-- Do not include any references to "the video" or "the transcript" — write as if this is an original article.
-- Ensure the content is cohesive and flows naturally.
-%3$s
-
-## Transcript:
-%4$s',
-			$language_name,
-			$video_title,
-			$persona_section,
-			$transcript
-		);
-
-		$schema = array(
-			'type'       => 'object',
-			'properties' => array(
-				'title'   => array(
-					'type'        => 'string',
-					'description' => 'The blog post title.',
-				),
-				'content' => array(
-					'type'        => 'string',
-					'description' => 'The blog post content in HTML format with headings, paragraphs, and lists.',
-				),
-			),
-			'required'   => array( 'title', 'content' ),
-		);
-
-		$result = wp_ai_client_prompt( $prompt )
-			->using_temperature( 0.7 )
-			->using_max_tokens( 8000 )
-			->as_json_response( $schema )
-			->generate_text();
-
-		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] AI call failed — %s: %s', $result->get_error_code(), $result->get_error_message() ) );
-			return $result;
-		}
-
-		$parsed = json_decode( $result, true );
-
-		if ( ! is_array( $parsed ) || empty( $parsed['title'] ) || empty( $parsed['content'] ) ) {
-			error_log( '[WP Tube-to-Blog AI] AI parse error — response could not be decoded or is missing required fields.' );
-			return new \WP_Error(
-				'wttba_ai_parse_error',
-				__( 'The AI returned an unexpected response format. Please try generating again.', 'wp-tube-to-blog-ai' )
-			);
-		}
-
-		return $parsed;
-	}
-
-	/**
 	 * Create a WordPress draft post from the AI output.
 	 *
 	 * @param array  $ai_result The parsed AI response with title and content.
-	 * @param string $video_id  The YouTube video ID.
-	 * @param array  $video     The video details from YouTube API.
+	 * @param string $video_id   The YouTube video ID.
+	 * @param array  $video      The video details from YouTube API.
+	 * @param array  $metadata   AI generation metadata.
 	 * @return array{post_id: int, warnings: string[]}|\WP_Error
 	 */
-	private function create_draft( array $ai_result, string $video_id, array $video ): array|\WP_Error {
+	private function create_draft( array $ai_result, string $video_id, array $video, array $metadata = array() ): array|\WP_Error {
 		// Build the YouTube embed block.
 		$embed_block = sprintf(
 			'<!-- wp:embed {"url":"https://www.youtube.com/watch?v=%1$s","type":"video","providerNameSlug":"youtube","responsive":true,"className":"wp-embed-aspect-16-9 wp-has-aspect-ratio"} -->
@@ -226,13 +158,22 @@ https://www.youtube.com/watch?v=%1$s
 			'post_type'    => 'post',
 			'meta_input'   => array(
 				'_wttba_source_video_id' => $video_id,
+				'_wttba_source_type'     => 'youtube_video',
 			),
 		);
+
+		if ( ! empty( $metadata ) ) {
+			$post_data['meta_input'][ Generation_Logger::META_KEY ] = Generation_Logger::sanitize_metadata( $metadata );
+		}
 
 		$post_id = wp_insert_post( $post_data, true );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
+		}
+
+		if ( ! empty( $metadata ) ) {
+			Generation_Logger::record( (int) $post_id, $metadata );
 		}
 
 		$warnings = array();

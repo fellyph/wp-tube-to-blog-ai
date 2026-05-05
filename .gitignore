@@ -31,3 +31,8 @@ package-lock.json
 
 # Plugin zip
 *.zip
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
