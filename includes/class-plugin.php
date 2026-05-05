@@ -42,6 +42,7 @@ class Plugin {
 		$this->check_dependencies();
 
 		new Settings();
+		new YouTube_OAuth();
 		new Dashboard_Widget();
 		new Admin_Videos_Page();
 

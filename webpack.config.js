@@ -12,6 +12,7 @@ module.exports = {
 			__dirname,
 			'src/admin-videos/index.js'
 		),
+		settings: path.resolve( __dirname, 'src/settings/index.js' ),
 	},
 	output: {
 		path: path.resolve( __dirname, 'build' ),

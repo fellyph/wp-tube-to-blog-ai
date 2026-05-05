@@ -31,8 +31,12 @@ if ( file_exists( WTTBA_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 
 // Load plugin classes.
 require_once WTTBA_PLUGIN_DIR . 'includes/class-plugin.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-admin-navigation.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-settings.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-ai-provider-status.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-generation-logger.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-api.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-oauth.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-transcript-fetcher.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-post-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-rest-controller.php';
