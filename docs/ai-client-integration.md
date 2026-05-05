@@ -90,7 +90,7 @@ $result = wp_ai_client_prompt( $prompt )
     ->using_system_instruction( 'You are a professional blog writer...' )
     ->using_temperature( 0.7 )
     ->using_max_tokens( 8000 )
-    ->using_model_preference( 'claude-sonnet-4-6', 'gemini-2.5-flash', 'gpt-4o-mini' )
+    ->using_model_preference( 'claude-sonnet-4-6', 'gpt-5.4', 'gemini-3-flash-preview', 'gemini-3-pro-preview', 'gpt-4o-mini' )
     ->as_json_response( $schema )
     ->generate_text();
 ```
