@@ -60,7 +60,10 @@ class YouTube_API {
 	 * @param int    $max_results Number of results per page (max 50).
 	 * @return array{items: array, nextPageToken?: string, totalResults: int}|\WP_Error
 	 */
-	public function get_videos( string $page_token = '', int $max_results = 5 ): array|\WP_Error {
+	public function get_videos( ?string $page_token = '', ?int $max_results = 5 ): array|\WP_Error {
+		$page_token  = (string) $page_token;
+		$max_results = $max_results ? absint( $max_results ) : 5;
+
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error(
 				'wttba_not_configured',

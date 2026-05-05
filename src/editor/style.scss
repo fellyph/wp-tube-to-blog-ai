@@ -1,0 +1,50 @@
+.wttba-editor-panel {
+
+	.components-panel__body {
+		padding-bottom: 4px;
+	}
+
+	&__section {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding-bottom: 18px;
+		margin-bottom: 18px;
+		border-bottom: 1px solid #ddd;
+
+		&:last-child {
+			padding-bottom: 0;
+			margin-bottom: 0;
+			border-bottom: 0;
+		}
+	}
+
+	&__heading {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.4;
+		font-weight: 600;
+	}
+
+	&__muted,
+	&__file {
+		margin: 0;
+		color: #646970;
+		font-size: 12px;
+		line-height: 1.5;
+	}
+
+	.components-notice {
+		margin: 0 0 12px;
+	}
+
+	.components-button {
+		justify-content: center;
+		width: 100%;
+		min-height: 36px;
+	}
+
+	.components-spinner {
+		margin: 0 6px 0 0;
+	}
+}

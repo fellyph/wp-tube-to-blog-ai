@@ -8,14 +8,17 @@ import { __ } from '@wordpress/i18n';
  * Extract structured error info from an api-fetch error.
  *
  * @param {Error|Object} err The caught error.
- * @return {{ message: string, category: string|null }} Parsed error info.
+ * @return {{ code: string|null, message: string, category: string|null, configurationUrl: string|null, configurationLabel: string|null }} Parsed error info.
  */
 export function parseError( err ) {
 	return {
+		code: err.code || null,
 		message:
 			err.message ||
 			__( 'An unexpected error occurred.', 'wp-tube-to-blog-ai' ),
 		category: err.data?.error_category || null,
+		configurationUrl: err.data?.configuration_url || null,
+		configurationLabel: err.data?.configuration_label || null,
 	};
 }
 
@@ -53,6 +56,17 @@ export function fetchVideo( videoId ) {
 }
 
 /**
+ * Fetch AI capability and upload limit information.
+ *
+ * @return {Promise<Object>} Capability data.
+ */
+export function fetchCapabilities() {
+	return apiFetch( {
+		path: '/wttba/v1/capabilities',
+	} );
+}
+
+/**
  * Generate a blog post preview from a video (no draft created).
  *
  * @param {string} videoId  The YouTube video ID.
@@ -75,12 +89,13 @@ export function previewPost( videoId, language, persona = '' ) {
 /**
  * Save AI-generated content as a WordPress draft.
  *
- * @param {string} videoId The YouTube video ID.
- * @param {string} title   The generated post title.
- * @param {string} content The generated post content (HTML).
+ * @param {string} videoId    The YouTube video ID.
+ * @param {string} title      The generated post title.
+ * @param {string} content    The generated post content (HTML).
+ * @param {Object} aiMetadata AI generation metadata.
  * @return {Promise<Object>} Draft info { post_id, edit_url, warnings }.
  */
-export function saveDraft( videoId, title, content ) {
+export function saveDraft( videoId, title, content, aiMetadata = {} ) {
 	return apiFetch( {
 		path: '/wttba/v1/save-draft',
 		method: 'POST',
@@ -88,6 +103,53 @@ export function saveDraft( videoId, title, content ) {
 			video_id: videoId,
 			title,
 			content,
+			ai_metadata: aiMetadata,
+		},
+	} );
+}
+
+/**
+ * Generate a blog post preview from an audio attachment.
+ *
+ * @param {number} postId       Current post ID.
+ * @param {number} attachmentId Audio attachment ID.
+ * @param {string} language     Target language code.
+ * @param {string} persona      Optional writing style persona.
+ * @return {Promise<Object>} Preview data.
+ */
+export function previewAudioPost(
+	postId,
+	attachmentId,
+	language,
+	persona = ''
+) {
+	return apiFetch( {
+		path: '/wttba/v1/audio-post/preview',
+		method: 'POST',
+		data: {
+			post_id: postId,
+			attachment_id: attachmentId,
+			language,
+			persona,
+		},
+	} );
+}
+
+/**
+ * Generate audio from an existing post.
+ *
+ * @param {number}  postId         Post ID.
+ * @param {string}  voice          Optional provider-specific voice.
+ * @param {boolean} overwriteBlock Whether to update an existing generated audio block.
+ * @return {Promise<Object>} Audio generation response.
+ */
+export function generatePostAudio( postId, voice = '', overwriteBlock = true ) {
+	return apiFetch( {
+		path: `/wttba/v1/posts/${ postId }/audio`,
+		method: 'POST',
+		data: {
+			voice,
+			overwrite_block: overwriteBlock,
 		},
 	} );
 }

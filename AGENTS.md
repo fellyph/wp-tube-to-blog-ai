@@ -1,10 +1,10 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-WP Tube-to-Blog AI is a WordPress plugin that converts YouTube videos into blog post drafts using AI. It fetches video transcripts, sends them to an AI provider (Gemini, Claude, or Ollama) via the `wordpress/wp-ai-client` SDK, and creates WordPress draft posts with structured HTML content.
+WP Tube-to-Blog AI is a WordPress plugin that converts YouTube videos into blog post drafts using AI. It fetches video transcripts, sends them to an AI provider (Gemini, Codex, or Ollama) via the `wordpress/wp-ai-client` SDK, and creates WordPress draft posts with structured HTML content.
 
 ## Build & Development Commands
 

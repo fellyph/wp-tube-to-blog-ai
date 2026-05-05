@@ -1,7 +1,13 @@
 /**
  * Admin videos page entry point.
  */
-import { createElement, render, useState, useEffect } from '@wordpress/element';
+import {
+	createElement,
+	render,
+	useState,
+	useEffect,
+	useCallback,
+} from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { fetchVideos, previewPost, saveDraft, parseError } from '../shared/api';
 import LanguageModal from '../shared/language-modal';
@@ -32,6 +38,11 @@ function formatDate( dateStr ) {
  */
 function AdminVideos() {
 	const config = window.wttbaConfig || {};
+	const ai = config.ai || {};
+	const isTextGenerationSupported =
+		ai.textGenerationSupported !== undefined
+			? ai.textGenerationSupported
+			: true;
 	const [ videos, setVideos ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
 	const [ error, setError ] = useState( null );
@@ -45,8 +56,9 @@ function AdminVideos() {
 	const [ saving, setSaving ] = useState( false );
 	const [ regenerating, setRegenerating ] = useState( false );
 	const [ lastGenParams, setLastGenParams ] = useState( null );
+	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
 
-	const loadVideos = ( pageToken = '' ) => {
+	const loadVideos = useCallback( ( pageToken = '' ) => {
 		const isLoadMore = pageToken !== '';
 		if ( isLoadMore ) {
 			setLoadingMore( true );
@@ -73,7 +85,7 @@ function AdminVideos() {
 				setLoading( false );
 				setLoadingMore( false );
 			} );
-	};
+	}, [] );
 
 	useEffect( () => {
 		if ( config.isConfigured ) {
@@ -81,10 +93,29 @@ function AdminVideos() {
 		} else {
 			setLoading( false );
 		}
-	}, [] );
+	}, [ config.isConfigured, loadVideos ] );
 
 	const handleGenerate = ( language, persona ) => {
 		if ( ! modalVideo ) {
+			return;
+		}
+
+		if ( ! isTextGenerationSupported ) {
+			setError( {
+				message:
+					ai.unavailableMessage ||
+					__(
+						'Configure an AI provider before generating posts.',
+						'wp-tube-to-blog-ai'
+					),
+				category: 'configuration',
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'wp-tube-to-blog-ai'
+				),
+			} );
+			setModalVideo( null );
 			return;
 		}
 
@@ -115,7 +146,12 @@ function AdminVideos() {
 
 		setSaving( true );
 
-		saveDraft( preview.video_id, preview.title, preview.content )
+		saveDraft(
+			preview.video_id,
+			preview.title,
+			preview.content,
+			preview.ai_metadata || {}
+		)
 			.then( ( result ) => {
 				setSaving( false );
 				setPreview( null );
@@ -153,6 +189,18 @@ function AdminVideos() {
 
 	const handleCancelPreview = () => {
 		setPreview( null );
+	};
+
+	const getGenerateButtonLabel = ( video ) => {
+		if ( ! isTextGenerationSupported ) {
+			return __( 'AI unavailable', 'wp-tube-to-blog-ai' );
+		}
+
+		if ( generating === video.id ) {
+			return __( 'Generating…', 'wp-tube-to-blog-ai' );
+		}
+
+		return __( 'Generate Post', 'wp-tube-to-blog-ai' );
 	};
 
 	if ( ! config.isConfigured ) {
@@ -194,8 +242,11 @@ function AdminVideos() {
 		{ className: 'wttba-videos' },
 		error &&
 			createElement( ErrorNotice, {
+				code: error.code,
 				message: error.message,
 				category: error.category,
+				configurationUrl: error.configurationUrl,
+				configurationLabel: error.configurationLabel,
 				onDismiss: () => setError( null ),
 				onRetry: failedVideo
 					? () => {
@@ -229,6 +280,25 @@ function AdminVideos() {
 				messages: success.warnings,
 				onDismiss: () => setSuccess( { ...success, warnings: [] } ),
 			} ),
+		! isTextGenerationSupported &&
+			! dismissedAiNotice &&
+			createElement( ErrorNotice, {
+				code: 'wttba_ai_not_supported',
+				message:
+					ai.unavailableMessage ||
+					__(
+						'Configure an AI provider before generating posts.',
+						'wp-tube-to-blog-ai'
+					),
+				category: 'configuration',
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'wp-tube-to-blog-ai'
+				),
+				onDismiss: () => setDismissedAiNotice( true ),
+				settingsUrl: config.settingsUrl,
+			} ),
 		createElement(
 			'div',
 			{ className: 'wttba-videos__grid' },
@@ -259,12 +329,12 @@ function AdminVideos() {
 							{
 								className: 'button button-primary',
 								onClick: () => setModalVideo( video ),
-								disabled: generating === video.id,
+								disabled:
+									generating === video.id ||
+									! isTextGenerationSupported,
 								type: 'button',
 							},
-							generating === video.id
-								? __( 'Generating…', 'wp-tube-to-blog-ai' )
-								: __( 'Generate Post', 'wp-tube-to-blog-ai' )
+							getGenerateButtonLabel( video )
 						)
 					)
 				)

@@ -32,6 +32,11 @@ function formatDate( dateStr ) {
  */
 function DashboardWidget() {
 	const config = window.wttbaConfig || {};
+	const ai = config.ai || {};
+	const isTextGenerationSupported =
+		ai.textGenerationSupported !== undefined
+			? ai.textGenerationSupported
+			: true;
 	const [ videos, setVideos ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
 	const [ error, setError ] = useState( null );
@@ -43,6 +48,7 @@ function DashboardWidget() {
 	const [ saving, setSaving ] = useState( false );
 	const [ regenerating, setRegenerating ] = useState( false );
 	const [ lastGenParams, setLastGenParams ] = useState( null );
+	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
 
 	useEffect( () => {
 		if ( ! config.isConfigured ) {
@@ -59,10 +65,29 @@ function DashboardWidget() {
 				setError( parseError( err ) );
 				setLoading( false );
 			} );
-	}, [] );
+	}, [ config.isConfigured ] );
 
 	const handleGenerate = ( language, persona ) => {
 		if ( ! modalVideo ) {
+			return;
+		}
+
+		if ( ! isTextGenerationSupported ) {
+			setError( {
+				message:
+					ai.unavailableMessage ||
+					__(
+						'Configure an AI provider before generating posts.',
+						'wp-tube-to-blog-ai'
+					),
+				category: 'configuration',
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'wp-tube-to-blog-ai'
+				),
+			} );
+			setModalVideo( null );
 			return;
 		}
 
@@ -93,7 +118,12 @@ function DashboardWidget() {
 
 		setSaving( true );
 
-		saveDraft( preview.video_id, preview.title, preview.content )
+		saveDraft(
+			preview.video_id,
+			preview.title,
+			preview.content,
+			preview.ai_metadata || {}
+		)
 			.then( ( result ) => {
 				setSaving( false );
 				setPreview( null );
@@ -133,6 +163,18 @@ function DashboardWidget() {
 		setPreview( null );
 	};
 
+	const getGenerateButtonLabel = ( video ) => {
+		if ( ! isTextGenerationSupported ) {
+			return __( 'AI unavailable', 'wp-tube-to-blog-ai' );
+		}
+
+		if ( generating === video.id ) {
+			return __( 'Generating…', 'wp-tube-to-blog-ai' );
+		}
+
+		return __( 'Generate Post', 'wp-tube-to-blog-ai' );
+	};
+
 	if ( ! config.isConfigured ) {
 		return createElement(
 			'div',
@@ -170,8 +212,11 @@ function DashboardWidget() {
 		{ className: 'wttba-widget' },
 		error &&
 			createElement( ErrorNotice, {
+				code: error.code,
 				message: error.message,
 				category: error.category,
+				configurationUrl: error.configurationUrl,
+				configurationLabel: error.configurationLabel,
 				onDismiss: () => setError( null ),
 				onRetry: failedVideo
 					? () => {
@@ -205,6 +250,25 @@ function DashboardWidget() {
 				messages: success.warnings,
 				onDismiss: () => setSuccess( { ...success, warnings: [] } ),
 			} ),
+		! isTextGenerationSupported &&
+			! dismissedAiNotice &&
+			createElement( ErrorNotice, {
+				code: 'wttba_ai_not_supported',
+				message:
+					ai.unavailableMessage ||
+					__(
+						'Configure an AI provider before generating posts.',
+						'wp-tube-to-blog-ai'
+					),
+				category: 'configuration',
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'wp-tube-to-blog-ai'
+				),
+				onDismiss: () => setDismissedAiNotice( true ),
+				settingsUrl: config.settingsUrl,
+			} ),
 		createElement(
 			'ul',
 			{ className: 'wttba-widget__list' },
@@ -233,14 +297,15 @@ function DashboardWidget() {
 						createElement(
 							'button',
 							{
-								className: 'button button-small button-primary',
+								className:
+									'button button-small button-primary wttba-widget__generate',
 								onClick: () => setModalVideo( video ),
-								disabled: generating === video.id,
+								disabled:
+									generating === video.id ||
+									! isTextGenerationSupported,
 								type: 'button',
 							},
-							generating === video.id
-								? __( 'Generating…', 'wp-tube-to-blog-ai' )
-								: __( 'Generate Post', 'wp-tube-to-blog-ai' )
+							getGenerateButtonLabel( video )
 						)
 					)
 				)

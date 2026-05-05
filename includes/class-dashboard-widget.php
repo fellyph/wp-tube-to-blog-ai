@@ -93,6 +93,7 @@ class Dashboard_Widget {
 				'languages'       => Settings::LANGUAGES,
 				'isConfigured'    => ( new YouTube_API() )->is_configured(),
 				'settingsUrl'     => admin_url( 'options-general.php?page=wttba-settings' ),
+				'ai'              => AI_Provider_Status::get_admin_config(),
 			)
 		);
 	}

@@ -45,19 +45,11 @@ class Plugin {
 		new YouTube_OAuth();
 		new Dashboard_Widget();
 		new Admin_Videos_Page();
+		new Editor_Integration();
 
 		add_action( 'rest_api_init', array( new REST_Controller(), 'register_routes' ) );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
-		add_action( 'init', array( $this, 'init_ai_client' ) );
-	}
-
-	/**
-	 * Initialize the WordPress AI Client SDK.
-	 */
-	public function init_ai_client(): void {
-		if ( class_exists( \WordPress\AI_Client\AI_Client::class ) ) {
-			\WordPress\AI_Client\AI_Client::init();
-		}
+		add_action( 'init', array( $this, 'register_post_meta' ) );
 	}
 
 	/**
@@ -75,7 +67,7 @@ class Plugin {
 	 * Check for required dependencies and show admin notice if missing.
 	 */
 	private function check_dependencies(): void {
-		if ( ! function_exists( 'wp_ai_client_prompt' ) && ! class_exists( \WordPress\AI_Client\AI_Client::class ) ) {
+		if ( ! AI_Provider_Status::is_supported_wordpress_version() || ! AI_Provider_Status::is_ai_client_available() ) {
 			add_action( 'admin_notices', array( $this, 'missing_ai_client_notice' ) );
 		}
 	}
@@ -84,17 +76,82 @@ class Plugin {
 	 * Display admin notice when wp-ai-client is not available.
 	 */
 	public function missing_ai_client_notice(): void {
+		$message = AI_Provider_Status::get_unavailable_message();
+
+		if ( ! AI_Provider_Status::is_supported_wordpress_version() ) {
+			$message = sprintf(
+				/* translators: %s: current WordPress version. */
+				__( 'WP Tube-to-Blog AI requires WordPress 7.0 beta or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'wp-tube-to-blog-ai' ),
+				AI_Provider_Status::get_wordpress_version()
+			);
+		}
 		?>
 		<div class="notice notice-warning">
-			<p>
-				<?php
-				esc_html_e(
-					'WP Tube-to-Blog AI requires the WordPress AI Client plugin to generate blog posts. Please install and activate it.',
-					'wp-tube-to-blog-ai'
-				);
-				?>
-			</p>
+			<p><?php echo esc_html( $message ); ?></p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Register protected plugin post meta.
+	 */
+	public function register_post_meta(): void {
+		$auth_callback = static function ( $allowed, $meta_key, $post_id ): bool {
+			$post_id = absint( $post_id );
+
+			if ( $post_id > 0 ) {
+				return current_user_can( 'edit_post', $post_id );
+			}
+
+			return current_user_can( 'edit_posts' );
+		};
+
+		register_post_meta(
+			'post',
+			'_wttba_source_type',
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
+			'_wttba_source_attachment_id',
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
+			Post_Audio_Generator::AUDIO_ATTACHMENT_META_KEY,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
+			Generation_Logger::META_KEY,
+			array(
+				'type'              => 'object',
+				'single'            => true,
+				'show_in_rest'      => false,
+				'sanitize_callback' => array( Generation_Logger::class, 'sanitize_metadata' ),
+				'auth_callback'     => $auth_callback,
+			)
+		);
 	}
 }

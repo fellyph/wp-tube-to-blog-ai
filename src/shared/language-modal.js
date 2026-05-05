@@ -8,12 +8,13 @@ import { __ } from '@wordpress/i18n';
  * Language selection modal.
  *
  * @param {Object}   props
- * @param {boolean}  props.isOpen        Whether the modal is visible.
- * @param {Object}   props.languages     Language map { code: label }.
- * @param {string}   props.defaultLang   Default selected language.
- * @param {Function} props.onConfirm     Callback with selected language code.
- * @param {Function} props.onCancel      Callback to close the modal.
- * @param {string}   props.videoTitle    The video title being generated.
+ * @param {boolean}  props.isOpen         Whether the modal is visible.
+ * @param {Object}   props.languages      Language map { code: label }.
+ * @param {string}   props.defaultLang    Default selected language.
+ * @param {string}   props.defaultPersona Default writing persona.
+ * @param {Function} props.onConfirm      Callback with selected language code.
+ * @param {Function} props.onCancel       Callback to close the modal.
+ * @param {string}   props.videoTitle     The video title being generated.
  * @return {Element|null} The modal element or null.
  */
 export default function LanguageModal( {
@@ -66,11 +67,7 @@ export default function LanguageModal( {
 					onChange: ( e ) => setSelectedLang( e.target.value ),
 				},
 				Object.entries( languages ).map( ( [ code, label ] ) =>
-					createElement(
-						'option',
-						{ key: code, value: code },
-						label
-					)
+					createElement( 'option', { key: code, value: code }, label )
 				)
 			),
 			createElement(

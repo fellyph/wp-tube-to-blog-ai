@@ -2,9 +2,9 @@
 /**
  * Plugin Name:       WP Tube-to-Blog AI
  * Plugin URI:        https://github.com/user/wp-tube-to-blog-ai
- * Description:       Convert YouTube videos into WordPress blog post drafts using the WordPress AI Client.
+ * Description:       AI content suite for converting videos and audio into posts, and posts into audio, using the WordPress AI Client.
  * Version:           1.0.0
- * Requires at least: 6.7
+ * Requires at least: 7.0-beta
  * Requires PHP:      8.1
  * Author:            Starter
  * License:           GPL-2.0-or-later
@@ -24,24 +24,22 @@ define( 'WTTBA_PLUGIN_FILE', __FILE__ );
 define( 'WTTBA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WTTBA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-// Autoload Composer dependencies.
-if ( file_exists( WTTBA_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-	require_once WTTBA_PLUGIN_DIR . 'vendor/autoload.php';
-}
-
 // Load plugin classes.
 require_once WTTBA_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-admin-navigation.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-settings.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-ai-provider-status.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-generation-logger.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-content-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-api.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-oauth.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-transcript-fetcher.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-post-generator.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-post-audio-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-rest-controller.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-dashboard-widget.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-admin-videos-page.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-editor-integration.php';
 
 /**
  * Initialize the plugin.

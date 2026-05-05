@@ -8,36 +8,62 @@ import { __ } from '@wordpress/i18n';
  * Renders a WordPress-styled dismissible error notice with contextual actions.
  *
  * @param {Object}        props
- * @param {string}        props.message     The error message to display.
- * @param {string|null}   props.category    Error category: 'configuration', 'rate_limit', 'not_found', 'upstream', 'internal', or null.
- * @param {Function}      props.onDismiss   Callback to clear the error.
- * @param {Function|null} props.onRetry     Callback to retry the failed action.
- * @param {string}        props.settingsUrl URL to the plugin settings page.
+ * @param {string|null}   props.code               Error code.
+ * @param {string}        props.message            The error message to display.
+ * @param {string|null}   props.category           Error category.
+ * @param {string|null}   props.configurationUrl   URL for the configuration action.
+ * @param {string|null}   props.configurationLabel Label for the configuration action.
+ * @param {Function}      props.onDismiss          Callback to clear the error.
+ * @param {Function|null} props.onRetry            Callback to retry the failed action.
+ * @param {string}        props.settingsUrl        URL to the plugin settings page.
  * @return {Element} The error notice element.
  */
 export default function ErrorNotice( {
+	code,
 	message,
 	category,
+	configurationUrl,
+	configurationLabel,
 	onDismiss,
 	onRetry,
 	settingsUrl,
 } ) {
+	const actionUrl = configurationUrl || settingsUrl;
+	const actionLabel =
+		configurationLabel || __( 'Go to Settings', 'wp-tube-to-blog-ai' );
+	const transcriptErrorCodes = [
+		'wttba_no_captions',
+		'wttba_no_tracks',
+		'wttba_no_track_url',
+		'wttba_empty_transcript',
+	];
+	const isTranscriptError = transcriptErrorCodes.includes( code );
+
 	return createElement(
 		'div',
 		{ className: 'notice notice-error is-dismissible wttba-error-notice' },
 		createElement( 'p', null, message ),
+		isTranscriptError &&
+			createElement(
+				'p',
+				{ className: 'wttba-error-notice__hint' },
+				__(
+					'This video needs captions or subtitles before it can be converted into a post.',
+					'wp-tube-to-blog-ai'
+				)
+			),
 		category === 'configuration' &&
-			settingsUrl &&
+			actionUrl &&
 			createElement(
 				'p',
 				null,
 				createElement(
 					'a',
 					{
-						href: settingsUrl,
+						href: actionUrl,
 						className: 'button button-secondary button-small',
 					},
-					__( 'Go to Settings', 'wp-tube-to-blog-ai' )
+					actionLabel
 				)
 			),
 		category === 'rate_limit' &&

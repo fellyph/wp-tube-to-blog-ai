@@ -36,6 +36,24 @@ class Admin_Videos_Page {
 			'dashicons-video-alt3',
 			30
 		);
+
+		add_submenu_page(
+			'wttba-videos',
+			__( 'YouTube Content', 'wp-tube-to-blog-ai' ),
+			__( 'YouTube Content', 'wp-tube-to-blog-ai' ),
+			'edit_posts',
+			'wttba-videos',
+			array( $this, 'render_page' )
+		);
+
+		add_submenu_page(
+			'wttba-videos',
+			__( 'Audio to Post', 'wp-tube-to-blog-ai' ),
+			__( 'Audio to Post', 'wp-tube-to-blog-ai' ),
+			'edit_posts',
+			'wttba-audio-to-post',
+			array( $this, 'render_audio_page' )
+		);
 	}
 
 	/**
@@ -47,7 +65,34 @@ class Admin_Videos_Page {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'YouTube Videos', 'wp-tube-to-blog-ai' ); ?></h1>
+			<?php Admin_Navigation::render( 'youtube' ); ?>
 			<div id="wttba-admin-videos"></div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the audio-to-post page.
+	 */
+	public function render_audio_page(): void {
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Audio to Post', 'wp-tube-to-blog-ai' ); ?></h1>
+			<?php Admin_Navigation::render( 'audio' ); ?>
+			<div class="wttba-audio-to-post">
+				<h2><?php esc_html_e( 'Create a draft from an audio file', 'wp-tube-to-blog-ai' ); ?></h2>
+				<p>
+					<?php esc_html_e( 'Open a new post draft, select an audio file from the AI Content Suite panel, then generate the article into the editor.', 'wp-tube-to-blog-ai' ); ?>
+				</p>
+				<p>
+					<a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=post' ) ); ?>">
+						<?php esc_html_e( 'Create Draft From Audio', 'wp-tube-to-blog-ai' ); ?>
+					</a>
+					<a class="button button-secondary" href="<?php echo esc_url( admin_url( 'upload.php?mode=list' ) ); ?>">
+						<?php esc_html_e( 'Media Library', 'wp-tube-to-blog-ai' ); ?>
+					</a>
+				</p>
+			</div>
 		</div>
 		<?php
 	}
@@ -97,6 +142,7 @@ class Admin_Videos_Page {
 				'languages'       => Settings::LANGUAGES,
 				'isConfigured'    => ( new YouTube_API() )->is_configured(),
 				'settingsUrl'     => admin_url( 'options-general.php?page=wttba-settings' ),
+				'ai'              => AI_Provider_Status::get_admin_config(),
 			)
 		);
 	}

@@ -8,10 +8,8 @@ module.exports = {
 			__dirname,
 			'src/dashboard-widget/index.js'
 		),
-		'admin-videos': path.resolve(
-			__dirname,
-			'src/admin-videos/index.js'
-		),
+		'admin-videos': path.resolve( __dirname, 'src/admin-videos/index.js' ),
+		editor: path.resolve( __dirname, 'src/editor/index.js' ),
 		settings: path.resolve( __dirname, 'src/settings/index.js' ),
 	},
 	output: {
