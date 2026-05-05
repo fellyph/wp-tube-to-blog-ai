@@ -123,6 +123,29 @@
 		margin-bottom: 20px;
 	}
 
+	&__checkbox-label {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		margin: 0 0 16px;
+		font-weight: 600;
+	}
+
+	&__manual-transcript {
+		margin-bottom: 20px;
+	}
+
+	&__manual-transcript &__textarea {
+		margin-bottom: 8px;
+	}
+
+	&__description {
+		margin: 0;
+		color: #646970;
+		font-size: 12px;
+		line-height: 1.4;
+	}
+
 	&__actions {
 		display: flex;
 		gap: 8px;
