@@ -2,7 +2,7 @@
 /**
  * Main plugin orchestrator.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -57,7 +57,7 @@ class Plugin {
 	 */
 	public function load_textdomain(): void {
 		load_plugin_textdomain(
-			'wp-tube-to-blog-ai',
+			'creatorstack-ai',
 			false,
 			dirname( plugin_basename( WTTBA_PLUGIN_FILE ) ) . '/languages'
 		);
@@ -81,7 +81,7 @@ class Plugin {
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() ) {
 			$message = sprintf(
 				/* translators: %s: current WordPress version. */
-				__( 'WP Tube-to-Blog AI requires WordPress 7.0 beta or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'wp-tube-to-blog-ai' ),
+				__( 'CreatorStack AI requires WordPress 7.0 beta or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'creatorstack-ai' ),
 				AI_Provider_Status::get_wordpress_version()
 			);
 		}
