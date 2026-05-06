@@ -23,7 +23,7 @@ export async function startPlayground(): Promise< PlaygroundCLI > {
 		mount: [
 			{
 				hostPath: pluginRoot,
-				vfsPath: '/wordpress/wp-content/plugins/wp-tube-to-blog-ai',
+				vfsPath: '/wordpress/wp-content/plugins/creatorstack-ai',
 			},
 		],
 		blueprint,
