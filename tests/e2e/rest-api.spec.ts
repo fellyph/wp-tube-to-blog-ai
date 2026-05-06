@@ -66,6 +66,7 @@ test( 'wttba/v1 namespace is registered', async () => {
 			'/wttba/v1/preview',
 			'/wttba/v1/save-draft',
 			'/wttba/v1/audio-post/preview',
+			'/wttba/v1/audio-post/draft',
 			'/wttba/v1/posts/(?P<id>[\\d]+)/audio',
 		] )
 	);
@@ -136,6 +137,12 @@ test( 'authenticated /capabilities returns AI feature flags and audio limits', a
 	expect( body ).toHaveProperty( 'textGenerationSupported' );
 	expect( body ).toHaveProperty( 'audioInputSupported' );
 	expect( body ).toHaveProperty( 'textToSpeechSupported' );
+	expect( body ).toHaveProperty( 'features', {
+		youtubeToPost: true,
+		audioToPost: true,
+		postToAudio: false,
+	} );
+	expect( body.textToSpeechSupported ).toBe( false );
 	expect( audioUpload.allowedExtensions ).toEqual(
 		expect.arrayContaining( [ 'mp3', 'wav', 'm4a' ] )
 	);
@@ -151,7 +158,7 @@ test( 'authenticated /ai/test returns a structured error when no provider is con
 	expect( body ).toHaveProperty( 'data.error_category' );
 } );
 
-test( 'post-to-audio route returns a structured error when no provider is configured', async () => {
+test( 'post-to-audio route is disabled by default with a structured error', async () => {
 	const postRes = await directRestRequest( 'POST', '/wp/v2/posts', {
 		title: 'Audio route test',
 		content: 'This post has enough readable text for an audio test.',
@@ -164,6 +171,47 @@ test( 'post-to-audio route returns a structured error when no provider is config
 		'POST',
 		`/wttba/v1/posts/${ post.id }/audio`
 	);
+
+	expect( res.status ).toBeGreaterThanOrEqual( 400 );
+	const body = res.body;
+	expect( body ).toHaveProperty( 'code', 'wttba_feature_disabled' );
+	expect( body ).toHaveProperty( 'data.error_category', 'configuration' );
+	expect( body ).toHaveProperty(
+		'data.configuration_label',
+		'Update settings'
+	);
+} );
+
+test( 'audio draft route returns a structured error when no audio provider is configured', async () => {
+	const response = await cli.playground.run( {
+		code: `<?php
+require '/wordpress/wp-load.php';
+wp_set_current_user( 1 );
+$upload = wp_upload_bits( 'audio-draft-test.wav', null, base64_decode( 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=' ) );
+if ( ! empty( $upload['error'] ) ) {
+	echo wp_json_encode( array( 'error' => $upload['error'] ) );
+	return;
+}
+$attachment_id = wp_insert_attachment(
+	array(
+		'post_title'     => 'Audio draft test',
+		'post_mime_type' => 'audio/wav',
+		'post_status'    => 'inherit',
+		'guid'           => $upload['url'],
+	),
+	$upload['file']
+);
+echo wp_json_encode( array( 'attachment_id' => $attachment_id ) );
+`,
+	} );
+	const attachment = JSON.parse( response.text ) as {
+		attachment_id: number;
+	};
+
+	const res = await directRestRequest( 'POST', '/wttba/v1/audio-post/draft', {
+		attachment_id: attachment.attachment_id,
+		language: 'en',
+	} );
 
 	expect( res.status ).toBeGreaterThanOrEqual( 400 );
 	const body = res.body;
