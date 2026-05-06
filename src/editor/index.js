@@ -1,12 +1,11 @@
 /**
- * Block editor AI Content Suite panel.
+ * Block editor CreatorStack AI panel.
  */
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginDocumentSettingPanel } from '@wordpress/editor';
 import {
 	Button,
 	ExternalLink,
-	Notice,
 	SelectControl,
 	Spinner,
 	TextareaControl,
@@ -21,45 +20,145 @@ import { createBlock } from '@wordpress/blocks';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { createElement, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { generatePostAudio, parseError, previewAudioPost } from '../shared/api';
+import {
+	generatePostAudio,
+	parseError,
+	previewAudioPost,
+	uploadAudioAttachment,
+} from '../shared/api';
+import {
+	createAudioFileFromBlob,
+	formatBytes,
+	formatDuration,
+	useAudioRecorder,
+} from '../shared/audio-recorder';
 import './style.scss';
 
 const GENERATED_AUDIO_CLASS = 'wttba-generated-audio';
 
 /**
- * Format bytes for the editor UI.
+ * Render a recording status message.
  *
- * @param {number} bytes Byte count.
- * @return {string} Formatted bytes.
+ * @param {Object} recorder Audio recorder state.
+ * @return {string} Status label.
  */
-function formatBytes( bytes ) {
-	if ( ! bytes ) {
-		return '';
+function getRecorderStatusText( recorder ) {
+	if ( 'requesting' === recorder.status ) {
+		return __( 'Requesting microphone access…', 'creatorstack-ai' );
 	}
 
-	const units = [ 'B', 'KB', 'MB', 'GB' ];
-	let size = bytes;
-	let unitIndex = 0;
-
-	while ( size >= 1024 && unitIndex < units.length - 1 ) {
-		size /= 1024;
-		unitIndex += 1;
+	if ( 'recording' === recorder.status ) {
+		return sprintf(
+			/* translators: %s: recording duration. */
+			__( 'Recording %s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration )
+		);
 	}
 
-	return `${ size.toFixed( unitIndex === 0 ? 0 : 1 ) } ${
-		units[ unitIndex ]
-	}`;
+	if ( recorder.hasRecording ) {
+		return sprintf(
+			/* translators: 1: recording duration, 2: recording file size. */
+			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration ),
+			formatBytes( recorder.recordedBlob.size )
+		);
+	}
+
+	if ( recorder.error ) {
+		return recorder.error;
+	}
+
+	return __( 'Record audio from your microphone.', 'creatorstack-ai' );
 }
 
 /**
- * AI Content Suite editor panel.
+ * Get a readable attachment label from media responses.
+ *
+ * @param {Object} media Media object.
+ * @return {string} Attachment label.
+ */
+function getAudioAttachmentLabel( media ) {
+	if ( media?.filename ) {
+		return media.filename;
+	}
+
+	if ( 'string' === typeof media?.title ) {
+		return media.title;
+	}
+
+	if ( media?.title?.raw ) {
+		return media.title.raw;
+	}
+
+	if ( media?.title?.rendered ) {
+		return media.title.rendered.replace( /<[^>]+>/g, '' );
+	}
+
+	return __( 'Recorded audio', 'creatorstack-ai' );
+}
+
+/**
+ * Compact notice for the narrow editor sidebar.
+ *
+ * @param {Object}   props           Component props.
+ * @param {Object}   props.notice    Notice data.
+ * @param {Function} props.onDismiss Dismiss handler.
+ * @return {Element} Notice element.
+ */
+function CompactPanelNotice( { notice, onDismiss } ) {
+	const status = notice.status || 'info';
+
+	return createElement(
+		'div',
+		{
+			className: `wttba-editor-panel__notice is-${ status }`,
+			role: 'error' === status ? 'alert' : 'status',
+			'aria-live': 'error' === status ? 'assertive' : 'polite',
+		},
+		createElement(
+			'div',
+			{ className: 'wttba-editor-panel__notice-content' },
+			createElement(
+				'p',
+				{ className: 'wttba-editor-panel__notice-message' },
+				notice.message
+			),
+			notice.configurationUrl &&
+				createElement(
+					ExternalLink,
+					{
+						href: notice.configurationUrl,
+						className: 'wttba-editor-panel__notice-link',
+					},
+					notice.configurationLabel ||
+						__( 'Configure AI Provider', 'creatorstack-ai' )
+				)
+		),
+		createElement(
+			'button',
+			{
+				type: 'button',
+				className: 'wttba-editor-panel__notice-dismiss',
+				onClick: onDismiss,
+				'aria-label': __( 'Dismiss notice', 'creatorstack-ai' ),
+			},
+			createElement( 'span', { 'aria-hidden': true }, '×' )
+		)
+	);
+}
+
+/**
+ * CreatorStack AI editor panel.
  *
  * @return {Element|null} Panel element.
  */
 function ContentSuitePanel() {
 	const config = window.wttbaEditorConfig || {};
 	const ai = config.ai || {};
+	const features = config.features || {};
 	const languages = config.languages || {};
+	const isAudioToPostEnabled = features.audioToPost !== false;
+	const isPostToAudioEnabled = features.postToAudio === true;
 	const [ selectedAudio, setSelectedAudio ] = useState( null );
 	const [ language, setLanguage ] = useState(
 		config.defaultLanguage || 'en'
@@ -69,6 +168,12 @@ function ContentSuitePanel() {
 	const [ audioToPostBusy, setAudioToPostBusy ] = useState( false );
 	const [ postToAudioBusy, setPostToAudioBusy ] = useState( false );
 	const [ panelNotice, setPanelNotice ] = useState( null );
+	const recorder = useAudioRecorder( {
+		onRecorded: () => {
+			setSelectedAudio( null );
+			setPanelNotice( null );
+		},
+	} );
 
 	const { editPost, savePost } = useDispatch( 'core/editor' );
 	const { createSuccessNotice, createErrorNotice } =
@@ -90,13 +195,24 @@ function ContentSuitePanel() {
 		[]
 	);
 
-	if ( 'post' !== post.type ) {
+	if (
+		'post' !== post.type ||
+		( ! isAudioToPostEnabled && ! isPostToAudioEnabled )
+	) {
 		return null;
 	}
 
-	const canGenerateFromAudio = !! ai.audioInputSupported;
-	const canGeneratePostAudio = !! ai.textToSpeechSupported;
+	const canGenerateFromAudio =
+		isAudioToPostEnabled && !! ai.audioInputSupported;
+	const canGeneratePostAudio =
+		isPostToAudioEnabled && !! ai.textToSpeechSupported;
 	const isBusy = audioToPostBusy || postToAudioBusy || post.isSaving;
+	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
+	const recordingTooLarge =
+		!! maxAudioBytes &&
+		!! recorder.recordedBlob &&
+		recorder.recordedBlob.size > maxAudioBytes;
+	const hasAudioSource = !! selectedAudio?.id || recorder.hasRecording;
 
 	const showError = ( err ) => {
 		const parsed = parseError( err );
@@ -110,12 +226,31 @@ function ContentSuitePanel() {
 	};
 
 	const handleAudioToPost = async () => {
-		if ( ! selectedAudio?.id || ! post.id ) {
+		if ( ! isAudioToPostEnabled ) {
+			return;
+		}
+
+		if ( ! hasAudioSource || ! post.id ) {
 			setPanelNotice( {
 				status: 'error',
 				message: __(
-					'Select an audio file first.',
-					'wp-tube-to-blog-ai'
+					'Select or record audio first.',
+					'creatorstack-ai'
+				),
+			} );
+			return;
+		}
+
+		if ( recordingTooLarge ) {
+			setPanelNotice( {
+				status: 'error',
+				message: sprintf(
+					/* translators: %s: maximum upload size. */
+					__(
+						'The recording is too large. The maximum size is %s.',
+						'creatorstack-ai'
+					),
+					formatBytes( maxAudioBytes )
 				),
 			} );
 			return;
@@ -125,9 +260,23 @@ function ContentSuitePanel() {
 		setPanelNotice( null );
 
 		try {
+			let audioAttachment = selectedAudio;
+
+			if ( ! audioAttachment?.id && recorder.recordedBlob ) {
+				const audioFile = createAudioFileFromBlob(
+					recorder.recordedBlob,
+					'wttba-editor-recording'
+				);
+				audioAttachment = await uploadAudioAttachment(
+					audioFile,
+					__( 'Editor audio recording', 'creatorstack-ai' )
+				);
+				setSelectedAudio( audioAttachment );
+			}
+
 			const result = await previewAudioPost(
 				post.id,
-				selectedAudio.id,
+				audioAttachment.id,
 				language,
 				persona
 			);
@@ -138,21 +287,18 @@ function ContentSuitePanel() {
 				meta: {
 					_wttba_source_type: 'audio_upload',
 					_wttba_source_attachment_id:
-						result.source_attachment_id || selectedAudio.id,
+						result.source_attachment_id || audioAttachment.id,
 				},
 			} );
 
 			await savePost();
 			createSuccessNotice(
-				__( 'Draft updated from audio.', 'wp-tube-to-blog-ai' ),
+				__( 'Draft updated from audio.', 'creatorstack-ai' ),
 				{ type: 'snackbar' }
 			);
 			setPanelNotice( {
 				status: 'success',
-				message: __(
-					'Draft updated from audio.',
-					'wp-tube-to-blog-ai'
-				),
+				message: __( 'Draft updated from audio.', 'creatorstack-ai' ),
 			} );
 		} catch ( err ) {
 			showError( err );
@@ -162,7 +308,7 @@ function ContentSuitePanel() {
 	};
 
 	const handlePostToAudio = async () => {
-		if ( ! post.id ) {
+		if ( ! isPostToAudioEnabled || ! post.id ) {
 			return;
 		}
 
@@ -204,14 +350,14 @@ function ContentSuitePanel() {
 
 			await savePost();
 			createSuccessNotice(
-				__( 'Audio generated for this post.', 'wp-tube-to-blog-ai' ),
+				__( 'Audio generated for this post.', 'creatorstack-ai' ),
 				{ type: 'snackbar' }
 			);
 			setPanelNotice( {
 				status: 'success',
 				message: __(
 					'Audio generated for this post.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 			} );
 		} catch ( err ) {
@@ -225,146 +371,226 @@ function ContentSuitePanel() {
 		PluginDocumentSettingPanel,
 		{
 			name: 'wttba-ai-content-suite',
-			title: __( 'AI Content Suite', 'wp-tube-to-blog-ai' ),
+			title: __( 'CreatorStack AI', 'creatorstack-ai' ),
 			className: 'wttba-editor-panel',
 		},
 		panelNotice &&
+			createElement( CompactPanelNotice, {
+				notice: panelNotice,
+				onDismiss: () => setPanelNotice( null ),
+			} ),
+		isAudioToPostEnabled &&
 			createElement(
-				Notice,
-				{
-					status: panelNotice.status,
-					isDismissible: true,
-					onRemove: () => setPanelNotice( null ),
-				},
-				panelNotice.message,
-				panelNotice.configurationUrl &&
+				'div',
+				{ className: 'wttba-editor-panel__section' },
+				createElement(
+					'h3',
+					{ className: 'wttba-editor-panel__heading' },
+					__( 'Audio to Post', 'creatorstack-ai' )
+				),
+				! canGenerateFromAudio &&
 					createElement(
-						ExternalLink,
-						{ href: panelNotice.configurationUrl },
-						panelNotice.configurationLabel ||
-							__( 'Configure AI Provider', 'wp-tube-to-blog-ai' )
-					)
-			),
-		createElement(
-			'div',
-			{ className: 'wttba-editor-panel__section' },
-			createElement(
-				'h3',
-				{ className: 'wttba-editor-panel__heading' },
-				__( 'Audio to Post', 'wp-tube-to-blog-ai' )
-			),
-			! canGenerateFromAudio &&
+						'p',
+						{ className: 'wttba-editor-panel__muted' },
+						ai.unavailableMessage ||
+							__(
+								'Configure an AI provider with audio input support.',
+								'creatorstack-ai'
+							)
+					),
 				createElement(
-					'p',
-					{ className: 'wttba-editor-panel__muted' },
-					ai.unavailableMessage ||
-						__(
-							'Configure an AI provider with audio input support.',
-							'wp-tube-to-blog-ai'
-						)
-				),
-			createElement(
-				MediaUploadCheck,
-				null,
-				createElement( MediaUpload, {
-					allowedTypes: [ 'audio' ],
-					onSelect: ( media ) => setSelectedAudio( media ),
-					render: ( { open } ) =>
-						createElement(
-							Button,
-							{
-								variant: 'secondary',
-								onClick: open,
-								disabled: isBusy || ! canGenerateFromAudio,
-							},
-							selectedAudio
-								? __( 'Change Audio', 'wp-tube-to-blog-ai' )
-								: __( 'Select Audio', 'wp-tube-to-blog-ai' )
-						),
-				} )
-			),
-			selectedAudio &&
-				createElement(
-					'p',
-					{ className: 'wttba-editor-panel__file' },
-					selectedAudio.filename || selectedAudio.title,
-					selectedAudio.filesizeInBytes
-						? sprintf(
-								/* translators: %s: formatted file size. */
-								__( '(%s)', 'wp-tube-to-blog-ai' ),
-								formatBytes( selectedAudio.filesizeInBytes )
-						  )
-						: ''
-				),
-			createElement( SelectControl, {
-				label: __( 'Output language', 'wp-tube-to-blog-ai' ),
-				value: language,
-				options: Object.entries( languages ).map(
-					( [ value, label ] ) => ( {
-						value,
-						label,
+					MediaUploadCheck,
+					null,
+					createElement( MediaUpload, {
+						allowedTypes: [ 'audio' ],
+						onSelect: ( media ) => {
+							recorder.reset();
+							setSelectedAudio( media );
+						},
+						render: ( { open } ) =>
+							createElement(
+								Button,
+								{
+									variant: 'secondary',
+									onClick: open,
+									disabled: isBusy || ! canGenerateFromAudio,
+								},
+								selectedAudio
+									? __( 'Change Audio', 'creatorstack-ai' )
+									: __( 'Select Audio', 'creatorstack-ai' )
+							),
 					} )
 				),
-				onChange: setLanguage,
-				disabled: isBusy || ! canGenerateFromAudio,
-			} ),
-			createElement( TextareaControl, {
-				label: __( 'Writing persona', 'wp-tube-to-blog-ai' ),
-				value: persona,
-				onChange: setPersona,
-				rows: 4,
-				disabled: isBusy || ! canGenerateFromAudio,
-			} ),
-			createElement(
-				Button,
-				{
-					variant: 'primary',
-					onClick: handleAudioToPost,
-					disabled:
-						isBusy || ! canGenerateFromAudio || ! selectedAudio,
-				},
-				audioToPostBusy && createElement( Spinner ),
-				audioToPostBusy
-					? __( 'Generating…', 'wp-tube-to-blog-ai' )
-					: __( 'Generate Draft', 'wp-tube-to-blog-ai' )
-			)
-		),
-		createElement(
-			'div',
-			{ className: 'wttba-editor-panel__section' },
-			createElement(
-				'h3',
-				{ className: 'wttba-editor-panel__heading' },
-				__( 'Post to Audio', 'wp-tube-to-blog-ai' )
-			),
-			! canGeneratePostAudio &&
 				createElement(
-					'p',
-					{ className: 'wttba-editor-panel__muted' },
-					__(
-						'Configure an AI provider with text-to-speech support.',
-						'wp-tube-to-blog-ai'
-					)
+					'div',
+					{
+						className: recorder.isRecording
+							? 'wttba-editor-panel__recorder is-recording'
+							: 'wttba-editor-panel__recorder',
+						'data-state': recorder.status,
+					},
+					createElement(
+						'p',
+						{
+							className: 'wttba-editor-panel__recorder-status',
+							'aria-live': 'polite',
+						},
+						createElement( 'span', {
+							className: 'wttba-editor-panel__recorder-dot',
+							'aria-hidden': true,
+						} ),
+						createElement(
+							'span',
+							null,
+							getRecorderStatusText( recorder )
+						)
+					),
+					createElement(
+						'div',
+						{ className: 'wttba-editor-panel__recorder-actions' },
+						! recorder.isRecording &&
+							createElement(
+								Button,
+								{
+									variant: 'secondary',
+									onClick: recorder.start,
+									disabled:
+										isBusy ||
+										! canGenerateFromAudio ||
+										! recorder.isSupported,
+								},
+								recorder.hasRecording
+									? __( 'Record Again', 'creatorstack-ai' )
+									: __( 'Record Audio', 'creatorstack-ai' )
+							),
+						recorder.isRecording &&
+							createElement(
+								Button,
+								{
+									variant: 'primary',
+									onClick: recorder.stop,
+									disabled: isBusy,
+								},
+								__( 'Stop Recording', 'creatorstack-ai' )
+							),
+						recorder.hasRecording &&
+							! recorder.isRecording &&
+							createElement(
+								Button,
+								{
+									variant: 'tertiary',
+									onClick: recorder.reset,
+									disabled: isBusy,
+								},
+								__( 'Discard', 'creatorstack-ai' )
+							)
+					),
+					recorder.recordedUrl &&
+						createElement( 'audio', {
+							className: 'wttba-editor-panel__recorder-preview',
+							controls: true,
+							src: recorder.recordedUrl,
+						} )
 				),
-			createElement( TextControl, {
-				label: __( 'Voice', 'wp-tube-to-blog-ai' ),
-				value: voice,
-				onChange: setVoice,
-				disabled: isBusy || ! canGeneratePostAudio,
-			} ),
+				selectedAudio &&
+					createElement(
+						'p',
+						{ className: 'wttba-editor-panel__file' },
+						getAudioAttachmentLabel( selectedAudio ),
+						selectedAudio.filesizeInBytes
+							? sprintf(
+									/* translators: %s: formatted file size. */
+									__( '(%s)', 'creatorstack-ai' ),
+									formatBytes( selectedAudio.filesizeInBytes )
+							  )
+							: ''
+					),
+				recordingTooLarge &&
+					createElement(
+						'p',
+						{ className: 'wttba-editor-panel__muted is-error' },
+						sprintf(
+							/* translators: %s: maximum upload size. */
+							__(
+								'This recording is larger than the %s upload limit.',
+								'creatorstack-ai'
+							),
+							formatBytes( maxAudioBytes )
+						)
+					),
+				createElement( SelectControl, {
+					label: __( 'Output language', 'creatorstack-ai' ),
+					value: language,
+					options: Object.entries( languages ).map(
+						( [ value, label ] ) => ( {
+							value,
+							label,
+						} )
+					),
+					onChange: setLanguage,
+					disabled: isBusy || ! canGenerateFromAudio,
+				} ),
+				createElement( TextareaControl, {
+					label: __( 'Writing persona', 'creatorstack-ai' ),
+					value: persona,
+					onChange: setPersona,
+					rows: 4,
+					disabled: isBusy || ! canGenerateFromAudio,
+				} ),
+				createElement(
+					Button,
+					{
+						variant: 'primary',
+						onClick: handleAudioToPost,
+						disabled:
+							isBusy ||
+							! canGenerateFromAudio ||
+							! hasAudioSource ||
+							recordingTooLarge,
+					},
+					audioToPostBusy && createElement( Spinner ),
+					audioToPostBusy
+						? __( 'Generating…', 'creatorstack-ai' )
+						: __( 'Generate Draft', 'creatorstack-ai' )
+				)
+			),
+		isPostToAudioEnabled &&
 			createElement(
-				Button,
-				{
-					variant: 'secondary',
-					onClick: handlePostToAudio,
+				'div',
+				{ className: 'wttba-editor-panel__section' },
+				createElement(
+					'h3',
+					{ className: 'wttba-editor-panel__heading' },
+					__( 'Post to Audio', 'creatorstack-ai' )
+				),
+				! canGeneratePostAudio &&
+					createElement(
+						'p',
+						{ className: 'wttba-editor-panel__muted' },
+						__(
+							'Configure an AI provider with text-to-speech support.',
+							'creatorstack-ai'
+						)
+					),
+				createElement( TextControl, {
+					label: __( 'Voice', 'creatorstack-ai' ),
+					value: voice,
+					onChange: setVoice,
 					disabled: isBusy || ! canGeneratePostAudio,
-				},
-				postToAudioBusy && createElement( Spinner ),
-				postToAudioBusy
-					? __( 'Generating…', 'wp-tube-to-blog-ai' )
-					: __( 'Generate Audio', 'wp-tube-to-blog-ai' )
+				} ),
+				createElement(
+					Button,
+					{
+						variant: 'secondary',
+						onClick: handlePostToAudio,
+						disabled: isBusy || ! canGeneratePostAudio,
+					},
+					postToAudioBusy && createElement( Spinner ),
+					postToAudioBusy
+						? __( 'Generating…', 'creatorstack-ai' )
+						: __( 'Generate Audio', 'creatorstack-ai' )
+				)
 			)
-		)
 	);
 }
 
