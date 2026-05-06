@@ -30,7 +30,7 @@ export default function WarningNotice( { messages, onDismiss } ) {
 			type: 'button',
 			className: 'notice-dismiss',
 			onClick: onDismiss,
-			'aria-label': __( 'Dismiss this notice', 'wp-tube-to-blog-ai' ),
+			'aria-label': __( 'Dismiss this notice', 'creatorstack-ai' ),
 		} )
 	);
 }
