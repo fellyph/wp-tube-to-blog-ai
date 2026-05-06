@@ -2,7 +2,7 @@
 /**
  * AI provider and Connectors API status helpers.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -196,7 +196,7 @@ class AI_Provider_Status {
 		if ( ! self::is_ai_supported_by_site() ) {
 			return __(
 				'AI features are disabled for this site.',
-				'wp-tube-to-blog-ai'
+				'creatorstack-ai'
 			);
 		}
 
@@ -204,26 +204,26 @@ class AI_Provider_Status {
 			if ( ! self::is_supported_wordpress_version() ) {
 				return __(
 					'The WordPress AI Client is not available. Upgrade to WordPress 7.0 beta or newer.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				);
 			}
 
 			return __(
 				'The WordPress AI Client is not available in this WordPress build. Make sure the build includes the AI Client APIs and AI features are enabled.',
-				'wp-tube-to-blog-ai'
+				'creatorstack-ai'
 			);
 		}
 
 		if ( self::should_use_connectors_screen() ) {
 			return __(
 				'No AI provider connector is configured for text generation. Configure an AI provider in Settings > Connectors.',
-				'wp-tube-to-blog-ai'
+				'creatorstack-ai'
 			);
 		}
 
 		return __(
 			'No AI provider is configured for text generation. Configure a provider in the WordPress AI Client settings.',
-			'wp-tube-to-blog-ai'
+			'creatorstack-ai'
 		);
 	}
 
@@ -235,7 +235,7 @@ class AI_Provider_Status {
 	public static function get_configuration_error_data(): array {
 		return array(
 			'configuration_url'   => self::get_configuration_url(),
-			'configuration_label' => __( 'Configure AI Provider', 'wp-tube-to-blog-ai' ),
+			'configuration_label' => __( 'Configure AI Provider', 'creatorstack-ai' ),
 		);
 	}
 
