@@ -1,7 +1,11 @@
 {
-	"name": "wp-tube-to-blog-ai",
+	"name": "creatorstack-ai",
 	"version": "1.0.0",
-	"description": "Convert YouTube videos into WordPress blog post drafts using AI.",
+	"description": "AI toolkit for creator workflows in WordPress.",
+	"author": {
+		"name": "Fellyph Cintra",
+		"url": "https://github.com/fellyph"
+	},
 	"private": true,
 	"scripts": {
 		"build": "wp-scripts build",

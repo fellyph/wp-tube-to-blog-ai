@@ -2,7 +2,7 @@
 /**
  * Post-to-audio generator.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -45,7 +45,7 @@ class Post_Audio_Generator {
 		if ( ! $post || 'post' !== $post->post_type ) {
 			return new \WP_Error(
 				'wttba_post_not_found',
-				__( 'The post could not be found.', 'wp-tube-to-blog-ai' ),
+				__( 'The post could not be found.', 'creatorstack-ai' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -53,7 +53,7 @@ class Post_Audio_Generator {
 		if ( ! AI_Provider_Status::is_text_to_speech_supported() ) {
 			return new \WP_Error(
 				'wttba_tts_not_supported',
-				__( 'No configured AI provider supports text-to-speech conversion. Configure a compatible provider in Settings > Connectors.', 'wp-tube-to-blog-ai' ),
+				__( 'No configured AI provider supports text-to-speech conversion. Configure a compatible provider in Settings > Connectors.', 'creatorstack-ai' ),
 				AI_Provider_Status::get_configuration_error_data()
 			);
 		}
@@ -63,13 +63,13 @@ class Post_Audio_Generator {
 		if ( '' === $narration ) {
 			return new \WP_Error(
 				'wttba_empty_post_content',
-				__( 'This post does not have enough readable content to generate audio.', 'wp-tube-to-blog-ai' ),
+				__( 'This post does not have enough readable content to generate audio.', 'creatorstack-ai' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		$builder = wp_ai_client_prompt( $narration )
-			->using_system_instruction( __( 'Convert the supplied WordPress article into clear, natural narration audio.', 'wp-tube-to-blog-ai' ) );
+			->using_system_instruction( __( 'Convert the supplied WordPress article into clear, natural narration audio.', 'creatorstack-ai' ) );
 
 		if ( '' !== trim( $voice ) ) {
 			$builder = $builder->as_output_speech_voice( sanitize_key( $voice ) );
@@ -78,17 +78,17 @@ class Post_Audio_Generator {
 		$result = $builder->convert_text_to_speech_result();
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] Text-to-speech failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
+			error_log( sprintf( '[CreatorStack AI] Text-to-speech failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$file = $result->toAudioFile();
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] Text-to-speech audio parse failed - %s', $throwable->getMessage() ) );
+			error_log( sprintf( '[CreatorStack AI] Text-to-speech audio parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_audio_generation_failed',
-				__( 'The AI provider did not return a usable audio file.', 'wp-tube-to-blog-ai' ),
+				__( 'The AI provider did not return a usable audio file.', 'creatorstack-ai' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -104,7 +104,7 @@ class Post_Audio_Generator {
 		if ( ! $audio_url ) {
 			return new \WP_Error(
 				'wttba_audio_save_failed',
-				__( 'The generated audio attachment could not be loaded.', 'wp-tube-to-blog-ai' ),
+				__( 'The generated audio attachment could not be loaded.', 'creatorstack-ai' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -184,7 +184,7 @@ class Post_Audio_Generator {
 
 		return new \WP_Error(
 			'wttba_audio_save_failed',
-			__( 'The generated audio could not be saved because it was returned in an unsupported format.', 'wp-tube-to-blog-ai' ),
+			__( 'The generated audio could not be saved because it was returned in an unsupported format.', 'creatorstack-ai' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -203,7 +203,7 @@ class Post_Audio_Generator {
 		if ( false === $audio_bytes ) {
 			return new \WP_Error(
 				'wttba_audio_save_failed',
-				__( 'The generated audio data could not be decoded.', 'wp-tube-to-blog-ai' ),
+				__( 'The generated audio data could not be decoded.', 'creatorstack-ai' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -225,7 +225,7 @@ class Post_Audio_Generator {
 				'post_mime_type' => $mime_type,
 				'post_title'     => sprintf(
 					/* translators: %s: post title. */
-					__( 'Audio version of %s', 'wp-tube-to-blog-ai' ),
+					__( 'Audio version of %s', 'creatorstack-ai' ),
 					get_the_title( $post )
 				),
 				'post_content'   => '',

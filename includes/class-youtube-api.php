@@ -2,7 +2,7 @@
 /**
  * YouTube Data API v3 wrapper.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -67,7 +67,7 @@ class YouTube_API {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error(
 				'wttba_not_configured',
-				__( 'YouTube API key and Channel ID are required. Please configure them in Settings > Tube-to-Blog AI.', 'wp-tube-to-blog-ai' )
+				__( 'YouTube API key and Channel ID are required. Please configure them in Settings > CreatorStack AI.', 'creatorstack-ai' )
 			);
 		}
 
@@ -102,7 +102,7 @@ class YouTube_API {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( 200 !== $code ) {
-			$message = $body['error']['message'] ?? __( 'Unknown YouTube API error.', 'wp-tube-to-blog-ai' );
+			$message = $body['error']['message'] ?? __( 'Unknown YouTube API error.', 'creatorstack-ai' );
 			return new \WP_Error( 'wttba_youtube_api_error', $message, array( 'status' => $code ) );
 		}
 
@@ -153,14 +153,14 @@ class YouTube_API {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( 200 !== $code ) {
-			$message = $body['error']['message'] ?? __( 'Unknown YouTube API error.', 'wp-tube-to-blog-ai' );
+			$message = $body['error']['message'] ?? __( 'Unknown YouTube API error.', 'creatorstack-ai' );
 			return new \WP_Error( 'wttba_youtube_api_error', $message, array( 'status' => $code ) );
 		}
 
 		if ( empty( $body['items'] ) ) {
 			return new \WP_Error(
 				'wttba_video_not_found',
-				__( 'The video could not be found. Please check the video ID and ensure it is publicly accessible.', 'wp-tube-to-blog-ai' )
+				__( 'The video could not be found. Please check the video ID and ensure it is publicly accessible.', 'creatorstack-ai' )
 			);
 		}
 

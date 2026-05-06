@@ -30,7 +30,7 @@ export default function ErrorNotice( {
 } ) {
 	const actionUrl = configurationUrl || settingsUrl;
 	const actionLabel =
-		configurationLabel || __( 'Go to Settings', 'wp-tube-to-blog-ai' );
+		configurationLabel || __( 'Go to Settings', 'creatorstack-ai' );
 	const transcriptErrorCodes = [
 		'wttba_no_captions',
 		'wttba_no_tracks',
@@ -49,7 +49,7 @@ export default function ErrorNotice( {
 				{ className: 'wttba-error-notice__hint' },
 				__(
 					'This video needs captions or subtitles before it can be converted into a post.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				)
 			),
 		category === 'configuration' &&
@@ -70,10 +70,7 @@ export default function ErrorNotice( {
 			createElement(
 				'p',
 				{ className: 'wttba-error-notice__hint' },
-				__(
-					'Please wait a moment and try again.',
-					'wp-tube-to-blog-ai'
-				)
+				__( 'Please wait a moment and try again.', 'creatorstack-ai' )
 			),
 		category === 'upstream' &&
 			createElement(
@@ -81,7 +78,7 @@ export default function ErrorNotice( {
 				{ className: 'wttba-error-notice__hint' },
 				__(
 					'This may be a temporary issue with an external service.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				)
 			),
 		onRetry &&
@@ -97,14 +94,14 @@ export default function ErrorNotice( {
 						className: 'button button-secondary button-small',
 						onClick: onRetry,
 					},
-					__( 'Retry', 'wp-tube-to-blog-ai' )
+					__( 'Retry', 'creatorstack-ai' )
 				)
 			),
 		createElement( 'button', {
 			type: 'button',
 			className: 'notice-dismiss',
 			onClick: onDismiss,
-			'aria-label': __( 'Dismiss this notice', 'wp-tube-to-blog-ai' ),
+			'aria-label': __( 'Dismiss this notice', 'creatorstack-ai' ),
 		} )
 	);
 }

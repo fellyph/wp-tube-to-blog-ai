@@ -77,7 +77,7 @@ if ( wizard ) {
 				copyStatus,
 				__(
 					'No redirect URI was available to copy.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 				'error'
 			);
@@ -93,7 +93,7 @@ if ( wizard ) {
 
 			setStatus(
 				copyStatus,
-				__( 'Redirect URI copied.', 'wp-tube-to-blog-ai' ),
+				__( 'Redirect URI copied.', 'creatorstack-ai' ),
 				'success'
 			);
 		} catch ( err ) {
@@ -101,7 +101,7 @@ if ( wizard ) {
 				copyStatus,
 				__(
 					'Copy failed. Select and copy the redirect URI manually.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 				'error'
 			);
@@ -116,7 +116,7 @@ if ( wizard ) {
 				fillStatus,
 				__(
 					'Paste the client_secret.json contents first.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 				'error'
 			);
@@ -143,7 +143,7 @@ if ( wizard ) {
 					fillStatus,
 					__(
 						'This does not look like a valid Web application client_secret.json file.',
-						'wp-tube-to-blog-ai'
+						'creatorstack-ai'
 					),
 					'error'
 				);
@@ -161,11 +161,11 @@ if ( wizard ) {
 			const hasRedirectUri = redirectUris.includes( currentRedirectUri );
 			const successMessage = __(
 				'OAuth fields filled. Save changes, then connect YouTube.',
-				'wp-tube-to-blog-ai'
+				'creatorstack-ai'
 			);
 			const warningMessage = __(
 				'OAuth fields filled. Make sure the Authorized redirect URI above is also saved in Google Cloud before connecting.',
-				'wp-tube-to-blog-ai'
+				'creatorstack-ai'
 			);
 
 			setStatus(
@@ -178,7 +178,7 @@ if ( wizard ) {
 				fillStatus,
 				__(
 					'The pasted text is not valid JSON. Download client_secret.json from Google Cloud and paste the full file contents.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 				'error'
 			);
@@ -196,8 +196,8 @@ if ( root ) {
 		if ( button ) {
 			button.disabled = isBusy;
 			button.textContent = isBusy
-				? __( 'Testing…', 'wp-tube-to-blog-ai' )
-				: __( 'Test AI Connection', 'wp-tube-to-blog-ai' );
+				? __( 'Testing…', 'creatorstack-ai' )
+				: __( 'Test AI Connection', 'creatorstack-ai' );
 		}
 
 		if ( spinner ) {
@@ -240,7 +240,7 @@ if ( root ) {
 				sample,
 				sprintf(
 					/* translators: %s: short AI generated test response. */
-					__( 'Test generation: %s', 'wp-tube-to-blog-ai' ),
+					__( 'Test generation: %s', 'creatorstack-ai' ),
 					response.summary
 				)
 			);
@@ -255,9 +255,9 @@ if ( root ) {
 				sample,
 				sprintf(
 					/* translators: 1: provider name, 2: model name. */
-					__( 'Provider: %1$s. Model: %2$s.', 'wp-tube-to-blog-ai' ),
-					provider || __( 'unknown', 'wp-tube-to-blog-ai' ),
-					model || __( 'unknown', 'wp-tube-to-blog-ai' )
+					__( 'Provider: %1$s. Model: %2$s.', 'creatorstack-ai' ),
+					provider || __( 'unknown', 'creatorstack-ai' ),
+					model || __( 'unknown', 'creatorstack-ai' )
 				)
 			);
 		}
@@ -290,7 +290,7 @@ if ( root ) {
 		link.textContent =
 			parsed.configurationLabel ||
 			config.configurationLabel ||
-			__( 'Configure AI Provider', 'wp-tube-to-blog-ai' );
+			__( 'Configure AI Provider', 'creatorstack-ai' );
 		paragraph.appendChild( link );
 		result.appendChild( paragraph );
 	};
@@ -317,7 +317,7 @@ if ( root ) {
 				response.message ||
 					__(
 						'AI provider connection test succeeded.',
-						'wp-tube-to-blog-ai'
+						'creatorstack-ai'
 					)
 			);
 			renderSample( response );

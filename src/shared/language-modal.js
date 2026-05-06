@@ -56,7 +56,7 @@ export default function LanguageModal( {
 			createElement(
 				'h3',
 				{ className: 'wttba-modal__title' },
-				__( 'Generate Blog Post', 'wp-tube-to-blog-ai' )
+				__( 'Generate Blog Post', 'creatorstack-ai' )
 			),
 			videoTitle &&
 				createElement(
@@ -70,7 +70,7 @@ export default function LanguageModal( {
 					className: 'wttba-modal__label',
 					htmlFor: 'wttba-language-select',
 				},
-				__( 'Output Language:', 'wp-tube-to-blog-ai' )
+				__( 'Output Language:', 'creatorstack-ai' )
 			),
 			createElement(
 				'select',
@@ -90,7 +90,7 @@ export default function LanguageModal( {
 					className: 'wttba-modal__label',
 					htmlFor: 'wttba-persona-textarea',
 				},
-				__( 'Writing Persona:', 'wp-tube-to-blog-ai' )
+				__( 'Writing Persona:', 'creatorstack-ai' )
 			),
 			createElement( 'textarea', {
 				id: 'wttba-persona-textarea',
@@ -100,7 +100,7 @@ export default function LanguageModal( {
 				onChange: ( e ) => setPersona( e.target.value ),
 				placeholder: __(
 					'e.g., Conversational tone, short paragraphs, humor, actionable tips…',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 			} ),
 			createElement(
@@ -114,7 +114,7 @@ export default function LanguageModal( {
 				} ),
 				__(
 					'Use a custom transcript instead of fetching captions',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				)
 			),
 			useManualTranscript &&
@@ -127,7 +127,7 @@ export default function LanguageModal( {
 							className: 'wttba-modal__label',
 							htmlFor: 'wttba-manual-transcript-textarea',
 						},
-						__( 'Manual Transcript:', 'wp-tube-to-blog-ai' )
+						__( 'Manual Transcript:', 'creatorstack-ai' )
 					),
 					createElement( 'textarea', {
 						id: 'wttba-manual-transcript-textarea',
@@ -138,7 +138,7 @@ export default function LanguageModal( {
 							setManualTranscript( e.target.value ),
 						placeholder: __(
 							'Paste the transcript text for this video.',
-							'wp-tube-to-blog-ai'
+							'creatorstack-ai'
 						),
 					} ),
 					createElement(
@@ -146,7 +146,7 @@ export default function LanguageModal( {
 						{ className: 'wttba-modal__description' },
 						__(
 							'Paste at least 50 characters. When provided, this transcript is used as the source material and YouTube captions are not fetched.',
-							'wp-tube-to-blog-ai'
+							'creatorstack-ai'
 						)
 					)
 				),
@@ -160,7 +160,7 @@ export default function LanguageModal( {
 						onClick: onCancel,
 						type: 'button',
 					},
-					__( 'Cancel', 'wp-tube-to-blog-ai' )
+					__( 'Cancel', 'creatorstack-ai' )
 				),
 				createElement(
 					'button',
@@ -177,7 +177,7 @@ export default function LanguageModal( {
 						disabled: isGenerateDisabled,
 						type: 'button',
 					},
-					__( 'Generate', 'wp-tube-to-blog-ai' )
+					__( 'Generate', 'creatorstack-ai' )
 				)
 			)
 		)

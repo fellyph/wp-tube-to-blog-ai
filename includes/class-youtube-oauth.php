@@ -2,7 +2,7 @@
 /**
  * YouTube OAuth integration.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -105,14 +105,14 @@ class YouTube_OAuth {
 		if ( ! self::has_credentials() ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_missing_credentials',
-				__( 'YouTube OAuth client credentials are not configured.', 'wp-tube-to-blog-ai' )
+				__( 'YouTube OAuth client credentials are not configured.', 'creatorstack-ai' )
 			);
 		}
 
 		if ( ! self::is_connected() ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_not_connected',
-				__( 'Connect YouTube with OAuth to download captions through the official API.', 'wp-tube-to-blog-ai' )
+				__( 'Connect YouTube with OAuth to download captions through the official API.', 'creatorstack-ai' )
 			);
 		}
 
@@ -130,7 +130,7 @@ class YouTube_OAuth {
 		if ( null === $track ) {
 			return new \WP_Error(
 				'wttba_youtube_caption_not_found',
-				__( 'No caption tracks were available through the YouTube Captions API.', 'wp-tube-to-blog-ai' )
+				__( 'No caption tracks were available through the YouTube Captions API.', 'creatorstack-ai' )
 			);
 		}
 
@@ -147,7 +147,7 @@ class YouTube_OAuth {
 	 */
 	public function handle_connect(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to connect YouTube.', 'wp-tube-to-blog-ai' ) );
+			wp_die( esc_html__( 'You are not allowed to connect YouTube.', 'creatorstack-ai' ) );
 		}
 
 		check_admin_referer( 'wttba_youtube_oauth_connect' );
@@ -184,7 +184,7 @@ class YouTube_OAuth {
 	 */
 	public function handle_callback(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to connect YouTube.', 'wp-tube-to-blog-ai' ) );
+			wp_die( esc_html__( 'You are not allowed to connect YouTube.', 'creatorstack-ai' ) );
 		}
 
 		$state        = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
@@ -218,7 +218,7 @@ class YouTube_OAuth {
 	 */
 	public function handle_disconnect(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to disconnect YouTube.', 'wp-tube-to-blog-ai' ) );
+			wp_die( esc_html__( 'You are not allowed to disconnect YouTube.', 'creatorstack-ai' ) );
 		}
 
 		check_admin_referer( 'wttba_youtube_oauth_disconnect' );
@@ -244,7 +244,7 @@ class YouTube_OAuth {
 		if ( '' === $refresh_token ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_not_connected',
-				__( 'Connect YouTube with OAuth to download captions through the official API.', 'wp-tube-to-blog-ai' )
+				__( 'Connect YouTube with OAuth to download captions through the official API.', 'creatorstack-ai' )
 			);
 		}
 
@@ -308,14 +308,14 @@ class YouTube_OAuth {
 		if ( 200 !== $code || ! is_array( $data ) || empty( $data['access_token'] ) ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_failed',
-				__( 'YouTube OAuth token exchange failed. Check the OAuth client configuration and try reconnecting.', 'wp-tube-to-blog-ai' )
+				__( 'YouTube OAuth token exchange failed. Check the OAuth client configuration and try reconnecting.', 'creatorstack-ai' )
 			);
 		}
 
 		if ( $require_refresh_token && empty( $data['refresh_token'] ) && '' === self::get_refresh_token() ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_failed',
-				__( 'YouTube did not return a refresh token. Reconnect YouTube and approve offline access.', 'wp-tube-to-blog-ai' )
+				__( 'YouTube did not return a refresh token. Reconnect YouTube and approve offline access.', 'creatorstack-ai' )
 			);
 		}
 
@@ -358,7 +358,7 @@ class YouTube_OAuth {
 		if ( 403 === $code ) {
 			return new \WP_Error(
 				'wttba_youtube_oauth_forbidden',
-				__( 'The connected YouTube account is not allowed to read captions for this video.', 'wp-tube-to-blog-ai' ),
+				__( 'The connected YouTube account is not allowed to read captions for this video.', 'creatorstack-ai' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -366,7 +366,7 @@ class YouTube_OAuth {
 		if ( 200 !== $code || ! is_array( $data ) ) {
 			return new \WP_Error(
 				'wttba_youtube_caption_download_failed',
-				__( 'Could not load caption tracks from the YouTube Captions API.', 'wp-tube-to-blog-ai' ),
+				__( 'Could not load caption tracks from the YouTube Captions API.', 'creatorstack-ai' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -387,7 +387,7 @@ class YouTube_OAuth {
 		if ( '' === $caption_id ) {
 			return new \WP_Error(
 				'wttba_youtube_caption_not_found',
-				__( 'The selected YouTube caption track is missing its ID.', 'wp-tube-to-blog-ai' )
+				__( 'The selected YouTube caption track is missing its ID.', 'creatorstack-ai' )
 			);
 		}
 
@@ -411,7 +411,7 @@ class YouTube_OAuth {
 		if ( 200 !== $code || '' === trim( $body ) ) {
 			return new \WP_Error(
 				'wttba_youtube_caption_download_failed',
-				__( 'Could not download captions from the YouTube Captions API.', 'wp-tube-to-blog-ai' ),
+				__( 'Could not download captions from the YouTube Captions API.', 'creatorstack-ai' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -487,7 +487,7 @@ class YouTube_OAuth {
 		if ( empty( $text ) ) {
 			return new \WP_Error(
 				'wttba_empty_transcript',
-				__( 'The downloaded YouTube caption file did not contain readable text.', 'wp-tube-to-blog-ai' )
+				__( 'The downloaded YouTube caption file did not contain readable text.', 'creatorstack-ai' )
 			);
 		}
 

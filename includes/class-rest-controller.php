@@ -2,7 +2,7 @@
 /**
  * REST API controller.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -200,6 +200,36 @@ class REST_Controller {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/audio-post/draft',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_audio_post_draft' ),
+				'permission_callback' => array( $this, 'can_create_audio_post_draft' ),
+				'args'                => array(
+					'attachment_id' => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'language'      => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => function ( $value ) {
+							return array_key_exists( $value, Settings::LANGUAGES );
+						},
+						'default'           => '',
+					),
+					'persona'       => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_textarea_field',
+						'default'           => '',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/posts/(?P<id>[\d]+)/audio',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -264,6 +294,8 @@ class REST_Controller {
 		'wttba_empty_post_content'  => 400,
 		'wttba_audio_generation_failed' => 502,
 		'wttba_audio_save_failed'   => 500,
+		'wttba_audio_draft_save_failed' => 500,
+		'wttba_feature_disabled'    => 403,
 	);
 
 	/**
@@ -304,6 +336,8 @@ class REST_Controller {
 		'wttba_empty_post_content'  => 'validation',
 		'wttba_audio_generation_failed' => 'upstream',
 		'wttba_audio_save_failed'   => 'internal',
+		'wttba_audio_draft_save_failed' => 'internal',
+		'wttba_feature_disabled'    => 'configuration',
 	);
 
 	/**
@@ -337,6 +371,20 @@ class REST_Controller {
 		return $post_id > 0
 			&& $attachment_id > 0
 			&& current_user_can( 'edit_post', $post_id )
+			&& current_user_can( 'edit_post', $attachment_id );
+	}
+
+	/**
+	 * Permission check for creating a draft from an audio attachment.
+	 *
+	 * @param \WP_REST_Request $request Request object.
+	 * @return bool
+	 */
+	public function can_create_audio_post_draft( \WP_REST_Request $request ): bool {
+		$attachment_id = absint( $request->get_param( 'attachment_id' ) );
+
+		return $attachment_id > 0
+			&& current_user_can( 'edit_posts' )
 			&& current_user_can( 'edit_post', $attachment_id );
 	}
 
@@ -401,6 +449,28 @@ class REST_Controller {
 	}
 
 	/**
+	 * Build a standardized disabled feature error.
+	 *
+	 * @param string $feature Feature key.
+	 * @return \WP_Error
+	 */
+	private function get_feature_disabled_error( string $feature ): \WP_Error {
+		return new \WP_Error(
+			'wttba_feature_disabled',
+			sprintf(
+				/* translators: %s: feature label. */
+				__( '%s is disabled in CreatorStack AI settings.', 'creatorstack-ai' ),
+				Settings::get_feature_label( $feature )
+			),
+			array(
+				'feature'             => $feature,
+				'configuration_url'   => admin_url( 'options-general.php?page=wttba-settings' ),
+				'configuration_label' => __( 'Update settings', 'creatorstack-ai' ),
+			)
+		);
+	}
+
+	/**
 	 * GET /capabilities - Current AI and source limits.
 	 *
 	 * @return \WP_REST_Response
@@ -414,10 +484,11 @@ class REST_Controller {
 				'aiClientAvailable'       => AI_Provider_Status::is_ai_client_available(),
 				'connectorsAvailable'     => AI_Provider_Status::is_connectors_api_available(),
 				'textGenerationSupported' => AI_Provider_Status::is_text_generation_supported(),
-				'audioInputSupported'      => AI_Provider_Status::is_audio_input_generation_supported(),
-				'textToSpeechSupported'    => AI_Provider_Status::is_text_to_speech_supported(),
+				'audioInputSupported'      => Settings::is_audio_to_post_enabled() && AI_Provider_Status::is_audio_input_generation_supported(),
+				'textToSpeechSupported'    => Settings::is_post_to_audio_enabled() && AI_Provider_Status::is_text_to_speech_supported(),
+				'features'                 => Settings::get_feature_states(),
 				'configurationUrl'        => AI_Provider_Status::get_configuration_url(),
-				'configurationLabel'      => __( 'Configure AI Provider', 'wp-tube-to-blog-ai' ),
+				'configurationLabel'      => __( 'Configure AI Provider', 'creatorstack-ai' ),
 				'unavailableMessage'      => AI_Provider_Status::get_unavailable_message(),
 				'providers'               => AI_Provider_Status::get_registered_ai_connectors(),
 				'audioUpload'             => array(
@@ -447,7 +518,7 @@ class REST_Controller {
 
 		return new \WP_REST_Response(
 			array(
-				'message'     => __( 'AI provider connection test succeeded.', 'wp-tube-to-blog-ai' ),
+				'message'     => __( 'AI provider connection test succeeded.', 'creatorstack-ai' ),
 				'summary'     => $result['summary'],
 				'ai_metadata' => $result['ai_metadata'],
 				'localhost'   => Settings::get_localhost_status(),
@@ -463,6 +534,10 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function get_videos( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_youtube_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_YOUTUBE_TO_POST ) );
+		}
+
 		$youtube = new YouTube_API();
 		$result  = $youtube->get_videos(
 			(string) ( $request->get_param( 'page_token' ) ?? '' ),
@@ -483,6 +558,10 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function get_video( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_youtube_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_YOUTUBE_TO_POST ) );
+		}
+
 		$youtube = new YouTube_API();
 		$result  = $youtube->get_video( $request->get_param( 'id' ) );
 
@@ -500,6 +579,10 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function preview_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_youtube_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_YOUTUBE_TO_POST ) );
+		}
+
 		$video_id = (string) ( $request->get_param( 'video_id' ) ?? '' );
 		$language = (string) ( $request->get_param( 'language' ) ?? '' );
 		$persona  = (string) ( $request->get_param( 'persona' ) ?? '' );
@@ -509,7 +592,7 @@ class REST_Controller {
 			return $this->prepare_error_response(
 				new \WP_Error(
 					'wttba_invalid_video_id',
-					__( 'A valid YouTube video ID is required.', 'wp-tube-to-blog-ai' )
+					__( 'A valid YouTube video ID is required.', 'creatorstack-ai' )
 				)
 			);
 		}
@@ -536,6 +619,10 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function save_draft( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_youtube_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_YOUTUBE_TO_POST ) );
+		}
+
 		$video_id = (string) ( $request->get_param( 'video_id' ) ?? '' );
 		$title    = (string) ( $request->get_param( 'title' ) ?? '' );
 		$content  = (string) ( $request->get_param( 'content' ) ?? '' );
@@ -558,6 +645,10 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function preview_audio_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_audio_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_AUDIO_TO_POST ) );
+		}
+
 		$post_id       = absint( $request->get_param( 'post_id' ) );
 		$attachment_id = absint( $request->get_param( 'attachment_id' ) );
 		$language      = (string) ( $request->get_param( 'language' ) ?? '' );
@@ -590,12 +681,90 @@ class REST_Controller {
 	}
 
 	/**
+	 * POST /audio-post/draft - Generate and save a new draft from an audio attachment.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function create_audio_post_draft( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_audio_to_post_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_AUDIO_TO_POST ) );
+		}
+
+		$attachment_id = absint( $request->get_param( 'attachment_id' ) );
+		$language      = (string) ( $request->get_param( 'language' ) ?? '' );
+		$persona       = (string) ( $request->get_param( 'persona' ) ?? '' );
+
+		if ( empty( $language ) ) {
+			$language = get_option( 'wttba_default_language', 'en' );
+		}
+
+		$generator = new Content_Generator();
+		$result    = $generator->generate_from_audio_attachment( $attachment_id, $language, $persona );
+
+		if ( is_wp_error( $result ) ) {
+			Generation_Logger::record( null, Generation_Logger::metadata_from_error( 'audio_upload', $result ) );
+			return $this->prepare_error_response( $result );
+		}
+
+		$metadata = Generation_Logger::sanitize_metadata( $result['ai_metadata'] ?? array() );
+		$post_id  = wp_insert_post(
+			array(
+				'post_title'   => $result['title'],
+				'post_content' => $result['content'],
+				'post_status'  => 'draft',
+				'post_type'    => 'post',
+				'meta_input'   => array(
+					'_wttba_source_type'          => 'audio_upload',
+					'_wttba_source_attachment_id' => $attachment_id,
+					Generation_Logger::META_KEY  => $metadata,
+				),
+			),
+			true
+		);
+
+		if ( is_wp_error( $post_id ) ) {
+			return $this->prepare_error_response(
+				new \WP_Error(
+					'wttba_audio_draft_save_failed',
+					__( 'The generated audio draft could not be saved.', 'creatorstack-ai' ),
+					array( 'status' => 500 )
+				)
+			);
+		}
+
+		wp_update_post(
+			array(
+				'ID'          => $attachment_id,
+				'post_parent' => (int) $post_id,
+			)
+		);
+
+		Generation_Logger::record( (int) $post_id, $metadata );
+
+		return new \WP_REST_Response(
+			array(
+				'post_id'              => (int) $post_id,
+				'edit_url'             => get_edit_post_link( (int) $post_id, 'raw' ),
+				'source_attachment_id' => $attachment_id,
+				'ai_metadata'          => $metadata,
+				'warnings'             => array(),
+			),
+			201
+		);
+	}
+
+	/**
 	 * POST /posts/{id}/audio - Generate an audio attachment from a post.
 	 *
 	 * @param \WP_REST_Request $request The request object.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function generate_post_audio( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_post_to_audio_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_POST_TO_AUDIO ) );
+		}
+
 		$post_id         = absint( $request->get_param( 'id' ) );
 		$voice           = (string) $request->get_param( 'voice' );
 		$overwrite_block = rest_sanitize_boolean( $request->get_param( 'overwrite_block' ) );
