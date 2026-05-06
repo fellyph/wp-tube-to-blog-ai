@@ -1,10 +1,10 @@
 # AI Client Integration
 
-This document explains how WP Tube-to-Blog AI integrates with the WordPress AI Client to generate blog posts from YouTube video transcripts.
+This document explains how CreatorStack AI integrates with the WordPress AI Client to generate posts from YouTube transcripts and audio sources.
 
 ## Overview
 
-The plugin uses the WordPress AI Client's fluent API (`wp_ai_client_prompt()`) to send video transcripts to an AI provider and receive structured blog post content (title + HTML body) in return. The entire AI interaction is isolated in `Post_Generator::call_ai()`.
+The plugin uses the WordPress AI Client's fluent API (`wp_ai_client_prompt()`) to send source material to an AI provider and receive structured blog post content (title + HTML body) in return. YouTube generation is handled through `Post_Generator::call_ai()`, while audio-to-post and post-to-audio workflows are handled by the content and audio generator services.
 
 ## WordPress 7.0+ (Recommended)
 
