@@ -43,7 +43,7 @@ export default function PreviewModal( {
 			createElement(
 				'h3',
 				{ className: 'wttba-modal__title' },
-				__( 'Draft Preview', 'wp-tube-to-blog-ai' )
+				__( 'Draft Preview', 'creatorstack-ai' )
 			),
 			createElement(
 				'h4',
@@ -65,7 +65,7 @@ export default function PreviewModal( {
 						disabled: isDisabled,
 						type: 'button',
 					},
-					__( 'Cancel', 'wp-tube-to-blog-ai' )
+					__( 'Cancel', 'creatorstack-ai' )
 				),
 				createElement(
 					'button',
@@ -76,8 +76,8 @@ export default function PreviewModal( {
 						type: 'button',
 					},
 					isRegenerating
-						? __( 'Regenerating…', 'wp-tube-to-blog-ai' )
-						: __( 'Regenerate', 'wp-tube-to-blog-ai' )
+						? __( 'Regenerating…', 'creatorstack-ai' )
+						: __( 'Regenerate', 'creatorstack-ai' )
 				),
 				createElement(
 					'button',
@@ -88,8 +88,8 @@ export default function PreviewModal( {
 						type: 'button',
 					},
 					isSaving
-						? __( 'Saving…', 'wp-tube-to-blog-ai' )
-						: __( 'Save as Draft', 'wp-tube-to-blog-ai' )
+						? __( 'Saving…', 'creatorstack-ai' )
+						: __( 'Save as Draft', 'creatorstack-ai' )
 				)
 			)
 		)
