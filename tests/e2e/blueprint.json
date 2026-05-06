@@ -8,7 +8,7 @@
 	"steps": [
 		{
 			"step": "activatePlugin",
-			"pluginPath": "wp-tube-to-blog-ai/wp-tube-to-blog-ai.php"
+			"pluginPath": "creatorstack-ai/creatorstack-ai.php"
 		}
 	]
 }
