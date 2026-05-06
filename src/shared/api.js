@@ -15,7 +15,7 @@ export function parseError( err ) {
 		code: err.code || null,
 		message:
 			err.message ||
-			__( 'An unexpected error occurred.', 'wp-tube-to-blog-ai' ),
+			__( 'An unexpected error occurred.', 'creatorstack-ai' ),
 		category: err.data?.error_category || null,
 		configurationUrl: err.data?.configuration_url || null,
 		configurationLabel: err.data?.configuration_label || null,
@@ -135,6 +135,50 @@ export function previewAudioPost(
 		method: 'POST',
 		data: {
 			post_id: postId,
+			attachment_id: attachmentId,
+			language,
+			persona,
+		},
+	} );
+}
+
+/**
+ * Upload an audio file to the WordPress Media Library.
+ *
+ * @param {File|Blob} file  Audio file.
+ * @param {string}    title Attachment title.
+ * @return {Promise<Object>} Media attachment response.
+ */
+export function uploadAudioAttachment( file, title = '' ) {
+	const formData = new window.FormData();
+	const filename = file.name || 'wttba-audio-recording.webm';
+
+	formData.append( 'file', file, filename );
+
+	if ( title ) {
+		formData.append( 'title', title );
+	}
+
+	return apiFetch( {
+		path: '/wp/v2/media',
+		method: 'POST',
+		body: formData,
+	} );
+}
+
+/**
+ * Generate and save a new draft post from an audio attachment.
+ *
+ * @param {number} attachmentId Audio attachment ID.
+ * @param {string} language     Target language code.
+ * @param {string} persona      Optional writing style persona.
+ * @return {Promise<Object>} Draft response.
+ */
+export function createAudioDraft( attachmentId, language, persona = '' ) {
+	return apiFetch( {
+		path: '/wttba/v1/audio-post/draft',
+		method: 'POST',
+		data: {
 			attachment_id: attachmentId,
 			language,
 			persona,
