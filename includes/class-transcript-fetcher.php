@@ -2,7 +2,7 @@
 /**
  * YouTube transcript fetcher.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -56,7 +56,7 @@ class Transcript_Fetcher {
 		if ( 200 !== $code ) {
 			return new \WP_Error(
 				'wttba_transcript_page_error',
-				__( 'Could not load the YouTube video page to find captions. Please try again later.', 'wp-tube-to-blog-ai' ),
+				__( 'Could not load the YouTube video page to find captions. Please try again later.', 'creatorstack-ai' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -65,7 +65,7 @@ class Transcript_Fetcher {
 		if ( '' === trim( $body ) ) {
 			return new \WP_Error(
 				'wttba_transcript_page_error',
-				__( 'YouTube returned an empty video page while looking for captions. Please try again later.', 'wp-tube-to-blog-ai' ),
+				__( 'YouTube returned an empty video page while looking for captions. Please try again later.', 'creatorstack-ai' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -105,10 +105,10 @@ class Transcript_Fetcher {
 		if ( null !== $captions_json ) {
 			$data = json_decode( $captions_json, true );
 			if ( ! is_array( $data ) ) {
-				error_log( '[WP Tube-to-Blog AI] Failed to parse caption JSON data from YouTube page.' );
+				error_log( '[CreatorStack AI] Failed to parse caption JSON data from YouTube page.' );
 				return new \WP_Error(
 					'wttba_captions_parse_error',
-					__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'wp-tube-to-blog-ai' )
+					__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'creatorstack-ai' )
 				);
 			}
 
@@ -120,26 +120,26 @@ class Transcript_Fetcher {
 
 		$tracks_json = $this->extract_json_value_after_key( $html, '"captionTracks"', '[' );
 		if ( null === $tracks_json ) {
-			error_log( '[WP Tube-to-Blog AI] No captions found in YouTube page HTML.' );
+			error_log( '[CreatorStack AI] No captions found in YouTube page HTML.' );
 			return new \WP_Error(
 				'wttba_no_captions',
-				__( 'No captions found for this video. The video may not have subtitles available.', 'wp-tube-to-blog-ai' )
+				__( 'No captions found for this video. The video may not have subtitles available.', 'creatorstack-ai' )
 			);
 		}
 
 		$tracks = json_decode( $tracks_json, true );
 		if ( ! is_array( $tracks ) ) {
-			error_log( '[WP Tube-to-Blog AI] Failed to parse caption JSON data from YouTube page.' );
+			error_log( '[CreatorStack AI] Failed to parse caption JSON data from YouTube page.' );
 			return new \WP_Error(
 				'wttba_captions_parse_error',
-				__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'wp-tube-to-blog-ai' )
+				__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'creatorstack-ai' )
 			);
 		}
 
 		if ( empty( $tracks ) ) {
 			return new \WP_Error(
 				'wttba_no_captions',
-				__( 'No captions found for this video.', 'wp-tube-to-blog-ai' )
+				__( 'No captions found for this video.', 'creatorstack-ai' )
 			);
 		}
 
@@ -269,7 +269,7 @@ class Transcript_Fetcher {
 		$tracks = $captions_data['captionTracks'] ?? array();
 
 		if ( empty( $tracks ) ) {
-			return new \WP_Error( 'wttba_no_tracks', __( 'No caption tracks available.', 'wp-tube-to-blog-ai' ) );
+			return new \WP_Error( 'wttba_no_tracks', __( 'No caption tracks available.', 'creatorstack-ai' ) );
 		}
 
 		// Try exact language match first.
@@ -314,7 +314,7 @@ class Transcript_Fetcher {
 			}
 		}
 
-		return new \WP_Error( 'wttba_no_track_url', __( 'Could not find a usable caption track.', 'wp-tube-to-blog-ai' ) );
+		return new \WP_Error( 'wttba_no_track_url', __( 'Could not find a usable caption track.', 'creatorstack-ai' ) );
 	}
 
 	/**
@@ -349,7 +349,7 @@ class Transcript_Fetcher {
 			if ( 429 === $code ) {
 				return new \WP_Error(
 					'wttba_transcript_rate_limited',
-					__( 'YouTube temporarily blocked transcript requests. Please wait and try again later.', 'wp-tube-to-blog-ai' ),
+					__( 'YouTube temporarily blocked transcript requests. Please wait and try again later.', 'creatorstack-ai' ),
 					array( 'status' => 429 )
 				);
 			}
@@ -357,7 +357,7 @@ class Transcript_Fetcher {
 			if ( $code < 200 || $code >= 300 ) {
 				$last_error = new \WP_Error(
 					'wttba_transcript_page_error',
-					__( 'Could not load the YouTube transcript data. Please try again later.', 'wp-tube-to-blog-ai' ),
+					__( 'Could not load the YouTube transcript data. Please try again later.', 'creatorstack-ai' ),
 					array( 'status' => 502 )
 				);
 				continue;
@@ -384,7 +384,7 @@ class Transcript_Fetcher {
 		if ( $empty_response ) {
 			return new \WP_Error(
 				'wttba_empty_transcript',
-				__( 'YouTube returned an empty transcript for this caption track. Try selecting a different video or try again later.', 'wp-tube-to-blog-ai' )
+				__( 'YouTube returned an empty transcript for this caption track. Try selecting a different video or try again later.', 'creatorstack-ai' )
 			);
 		}
 
@@ -392,7 +392,7 @@ class Transcript_Fetcher {
 			? $last_error
 			: new \WP_Error(
 				'wttba_xml_parse_error',
-				__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'wp-tube-to-blog-ai' )
+				__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'creatorstack-ai' )
 			);
 	}
 
@@ -487,7 +487,7 @@ class Transcript_Fetcher {
 		if ( empty( $lines ) ) {
 			return new \WP_Error(
 				'wttba_empty_transcript',
-				__( 'The transcript for this video appears to be empty. Try selecting a video with captions enabled.', 'wp-tube-to-blog-ai' )
+				__( 'The transcript for this video appears to be empty. Try selecting a video with captions enabled.', 'creatorstack-ai' )
 			);
 		}
 
@@ -518,11 +518,11 @@ class Transcript_Fetcher {
 	 * @return \WP_Error Parse error.
 	 */
 	private function transcript_parse_error( string $format ): \WP_Error {
-		error_log( sprintf( '[WP Tube-to-Blog AI] Failed to parse transcript %s from YouTube timedtext endpoint.', $format ) );
+		error_log( sprintf( '[CreatorStack AI] Failed to parse transcript %s from YouTube timedtext endpoint.', $format ) );
 
 		return new \WP_Error(
 			'wttba_xml_parse_error',
-			__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'wp-tube-to-blog-ai' )
+			__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'creatorstack-ai' )
 		);
 	}
 
@@ -571,12 +571,12 @@ class Transcript_Fetcher {
 	private function build_oauth_required_error(): \WP_Error {
 		return new \WP_Error(
 			'wttba_youtube_oauth_required_for_captions',
-			__( 'Connect YouTube OAuth to read captions through the official YouTube Captions API. The public transcript fallback returned an empty transcript for this video.', 'wp-tube-to-blog-ai' ),
+			__( 'Connect YouTube OAuth to read captions through the official YouTube Captions API. The public transcript fallback returned an empty transcript for this video.', 'creatorstack-ai' ),
 			array(
 				'status'              => 422,
 				'error_category'      => 'configuration',
 				'configuration_url'   => admin_url( 'options-general.php?page=wttba-settings' ),
-				'configuration_label' => __( 'Connect YouTube OAuth', 'wp-tube-to-blog-ai' ),
+				'configuration_label' => __( 'Connect YouTube OAuth', 'creatorstack-ai' ),
 			)
 		);
 	}
