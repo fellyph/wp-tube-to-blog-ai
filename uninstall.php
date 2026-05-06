@@ -1,10 +1,10 @@
 <?php
 /**
- * Uninstall WP Tube-to-Blog AI.
+ * Uninstall CreatorStack AI.
  *
  * Removes all plugin options and transients on uninstall.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
