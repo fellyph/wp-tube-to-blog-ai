@@ -2,7 +2,7 @@
 /**
  * Shared admin navigation.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -28,7 +28,7 @@ class Admin_Navigation {
 			return;
 		}
 		?>
-		<nav class="nav-tab-wrapper wttba-admin-tabs" aria-label="<?php esc_attr_e( 'AI Content Suite sections', 'wp-tube-to-blog-ai' ); ?>">
+		<nav class="nav-tab-wrapper wttba-admin-tabs" aria-label="<?php esc_attr_e( 'CreatorStack AI sections', 'creatorstack-ai' ); ?>">
 			<?php foreach ( $items as $key => $item ) : ?>
 				<?php
 				$classes = array( 'nav-tab' );
@@ -57,20 +57,25 @@ class Admin_Navigation {
 	 * @return array<string, array{label: string, url: string}>
 	 */
 	private static function get_items(): array {
-		$items = array(
-			'youtube' => array(
-				'label' => __( 'YouTube Content', 'wp-tube-to-blog-ai' ),
+		$items = array();
+
+		if ( Settings::is_youtube_to_post_enabled() ) {
+			$items['youtube'] = array(
+				'label' => __( 'YouTube Content', 'creatorstack-ai' ),
 				'url'   => admin_url( 'admin.php?page=wttba-videos' ),
-			),
-			'audio'   => array(
-				'label' => __( 'Audio to Post', 'wp-tube-to-blog-ai' ),
+			);
+		}
+
+		if ( Settings::is_audio_to_post_enabled() ) {
+			$items['audio'] = array(
+				'label' => __( 'Audio to Post', 'creatorstack-ai' ),
 				'url'   => admin_url( 'admin.php?page=wttba-audio-to-post' ),
-			),
-		);
+			);
+		}
 
 		if ( current_user_can( 'manage_options' ) ) {
 			$items['settings'] = array(
-				'label' => __( 'Settings', 'wp-tube-to-blog-ai' ),
+				'label' => __( 'Settings', 'creatorstack-ai' ),
 				'url'   => admin_url( 'options-general.php?page=wttba-settings' ),
 			);
 		}
