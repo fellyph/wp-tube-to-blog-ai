@@ -34,8 +34,124 @@
 		line-height: 1.5;
 	}
 
-	.components-notice {
+	&__muted.is-error {
+		color: #b32d2e;
+	}
+
+	&__notice {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 28px;
+		gap: 10px;
 		margin: 0 0 12px;
+		padding: 12px;
+		border-left: 4px solid #72aee6;
+		border-radius: 4px;
+		background: #f0f6fc;
+		color: #1d2327;
+	}
+
+	&__notice.is-success {
+		border-left-color: #00a32a;
+		background: #edfaef;
+	}
+
+	&__notice.is-error {
+		border-left-color: #d63638;
+		background: #fcf0f1;
+	}
+
+	&__notice-content {
+		min-width: 0;
+	}
+
+	&__notice-message {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.45;
+		overflow-wrap: anywhere;
+	}
+
+	&__notice-link {
+		display: inline-block;
+		margin-top: 6px;
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	&__notice-dismiss {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		min-width: 28px;
+		margin: -4px -4px 0 0;
+		padding: 0;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		color: #50575e;
+		cursor: pointer;
+		font-size: 22px;
+		line-height: 1;
+	}
+
+	&__notice-dismiss:hover,
+	&__notice-dismiss:focus {
+		background: rgba(0, 0, 0, 0.06);
+		color: #1d2327;
+	}
+
+	&__recorder {
+		padding: 12px;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		background: #fbfbfc;
+	}
+
+	&__recorder-status {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0 0 10px;
+		color: #1d2327;
+		font-size: 12px;
+		line-height: 1.4;
+	}
+
+	&__recorder.is-recording &__recorder-status {
+		color: #b32d2e;
+		font-weight: 600;
+	}
+
+	&__recorder-dot {
+		flex: 0 0 10px;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: #8c8f94;
+		box-shadow: 0 0 0 3px rgba(140, 143, 148, 0.14);
+	}
+
+	&__recorder.is-recording &__recorder-dot {
+		background: #d63638;
+		box-shadow: 0 0 0 3px rgba(214, 54, 56, 0.16);
+	}
+
+	&__recorder-actions {
+		display: flex;
+		gap: 8px;
+
+		.components-button {
+			flex: 1 1 0;
+			width: auto;
+		}
+	}
+
+	&__recorder-preview {
+		display: block;
+		width: 100%;
+		margin-top: 10px;
 	}
 
 	.components-button {
