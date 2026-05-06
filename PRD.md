@@ -1,14 +1,14 @@
 # Product Requirements Document (PRD)
-**Product Name:** WP Tube-to-Blog AI 
+**Product Name:** CreatorStack AI
 **Document Version:** 1.0
 **Target Platform:** WordPress
 
 ## 1. Executive Summary
-The WP Tube-to-Blog AI plugin bridges the gap between video content creation and written content distribution. It allows WordPress administrators to connect their YouTube channel directly to their WordPress dashboard. Through a dedicated dashboard widget, users can browse their recent videos, extract the video transcripts, and utilize the new WordPress AI layer/connector to automatically generate high-quality, localized blog posts as drafts. 
+The CreatorStack AI plugin is a suite of WordPress content tools for creators. It helps administrators convert YouTube videos and audio sources into localized draft posts, and can optionally generate narrated audio from published or draft content through the WordPress AI layer and connector system.
 
 ## 2. Goals & Objectives
-*   **Automate Content Creation:** Convert YouTube videos into readable, well-formatted blog posts with one click.
-*   **Centralized Workflow:** Keep the user inside the WordPress dashboard to manage their video-to-text pipeline.
+*   **Automate Content Creation:** Convert YouTube videos and audio sources into readable, well-formatted blog posts with one click.
+*   **Centralized Workflow:** Keep the user inside the WordPress dashboard to manage video-to-post, audio-to-post, and post-to-audio workflows.
 *   **AI Flexibility:** Leverage the emerging WordPress AI Layer to allow users to seamlessly switch between cloud AI (Gemini, Claude) and local privacy-first models (Ollama).
 *   **Global Reach:** Provide automated internationalization (i18n) by allowing users to generate blog posts in the video's native language or translate them into a selected target language.
 
@@ -70,7 +70,7 @@ The WP Tube-to-Blog AI plugin bridges the gap between video content creation and
 ## 6. User Interface (UI) / User Experience (UX) Flow
 
 1.  **Onboarding:** User installs plugin -> Goes to Settings -> Enters YouTube API Key, AI API Key, selects Model -> Saves.
-2.  **Discovery:** User navigates to WP Dashboard -> Sees the new "YouTube to Blog" widget.
+2.  **Discovery:** User navigates to WP Dashboard -> Sees the new "CreatorStack: YouTube Content" widget.
 3.  **Initiation:** User clicks "Generate Post" on a specific video.
 4.  **Configuration:** A lightweight modal appears: *"Select Output Language: [Match Transcript (Default)] or [Dropdown of languages]"*.
 5.  **Processing:** User clicks "Confirm". A loading spinner indicates the transcript is downloading and AI is processing.
