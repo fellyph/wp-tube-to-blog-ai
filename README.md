@@ -68,6 +68,18 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 3.  Open **Audio to Post** to record or select audio and generate a draft.
 4.  Use the post editor panel to generate a draft from audio while editing, or enable **Post to Audio** to generate narrated audio from post content.
 
+## User Documentation
+
+User guides are available in:
+
+*   [English](docs/user-guide-en.md)
+*   [Portuguese](docs/user-guide-pt.md)
+*   [Spanish](docs/user-guide-es.md)
+
+Implementation article:
+
+*   [Implementing CreatorStack AI With WordPress AI Client And Connectors](docs/implementing-creatorstack-ai-with-ai-connectors.md)
+
 ## 🔒 Security
 
 *   **Backend Prompting:** All AI prompts and system instructions are handled securely on the backend (PHP).
