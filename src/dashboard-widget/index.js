@@ -78,13 +78,13 @@ function DashboardWidget() {
 					ai.unavailableMessage ||
 					__(
 						'Configure an AI provider before generating posts.',
-						'wp-tube-to-blog-ai'
+						'creatorstack-ai'
 					),
 				category: 'configuration',
 				configurationUrl: ai.configurationUrl || config.settingsUrl,
 				configurationLabel: __(
 					'Configure AI Provider',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 			} );
 			setModalVideo( null );
@@ -171,14 +171,14 @@ function DashboardWidget() {
 
 	const getGenerateButtonLabel = ( video ) => {
 		if ( ! isTextGenerationSupported ) {
-			return __( 'AI unavailable', 'wp-tube-to-blog-ai' );
+			return __( 'AI unavailable', 'creatorstack-ai' );
 		}
 
 		if ( generating === video.id ) {
-			return __( 'Generating…', 'wp-tube-to-blog-ai' );
+			return __( 'Generating…', 'creatorstack-ai' );
 		}
 
-		return __( 'Generate Post', 'wp-tube-to-blog-ai' );
+		return __( 'Generate Post', 'creatorstack-ai' );
 	};
 
 	if ( ! config.isConfigured ) {
@@ -190,7 +190,7 @@ function DashboardWidget() {
 				null,
 				__(
 					'Please configure your YouTube API settings.',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				)
 			),
 			createElement(
@@ -199,7 +199,7 @@ function DashboardWidget() {
 					href: config.settingsUrl,
 					className: 'button button-primary',
 				},
-				__( 'Go to Settings', 'wp-tube-to-blog-ai' )
+				__( 'Go to Settings', 'creatorstack-ai' )
 			)
 		);
 	}
@@ -209,7 +209,7 @@ function DashboardWidget() {
 			'div',
 			{ className: 'wttba-widget wttba-widget--loading' },
 			createElement( 'span', { className: 'spinner is-active' } ),
-			__( 'Loading videos…', 'wp-tube-to-blog-ai' )
+			__( 'Loading videos…', 'creatorstack-ai' )
 		);
 	}
 
@@ -240,12 +240,12 @@ function DashboardWidget() {
 				createElement(
 					'p',
 					null,
-					__( 'Post generated successfully!', 'wp-tube-to-blog-ai' ),
+					__( 'Post generated successfully!', 'creatorstack-ai' ),
 					' ',
 					createElement(
 						'a',
 						{ href: success.edit_url },
-						__( 'Edit Draft', 'wp-tube-to-blog-ai' )
+						__( 'Edit Draft', 'creatorstack-ai' )
 					)
 				)
 			),
@@ -264,13 +264,13 @@ function DashboardWidget() {
 					ai.unavailableMessage ||
 					__(
 						'Configure an AI provider before generating posts.',
-						'wp-tube-to-blog-ai'
+						'creatorstack-ai'
 					),
 				category: 'configuration',
 				configurationUrl: ai.configurationUrl || config.settingsUrl,
 				configurationLabel: __(
 					'Configure AI Provider',
-					'wp-tube-to-blog-ai'
+					'creatorstack-ai'
 				),
 				onDismiss: () => setDismissedAiNotice( true ),
 				settingsUrl: config.settingsUrl,
@@ -323,7 +323,7 @@ function DashboardWidget() {
 			createElement(
 				'a',
 				{ href: config.adminVideosUrl },
-				__( 'See More →', 'wp-tube-to-blog-ai' )
+				__( 'See More →', 'creatorstack-ai' )
 			)
 		),
 		createElement( LanguageModal, {
