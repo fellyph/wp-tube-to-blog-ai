@@ -1,28 +1,28 @@
-# WP Tube-to-Blog AI
+# CreatorStack AI
 
-Convert YouTube videos into high-quality WordPress blog post drafts automatically using AI.
+Turn creator source material into WordPress content with AI.
 
 [![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ## 📖 Overview
 
-The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation and written content distribution. It allows WordPress administrators to connect their YouTube channel directly to their WordPress dashboard. Through a dedicated dashboard widget, users can browse their recent videos, extract the video transcripts, and utilize the WordPress AI layer to automatically generate high-quality, localized blog posts as drafts.
+The **CreatorStack AI** plugin is a WordPress content workflow suite for creators. It connects YouTube content, recorded audio, uploaded audio, and post narration workflows to WordPress AI providers so teams can generate draft posts and audio versions without leaving wp-admin.
 
 ## ✨ Features
 
-*   **Automate Content Creation:** Convert YouTube videos into readable, well-formatted blog posts with one click.
-*   **Centralized Workflow:** Manage your video-to-text pipeline directly from the WordPress dashboard.
-*   **AI Flexibility:** Leverage the **WordPress AI Client** and **Connectors API** to use whichever text-generation provider the site owner configures.
-*   **Global Reach:** Automated internationalization (i18n) by generating blog posts in the video's native language or translating them into a selected target language.
-*   **SEO Friendly:** Generates cohesive blog posts including Title, Headings, and Paragraphs.
-*   **Visual Integration:** Automatically sets the YouTube thumbnail as the featured image and embeds the original video in the draft.
+*   **YouTube to Post:** Browse channel videos, extract transcripts, and generate WordPress drafts.
+*   **Audio to Post:** Record audio in wp-admin or the post editor, select existing audio, and generate drafts from spoken content.
+*   **Post to Audio:** Optionally generate narrated audio from existing posts.
+*   **Feature Controls:** Enable or disable YouTube to Post, Audio to Post, and Post to Audio from settings.
+*   **AI Flexibility:** Leverage the **WordPress AI Client** and **Connectors API** to use whichever compatible provider the site owner configures.
+*   **Global Reach:** Generate posts in the source language or translate them into a selected target language.
 
 ## 🛠️ Requirements
 
 *   **WordPress:** 6.7 or higher (7.0+ recommended for built-in AI Client support).
 *   **PHP:** 8.1 or higher.
 *   **YouTube Data API Key:** Required to fetch video information and channel data.
-*   **AI Provider:** A text-generation provider configured through the WordPress AI Client and Connectors API.
+*   **AI Provider:** A compatible provider configured through the WordPress AI Client and Connectors API. Audio workflows require provider support for audio input or text-to-speech.
 *   **WordPress AI Client:**
     *   **WordPress 7.0+:** The AI Client and Connectors API are built into Core. Configure provider plugins and credentials via **Settings > Connectors**.
     *   **WordPress < 7.0:** Requires the `wordpress/wp-ai-client` Composer package (installed automatically via `composer install`).
@@ -34,7 +34,7 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 1.  Clone the repository into your WordPress plugins directory:
     ```bash
     cd wp-content/plugins
-    git clone https://github.com/your-repo/wp-tube-to-blog-ai.git
+    git clone https://github.com/fellyph/creatorstack-ai.git
     ```
 
 2.  Install PHP dependencies using Composer:
@@ -52,7 +52,7 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 
 ## ⚙️ Configuration
 
-1.  Navigate to **Settings > Tube-to-Blog AI** in your WordPress dashboard.
+1.  Navigate to **Settings > CreatorStack AI** in your WordPress dashboard.
 2.  Enter your **YouTube Data API Key** and **Channel ID**.
 3.  Configure your preferred AI Provider:
     *   **WordPress 7.0+:** Go to **Settings > Connectors** to install, activate, and configure an AI provider connector.
@@ -64,10 +64,9 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 ## 📝 Usage
 
 1.  Go to the **WordPress Dashboard** (`wp-admin/index.php`).
-2.  Locate the **YouTube to Blog AI** widget.
-3.  Click **"Generate Post"** on any of your recent videos.
-4.  (Optional) Select a target language in the appearing modal.
-5.  Once processing is complete, a success message will appear with a link to edit your new **Draft Post**.
+2.  Use the **CreatorStack: YouTube Content** widget or the **CreatorStack** admin menu to generate drafts from videos.
+3.  Open **Audio to Post** to record or select audio and generate a draft.
+4.  Use the post editor panel to generate a draft from audio while editing, or enable **Post to Audio** to generate narrated audio from post content.
 
 ## 🔒 Security
 
