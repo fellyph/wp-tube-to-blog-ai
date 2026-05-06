@@ -91,16 +91,37 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 
 	await expect(
 		page.getByRole( 'heading', {
-			name: 'AI Content Suite Settings',
+			name: 'CreatorStack AI Settings',
 		} )
 	).toBeVisible();
 	await expect(
 		page.getByRole( 'heading', { name: 'YouTube Integration' } )
 	).toBeVisible();
+	await expectSettingsSection( page, 'features', 'Enabled Functionality' );
 	await expectSettingsSection( page, 'youtube', 'YouTube Integration' );
 	await expectSettingsSection( page, 'content', 'Content Settings' );
 	await expectSettingsSection( page, 'ai-provider', 'AI Provider' );
 	await expectSettingsSection( page, 'usage', 'AI Usage' );
+	await expect(
+		page.locator( '#wttba_feature_youtube_to_post' )
+	).toBeChecked();
+	await expect(
+		page.locator( '#wttba_feature_audio_to_post' )
+	).toBeChecked();
+	await expect(
+		page.locator( '#wttba_feature_post_to_audio' )
+	).not.toBeChecked();
+	await expect(
+		page.locator(
+			'.wttba-settings-section--features .wttba-feature-toggle__badge'
+		)
+	).toHaveCount( 0 );
+	await expect(
+		page.locator( 'label[for="wttba_feature_youtube_to_post"]' )
+	).toHaveCSS( 'border-color', 'rgb(114, 174, 230)' );
+	await expect(
+		page.locator( 'label[for="wttba_feature_youtube_to_post"]' )
+	).toHaveCSS( 'background-color', 'rgb(240, 246, 252)' );
 	await expect(
 		page.locator( '#wttba_youtube_oauth_redirect_uri' )
 	).toHaveValue(
@@ -195,6 +216,34 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 	await expect(
 		page.getByRole( 'heading', { name: 'Localhost Compatibility' } )
 	).toBeVisible();
+} );
+
+test( 'saves enabled functionality toggles', async ( { page } ) => {
+	await page.goto(
+		`${ serverUrl }/wp-admin/options-general.php?page=wttba-settings`
+	);
+
+	const youtubeToPost = page.locator( '#wttba_feature_youtube_to_post' );
+	const audioToPost = page.locator( '#wttba_feature_audio_to_post' );
+	const postToAudio = page.locator( '#wttba_feature_post_to_audio' );
+
+	await audioToPost.uncheck();
+	await postToAudio.check();
+	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
+
+	await expect( page.getByText( 'Settings saved' ) ).toBeVisible();
+	await expect( youtubeToPost ).toBeChecked();
+	await expect( audioToPost ).not.toBeChecked();
+	await expect( postToAudio ).toBeChecked();
+
+	await audioToPost.check();
+	await postToAudio.uncheck();
+	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
+
+	await expect( page.getByText( 'Settings saved' ) ).toBeVisible();
+	await expect( youtubeToPost ).toBeChecked();
+	await expect( audioToPost ).toBeChecked();
+	await expect( postToAudio ).not.toBeChecked();
 } );
 
 test( 'AI connection test reports provider configuration state on localhost', async ( {
