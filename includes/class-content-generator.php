@@ -2,7 +2,7 @@
 /**
  * Shared AI article generation service.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -70,9 +70,9 @@ class Content_Generator {
 
 		try {
 			$builder = wp_ai_client_prompt(
-				__( 'Reply with a short confirmation that the WordPress AI content generation test succeeded.', 'wp-tube-to-blog-ai' )
+				__( 'Reply with a short confirmation that the WordPress AI content generation test succeeded.', 'creatorstack-ai' )
 			)
-				->using_system_instruction( __( 'You verify AI provider connectivity for a WordPress plugin. Keep the response under 20 words.', 'wp-tube-to-blog-ai' ) )
+				->using_system_instruction( __( 'You verify AI provider connectivity for a WordPress plugin. Keep the response under 20 words.', 'creatorstack-ai' ) )
 				->using_temperature( 0 )
 				->using_max_tokens( 80 )
 				->using_model_preference( ...$this->get_text_model_preferences() );
@@ -83,24 +83,24 @@ class Content_Generator {
 		}
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] AI connection test failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
+			error_log( sprintf( '[CreatorStack AI] AI connection test failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$text = trim( $result->toText() );
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] AI connection test result parse failed - %s', $throwable->getMessage() ) );
+			error_log( sprintf( '[CreatorStack AI] AI connection test result parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
-				__( 'The AI provider responded, but the test response could not be read.', 'wp-tube-to-blog-ai' )
+				__( 'The AI provider responded, but the test response could not be read.', 'creatorstack-ai' )
 			);
 		}
 
 		if ( '' === $text ) {
 			return new \WP_Error(
 				'wttba_ai_parse_error',
-				__( 'The AI provider responded with an empty test result.', 'wp-tube-to-blog-ai' )
+				__( 'The AI provider responded with an empty test result.', 'creatorstack-ai' )
 			);
 		}
 
@@ -143,7 +143,7 @@ class Content_Generator {
 
 		try {
 			$builder = wp_ai_client_prompt( $prompt )
-				->using_system_instruction( __( 'You are a professional blog writer creating accurate, SEO-friendly WordPress content.', 'wp-tube-to-blog-ai' ) )
+				->using_system_instruction( __( 'You are a professional blog writer creating accurate, SEO-friendly WordPress content.', 'creatorstack-ai' ) )
 				->using_temperature( 0.7 )
 				->using_max_tokens( $post_length['max_tokens'] )
 				->using_model_preference( ...$this->get_text_model_preferences() )
@@ -173,7 +173,7 @@ class Content_Generator {
 		if ( ! AI_Provider_Status::is_audio_input_generation_supported() ) {
 			return new \WP_Error(
 				'wttba_audio_input_not_supported',
-				__( 'No configured AI provider supports generating text from audio input. Configure a compatible provider in Settings > Connectors.', 'wp-tube-to-blog-ai' ),
+				__( 'No configured AI provider supports generating text from audio input. Configure a compatible provider in Settings > Connectors.', 'creatorstack-ai' ),
 				AI_Provider_Status::get_configuration_error_data()
 			);
 		}
@@ -214,7 +214,7 @@ class Content_Generator {
 			$builder = wp_ai_client_prompt()
 				->with_text( $prompt )
 				->with_file( $audio['path'], $audio['mime_type'] )
-				->using_system_instruction( __( 'You are a professional editor turning spoken source material into accurate WordPress articles.', 'wp-tube-to-blog-ai' ) )
+				->using_system_instruction( __( 'You are a professional editor turning spoken source material into accurate WordPress articles.', 'creatorstack-ai' ) )
 				->using_temperature( 0.5 )
 				->using_max_tokens( $post_length['max_tokens'] )
 				->using_model_preference( ...$this->get_text_model_preferences() )
@@ -246,7 +246,7 @@ class Content_Generator {
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 			return new \WP_Error(
 				'wttba_invalid_audio_attachment',
-				__( 'The selected audio attachment could not be found.', 'wp-tube-to-blog-ai' ),
+				__( 'The selected audio attachment could not be found.', 'creatorstack-ai' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -256,7 +256,7 @@ class Content_Generator {
 		if ( ! $path || ! file_exists( $path ) || ! is_readable( $path ) ) {
 			return new \WP_Error(
 				'wttba_audio_file_missing',
-				__( 'The selected audio file is missing from the server.', 'wp-tube-to-blog-ai' ),
+				__( 'The selected audio file is missing from the server.', 'creatorstack-ai' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -264,10 +264,13 @@ class Content_Generator {
 		$mime_type = (string) get_post_mime_type( $attachment_id );
 		$extension = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 
-		if ( ! in_array( $extension, self::ALLOWED_AUDIO_EXTENSIONS, true ) || ! str_starts_with( $mime_type, 'audio/' ) ) {
+		$is_audio_mime = str_starts_with( $mime_type, 'audio/' )
+			|| ( 'webm' === $extension && 'video/webm' === $mime_type );
+
+		if ( ! in_array( $extension, self::ALLOWED_AUDIO_EXTENSIONS, true ) || ! $is_audio_mime ) {
 			return new \WP_Error(
 				'wttba_invalid_audio_attachment',
-				__( 'Please select a supported audio file.', 'wp-tube-to-blog-ai' ),
+				__( 'Please select a supported audio file.', 'creatorstack-ai' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -280,7 +283,7 @@ class Content_Generator {
 				'wttba_audio_too_large',
 				sprintf(
 					/* translators: %s: maximum upload size. */
-					__( 'The selected audio file is too large. The maximum size is %s.', 'wp-tube-to-blog-ai' ),
+					__( 'The selected audio file is too large. The maximum size is %s.', 'creatorstack-ai' ),
 					size_format( $max_bytes )
 				),
 				array( 'status' => 400 )
@@ -289,7 +292,7 @@ class Content_Generator {
 
 		return array(
 			'path'      => $path,
-			'mime_type' => $mime_type,
+			'mime_type' => 'video/webm' === $mime_type && 'webm' === $extension ? 'audio/webm' : $mime_type,
 			'size'      => (int) $size,
 		);
 	}
@@ -314,27 +317,27 @@ class Content_Generator {
 		$result = $builder->generate_text_result();
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] AI call failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
+			error_log( sprintf( '[CreatorStack AI] AI call failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$json = $result->toText();
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] AI result parse failed - %s', $throwable->getMessage() ) );
+			error_log( sprintf( '[CreatorStack AI] AI result parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
-				__( 'The AI returned an unexpected response format. Please try generating again.', 'wp-tube-to-blog-ai' )
+				__( 'The AI returned an unexpected response format. Please try generating again.', 'creatorstack-ai' )
 			);
 		}
 
 		$parsed = json_decode( $json, true );
 
 		if ( ! is_array( $parsed ) || empty( $parsed['title'] ) || empty( $parsed['content'] ) ) {
-			error_log( '[WP Tube-to-Blog AI] AI parse error - response could not be decoded or is missing required fields.' );
+			error_log( '[CreatorStack AI] AI parse error - response could not be decoded or is missing required fields.' );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
-				__( 'The AI returned an unexpected response format. Please try generating again.', 'wp-tube-to-blog-ai' )
+				__( 'The AI returned an unexpected response format. Please try generating again.', 'creatorstack-ai' )
 			);
 		}
 
