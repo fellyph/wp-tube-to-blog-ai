@@ -2,7 +2,7 @@
 /**
  * Dashboard widget.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Registers and renders the YouTube to Blog dashboard widget.
+ * Registers and renders the CreatorStack: YouTube Content dashboard widget.
  */
 class Dashboard_Widget {
 
@@ -27,13 +27,13 @@ class Dashboard_Widget {
 	 * Register the dashboard widget.
 	 */
 	public function register_widget(): void {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) || ! Settings::is_youtube_to_post_enabled() ) {
 			return;
 		}
 
 		wp_add_dashboard_widget(
 			'wttba_dashboard_widget',
-			__( 'YouTube to Blog', 'wp-tube-to-blog-ai' ),
+			__( 'CreatorStack: YouTube Content', 'creatorstack-ai' ),
 			array( $this, 'render_widget' )
 		);
 	}
@@ -54,7 +54,7 @@ class Dashboard_Widget {
 		$asset_file = WTTBA_PLUGIN_DIR . 'build/dashboard-widget.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
-			echo '<p>' . esc_html__( 'Widget assets not built. Run npm run build.', 'wp-tube-to-blog-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'Widget assets not built. Run npm run build.', 'creatorstack-ai' ) . '</p>';
 			return;
 		}
 
@@ -77,7 +77,7 @@ class Dashboard_Widget {
 
 		wp_set_script_translations(
 			'wttba-dashboard-widget',
-			'wp-tube-to-blog-ai',
+			'creatorstack-ai',
 			WTTBA_PLUGIN_DIR . 'languages'
 		);
 
@@ -93,6 +93,7 @@ class Dashboard_Widget {
 				'languages'       => Settings::LANGUAGES,
 				'isConfigured'    => ( new YouTube_API() )->is_configured(),
 				'settingsUrl'     => admin_url( 'options-general.php?page=wttba-settings' ),
+				'features'        => Settings::get_feature_states(),
 				'ai'              => AI_Provider_Status::get_admin_config(),
 			)
 		);
