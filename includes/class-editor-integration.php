@@ -2,7 +2,7 @@
 /**
  * Block editor and post-list integration.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Adds AI Content Suite actions to the post editor and posts list table.
+ * Adds CreatorStack AI actions to the post editor and posts list table.
  */
 class Editor_Integration {
 
@@ -33,6 +33,10 @@ class Editor_Integration {
 		$screen = get_current_screen();
 
 		if ( ! $screen || 'post' !== $screen->post_type ) {
+			return;
+		}
+
+		if ( ! Settings::is_audio_to_post_enabled() && ! Settings::is_post_to_audio_enabled() ) {
 			return;
 		}
 
@@ -61,7 +65,7 @@ class Editor_Integration {
 
 		wp_set_script_translations(
 			'wttba-editor',
-			'wp-tube-to-blog-ai',
+			'creatorstack-ai',
 			WTTBA_PLUGIN_DIR . 'languages'
 		);
 
@@ -78,6 +82,7 @@ class Editor_Integration {
 				'languages'              => Settings::LANGUAGES,
 				'settingsUrl'            => admin_url( 'options-general.php?page=wttba-settings' ),
 				'connectorsUrl'          => AI_Provider_Status::get_configuration_url(),
+				'features'               => Settings::get_feature_states(),
 				'ai'                     => AI_Provider_Status::get_admin_config(),
 				'allowedAudioExtensions' => Content_Generator::ALLOWED_AUDIO_EXTENSIONS,
 				'maxAudioBytes'          => $content_generator->get_max_audio_bytes(),
@@ -97,7 +102,7 @@ class Editor_Integration {
 			return $actions;
 		}
 
-		if ( ! AI_Provider_Status::is_text_to_speech_supported() ) {
+		if ( ! Settings::is_post_to_audio_enabled() || ! AI_Provider_Status::is_text_to_speech_supported() ) {
 			return $actions;
 		}
 
@@ -115,7 +120,7 @@ class Editor_Integration {
 		$actions['wttba_generate_audio'] = sprintf(
 			'<a href="%1$s">%2$s</a>',
 			esc_url( $url ),
-			esc_html__( 'Generate Audio', 'wp-tube-to-blog-ai' )
+			esc_html__( 'Generate Audio', 'creatorstack-ai' )
 		);
 
 		return $actions;
@@ -128,15 +133,19 @@ class Editor_Integration {
 		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
 
 		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
-			wp_die( esc_html__( 'You are not allowed to generate audio for this post.', 'wp-tube-to-blog-ai' ) );
+			wp_die( esc_html__( 'You are not allowed to generate audio for this post.', 'creatorstack-ai' ) );
 		}
 
 		check_admin_referer( 'wttba_generate_post_audio_' . $post_id );
 
+		if ( ! Settings::is_post_to_audio_enabled() ) {
+			wp_die( esc_html__( 'Post to Audio is disabled in CreatorStack AI settings.', 'creatorstack-ai' ) );
+		}
+
 		$generator = new Post_Audio_Generator();
 		$result    = $generator->generate_for_post( $post_id );
 		$status    = is_wp_error( $result ) ? 'error' : 'success';
-		$message   = is_wp_error( $result ) ? $result->get_error_message() : __( 'Audio generated and attached to the post.', 'wp-tube-to-blog-ai' );
+		$message   = is_wp_error( $result ) ? $result->get_error_message() : __( 'Audio generated and attached to the post.', 'creatorstack-ai' );
 
 		wp_safe_redirect(
 			add_query_arg(
