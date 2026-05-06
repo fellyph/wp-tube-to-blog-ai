@@ -2,7 +2,7 @@
 /**
  * Plugin settings page.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -72,6 +72,44 @@ class Settings {
 	public const POST_LENGTH_IDS = array( 'short', 'medium', 'long' );
 
 	/**
+	 * Feature key for YouTube-to-post generation.
+	 */
+	public const FEATURE_YOUTUBE_TO_POST = 'youtube_to_post';
+
+	/**
+	 * Feature key for audio-to-post generation.
+	 */
+	public const FEATURE_AUDIO_TO_POST = 'audio_to_post';
+
+	/**
+	 * Feature key for post-to-audio generation.
+	 */
+	public const FEATURE_POST_TO_AUDIO = 'post_to_audio';
+
+	/**
+	 * Feature option map.
+	 *
+	 * @var array<string, array{option: string, default: bool, jsKey: string}>
+	 */
+	private const FEATURE_OPTION_MAP = array(
+		self::FEATURE_YOUTUBE_TO_POST => array(
+			'option'  => 'wttba_feature_youtube_to_post',
+			'default' => true,
+			'jsKey'   => 'youtubeToPost',
+		),
+		self::FEATURE_AUDIO_TO_POST   => array(
+			'option'  => 'wttba_feature_audio_to_post',
+			'default' => true,
+			'jsKey'   => 'audioToPost',
+		),
+		self::FEATURE_POST_TO_AUDIO   => array(
+			'option'  => 'wttba_feature_post_to_audio',
+			'default' => false,
+			'jsKey'   => 'postToAudio',
+		),
+	);
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -85,8 +123,8 @@ class Settings {
 	 */
 	public function add_settings_page(): void {
 		add_options_page(
-			__( 'AI Content Suite', 'wp-tube-to-blog-ai' ),
-			__( 'AI Content Suite', 'wp-tube-to-blog-ai' ),
+			__( 'CreatorStack AI', 'creatorstack-ai' ),
+			__( 'CreatorStack AI', 'creatorstack-ai' ),
 			'manage_options',
 			'wttba-settings',
 			array( $this, 'render_settings_page' )
@@ -97,6 +135,18 @@ class Settings {
 	 * Register settings, sections, and fields.
 	 */
 	public function register_settings(): void {
+		foreach ( self::FEATURE_OPTION_MAP as $feature ) {
+			register_setting(
+				'wttba_settings',
+				$feature['option'],
+				array(
+					'type'              => 'boolean',
+					'sanitize_callback' => array( $this, 'sanitize_feature_enabled' ),
+					'default'           => $feature['default'],
+				)
+			);
+		}
+
 		// YouTube API Key.
 		register_setting(
 			'wttba_settings',
@@ -185,10 +235,27 @@ class Settings {
 			)
 		);
 
+		// Features section.
+		add_settings_section(
+			'wttba_features_section',
+			__( 'Enabled Functionality', 'creatorstack-ai' ),
+			array( $this, 'render_features_section' ),
+			'wttba-settings',
+			$this->get_settings_section_args( 'features' )
+		);
+
+		add_settings_field(
+			'wttba_enabled_features',
+			__( 'Available workflows', 'creatorstack-ai' ),
+			array( $this, 'render_features_field' ),
+			'wttba-settings',
+			'wttba_features_section'
+		);
+
 		// YouTube section.
 		add_settings_section(
 			'wttba_youtube_section',
-			__( 'YouTube Integration', 'wp-tube-to-blog-ai' ),
+			__( 'YouTube Integration', 'creatorstack-ai' ),
 			array( $this, 'render_youtube_section' ),
 			'wttba-settings',
 			$this->get_settings_section_args( 'youtube' )
@@ -196,7 +263,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_youtube_api_key',
-			__( 'YouTube API Key', 'wp-tube-to-blog-ai' ),
+			__( 'YouTube API Key', 'creatorstack-ai' ),
 			array( $this, 'render_api_key_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
@@ -204,7 +271,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_youtube_channel_id',
-			__( 'YouTube Channel ID', 'wp-tube-to-blog-ai' ),
+			__( 'YouTube Channel ID', 'creatorstack-ai' ),
 			array( $this, 'render_channel_id_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
@@ -212,7 +279,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_youtube_oauth_client_id',
-			__( 'OAuth Client ID', 'wp-tube-to-blog-ai' ),
+			__( 'OAuth Client ID', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_id_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
@@ -220,7 +287,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_youtube_oauth_client_secret',
-			__( 'OAuth Client Secret', 'wp-tube-to-blog-ai' ),
+			__( 'OAuth Client Secret', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_secret_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
@@ -228,7 +295,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_youtube_oauth_connection',
-			__( 'OAuth Connection', 'wp-tube-to-blog-ai' ),
+			__( 'OAuth Connection', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_connection_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
@@ -237,7 +304,7 @@ class Settings {
 		// Content section.
 		add_settings_section(
 			'wttba_content_section',
-			__( 'Content Settings', 'wp-tube-to-blog-ai' ),
+			__( 'Content Settings', 'creatorstack-ai' ),
 			array( $this, 'render_content_section' ),
 			'wttba-settings',
 			$this->get_settings_section_args( 'content' )
@@ -245,7 +312,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_default_language',
-			__( 'Default Output Language', 'wp-tube-to-blog-ai' ),
+			__( 'Default Output Language', 'creatorstack-ai' ),
 			array( $this, 'render_language_field' ),
 			'wttba-settings',
 			'wttba_content_section'
@@ -253,7 +320,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_post_length',
-			__( 'Post Length', 'wp-tube-to-blog-ai' ),
+			__( 'Post Length', 'creatorstack-ai' ),
 			array( $this, 'render_post_length_field' ),
 			'wttba-settings',
 			'wttba_content_section'
@@ -261,7 +328,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_default_persona',
-			__( 'Writing Persona', 'wp-tube-to-blog-ai' ),
+			__( 'Writing Persona', 'creatorstack-ai' ),
 			array( $this, 'render_persona_field' ),
 			'wttba-settings',
 			'wttba_content_section'
@@ -270,7 +337,7 @@ class Settings {
 		// AI Provider section.
 		add_settings_section(
 			'wttba_ai_section',
-			__( 'AI Provider', 'wp-tube-to-blog-ai' ),
+			__( 'AI Provider', 'creatorstack-ai' ),
 			array( $this, 'render_ai_section' ),
 			'wttba-settings',
 			$this->get_settings_section_args( 'ai-provider' )
@@ -278,7 +345,7 @@ class Settings {
 
 		add_settings_field(
 			'wttba_ai_model',
-			__( 'Preferred AI Model', 'wp-tube-to-blog-ai' ),
+			__( 'Preferred AI Model', 'creatorstack-ai' ),
 			array( $this, 'render_ai_model_field' ),
 			'wttba-settings',
 			'wttba_ai_section'
@@ -286,7 +353,7 @@ class Settings {
 
 		add_settings_section(
 			'wttba_usage_section',
-			__( 'AI Usage', 'wp-tube-to-blog-ai' ),
+			__( 'AI Usage', 'creatorstack-ai' ),
 			array( $this, 'render_usage_section' ),
 			'wttba-settings',
 			$this->get_settings_section_args( 'usage' )
@@ -305,6 +372,116 @@ class Settings {
 			'after_section'  => '</div>',
 			'section_class'  => 'wttba-settings-section wttba-settings-section--' . sanitize_html_class( $modifier ),
 		);
+	}
+
+	/**
+	 * Get configurable feature definitions.
+	 *
+	 * @return array<string, array{option: string, default: bool, jsKey: string, label: string, description: string}>
+	 */
+	public static function get_feature_definitions(): array {
+		return array(
+			self::FEATURE_YOUTUBE_TO_POST => array(
+				'option'      => self::FEATURE_OPTION_MAP[ self::FEATURE_YOUTUBE_TO_POST ]['option'],
+				'default'     => self::FEATURE_OPTION_MAP[ self::FEATURE_YOUTUBE_TO_POST ]['default'],
+				'jsKey'       => self::FEATURE_OPTION_MAP[ self::FEATURE_YOUTUBE_TO_POST ]['jsKey'],
+				'label'       => __( 'YouTube to Post', 'creatorstack-ai' ),
+				'description' => __( 'Browse channel videos, generate posts from YouTube transcripts, and create draft articles.', 'creatorstack-ai' ),
+			),
+			self::FEATURE_AUDIO_TO_POST   => array(
+				'option'      => self::FEATURE_OPTION_MAP[ self::FEATURE_AUDIO_TO_POST ]['option'],
+				'default'     => self::FEATURE_OPTION_MAP[ self::FEATURE_AUDIO_TO_POST ]['default'],
+				'jsKey'       => self::FEATURE_OPTION_MAP[ self::FEATURE_AUDIO_TO_POST ]['jsKey'],
+				'label'       => __( 'Audio to Post', 'creatorstack-ai' ),
+				'description' => __( 'Record or select audio, transcribe it with AI, and generate draft posts from spoken content.', 'creatorstack-ai' ),
+			),
+			self::FEATURE_POST_TO_AUDIO   => array(
+				'option'      => self::FEATURE_OPTION_MAP[ self::FEATURE_POST_TO_AUDIO ]['option'],
+				'default'     => self::FEATURE_OPTION_MAP[ self::FEATURE_POST_TO_AUDIO ]['default'],
+				'jsKey'       => self::FEATURE_OPTION_MAP[ self::FEATURE_POST_TO_AUDIO ]['jsKey'],
+				'label'       => __( 'Post to Audio', 'creatorstack-ai' ),
+				'description' => __( 'Generate narrated audio from post content and attach the result to the post.', 'creatorstack-ai' ),
+			),
+		);
+	}
+
+	/**
+	 * Sanitize feature toggle values from the settings form.
+	 *
+	 * @param mixed $value Submitted value.
+	 * @return bool
+	 */
+	public function sanitize_feature_enabled( mixed $value ): bool {
+		return rest_sanitize_boolean( $value );
+	}
+
+	/**
+	 * Check whether a feature is enabled.
+	 *
+	 * @param string $feature Feature key.
+	 * @return bool
+	 */
+	public static function is_feature_enabled( string $feature ): bool {
+		$definition = self::get_feature_definitions()[ $feature ] ?? null;
+
+		if ( null === $definition ) {
+			return false;
+		}
+
+		return rest_sanitize_boolean(
+			get_option(
+				$definition['option'],
+				$definition['default'] ? '1' : '0'
+			)
+		);
+	}
+
+	/**
+	 * Check whether YouTube-to-post functionality is enabled.
+	 */
+	public static function is_youtube_to_post_enabled(): bool {
+		return self::is_feature_enabled( self::FEATURE_YOUTUBE_TO_POST );
+	}
+
+	/**
+	 * Check whether audio-to-post functionality is enabled.
+	 */
+	public static function is_audio_to_post_enabled(): bool {
+		return self::is_feature_enabled( self::FEATURE_AUDIO_TO_POST );
+	}
+
+	/**
+	 * Check whether post-to-audio functionality is enabled.
+	 */
+	public static function is_post_to_audio_enabled(): bool {
+		return self::is_feature_enabled( self::FEATURE_POST_TO_AUDIO );
+	}
+
+	/**
+	 * Get feature states for JavaScript configuration and REST responses.
+	 *
+	 * @return array<string, bool>
+	 */
+	public static function get_feature_states(): array {
+		$states = array();
+
+		foreach ( self::get_feature_definitions() as $key => $definition ) {
+			$states[ $definition['jsKey'] ] = self::is_feature_enabled( $key );
+		}
+
+		return $states;
+	}
+
+	/**
+	 * Get the human-readable label for a feature.
+	 *
+	 * @param string $feature Feature key.
+	 * @return string
+	 */
+	public static function get_feature_label( string $feature ): string {
+		$definition = self::get_feature_definitions()[ $feature ] ?? null;
+
+		return null === $definition ? __( 'This feature', 'creatorstack-ai' ) : $definition['label'];
 	}
 
 	/**
@@ -351,7 +528,7 @@ class Settings {
 	 */
 	public static function get_ai_model_options(): array {
 		return array(
-			''                                => __( 'Automatic (recommended)', 'wp-tube-to-blog-ai' ),
+			''                                => __( 'Automatic (recommended)', 'creatorstack-ai' ),
 			'claude-sonnet-4-6'               => 'Claude Sonnet 4.6',
 			'gpt-5.4'                         => 'GPT-5.4',
 			'gemini-3-flash-preview'          => 'Gemini 3 Flash Preview',
@@ -372,16 +549,16 @@ class Settings {
 	public static function get_post_length_options(): array {
 		return array(
 			'short'  => array(
-				'label'       => __( 'Short', 'wp-tube-to-blog-ai' ),
-				'description' => __( 'About 600 to 900 words.', 'wp-tube-to-blog-ai' ),
+				'label'       => __( 'Short', 'creatorstack-ai' ),
+				'description' => __( 'About 600 to 900 words.', 'creatorstack-ai' ),
 			),
 			'medium' => array(
-				'label'       => __( 'Medium', 'wp-tube-to-blog-ai' ),
-				'description' => __( 'About 1,000 to 1,500 words.', 'wp-tube-to-blog-ai' ),
+				'label'       => __( 'Medium', 'creatorstack-ai' ),
+				'description' => __( 'About 1,000 to 1,500 words.', 'creatorstack-ai' ),
 			),
 			'long'   => array(
-				'label'       => __( 'Long', 'wp-tube-to-blog-ai' ),
-				'description' => __( 'About 1,800 to 2,500 words.', 'wp-tube-to-blog-ai' ),
+				'label'       => __( 'Long', 'creatorstack-ai' ),
+				'description' => __( 'About 1,800 to 2,500 words.', 'creatorstack-ai' ),
 			),
 		);
 	}
@@ -399,20 +576,20 @@ class Settings {
 		if ( 'short' === $length ) {
 			return array(
 				'max_tokens'  => 3500,
-				'instruction' => __( 'Aim for a concise post of about 600 to 900 words. Focus on the core takeaways and avoid extended background.', 'wp-tube-to-blog-ai' ),
+				'instruction' => __( 'Aim for a concise post of about 600 to 900 words. Focus on the core takeaways and avoid extended background.', 'creatorstack-ai' ),
 			);
 		}
 
 		if ( 'long' === $length ) {
 			return array(
 				'max_tokens'  => 8000,
-				'instruction' => __( 'Aim for a detailed post of about 1,800 to 2,500 words. Expand important sections with context, examples, and practical takeaways.', 'wp-tube-to-blog-ai' ),
+				'instruction' => __( 'Aim for a detailed post of about 1,800 to 2,500 words. Expand important sections with context, examples, and practical takeaways.', 'creatorstack-ai' ),
 			);
 		}
 
 		return array(
 			'max_tokens'  => 5500,
-			'instruction' => __( 'Aim for a balanced post of about 1,000 to 1,500 words. Cover the main ideas with enough context and examples.', 'wp-tube-to-blog-ai' ),
+			'instruction' => __( 'Aim for a balanced post of about 1,000 to 1,500 words. Cover the main ideas with enough context and examples.', 'creatorstack-ai' ),
 		);
 	}
 
@@ -432,7 +609,7 @@ class Settings {
 		add_settings_error(
 			'wttba_youtube_api_key',
 			'wttba_youtube_api_key_invalid',
-			__( 'Enter a valid YouTube Data API key from Google Cloud.', 'wp-tube-to-blog-ai' )
+			__( 'Enter a valid YouTube Data API key from Google Cloud.', 'creatorstack-ai' )
 		);
 
 		return $this->get_previous_valid_option( 'wttba_youtube_api_key', array( self::class, 'is_valid_youtube_api_key' ) );
@@ -454,7 +631,7 @@ class Settings {
 		add_settings_error(
 			'wttba_youtube_channel_id',
 			'wttba_youtube_channel_id_invalid',
-			__( 'Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters.', 'wp-tube-to-blog-ai' )
+			__( 'Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters.', 'creatorstack-ai' )
 		);
 
 		return $this->get_previous_valid_option( 'wttba_youtube_channel_id', array( self::class, 'is_valid_youtube_channel_id' ) );
@@ -476,7 +653,7 @@ class Settings {
 		add_settings_error(
 			'wttba_youtube_oauth_client_id',
 			'wttba_youtube_oauth_client_id_invalid',
-			__( 'Enter a valid Google OAuth Web application Client ID ending in .apps.googleusercontent.com.', 'wp-tube-to-blog-ai' )
+			__( 'Enter a valid Google OAuth Web application Client ID ending in .apps.googleusercontent.com.', 'creatorstack-ai' )
 		);
 
 		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_id', array( YouTube_OAuth::class, 'is_valid_client_id' ) );
@@ -498,7 +675,7 @@ class Settings {
 		add_settings_error(
 			'wttba_youtube_oauth_client_secret',
 			'wttba_youtube_oauth_client_secret_invalid',
-			__( 'Enter a valid Google OAuth Client Secret from the Web application client.', 'wp-tube-to-blog-ai' )
+			__( 'Enter a valid Google OAuth Client Secret from the Web application client.', 'creatorstack-ai' )
 		);
 
 		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_secret', array( YouTube_OAuth::class, 'is_valid_client_secret' ) );
@@ -551,8 +728,8 @@ class Settings {
 		$host      = '' !== $site_host ? $site_host : $home_host;
 		$is_local  = self::is_localhost_host( $site_host ) || self::is_localhost_host( $home_host );
 		$message   = $is_local
-			? __( 'This site is running locally. The plugin can run on localhost when WordPress can make outbound HTTPS requests to YouTube and the configured AI provider.', 'wp-tube-to-blog-ai' )
-			: __( 'This site is not currently using a localhost URL. Localhost is supported for development when outbound HTTPS requests and provider credentials are available.', 'wp-tube-to-blog-ai' );
+			? __( 'This site is running locally. The plugin can run on localhost when WordPress can make outbound HTTPS requests to YouTube and the configured AI provider.', 'creatorstack-ai' )
+			: __( 'This site is not currently using a localhost URL. Localhost is supported for development when outbound HTTPS requests and provider credentials are available.', 'creatorstack-ai' );
 
 		return array(
 			'supported' => true,
@@ -600,7 +777,7 @@ class Settings {
 
 		wp_set_script_translations(
 			'wttba-settings',
-			'wp-tube-to-blog-ai',
+			'creatorstack-ai',
 			WTTBA_PLUGIN_DIR . 'languages'
 		);
 
@@ -611,7 +788,7 @@ class Settings {
 				'testPath'          => '/wttba/v1/ai/test',
 				'configurationUrl'  => AI_Provider_Status::get_configuration_url(),
 				'localhost'         => self::get_localhost_status(),
-				'configurationLabel' => __( 'Configure AI Provider', 'wp-tube-to-blog-ai' ),
+				'configurationLabel' => __( 'Configure AI Provider', 'creatorstack-ai' ),
 				'redirectUri'       => YouTube_OAuth::get_redirect_uri(),
 			)
 		);
@@ -626,9 +803,9 @@ class Settings {
 			<div class="wttba-settings-shell">
 				<header class="wttba-settings-hero">
 					<div class="wttba-settings-hero__content">
-						<p class="wttba-settings-eyebrow"><?php esc_html_e( 'WP Tube-to-Blog AI', 'wp-tube-to-blog-ai' ); ?></p>
-						<h1><?php esc_html_e( 'AI Content Suite Settings', 'wp-tube-to-blog-ai' ); ?></h1>
-						<p class="wttba-settings-hero__description"><?php esc_html_e( 'Connect YouTube, tune generated posts, and verify your AI provider from one focused workspace.', 'wp-tube-to-blog-ai' ); ?></p>
+						<p class="wttba-settings-eyebrow"><?php esc_html_e( 'CreatorStack AI', 'creatorstack-ai' ); ?></p>
+						<h1><?php esc_html_e( 'CreatorStack AI Settings', 'creatorstack-ai' ); ?></h1>
+						<p class="wttba-settings-hero__description"><?php esc_html_e( 'Enable creator workflows, connect YouTube, tune generated posts, and verify your AI provider from one focused workspace.', 'creatorstack-ai' ); ?></p>
 					</div>
 				</header>
 				<?php $this->render_oauth_status_notice(); ?>
@@ -646,6 +823,49 @@ class Settings {
 	}
 
 	/**
+	 * Feature section description.
+	 */
+	public function render_features_section(): void {
+		echo '<p>' . esc_html__( 'Choose which CreatorStack AI workflows are available in the WordPress admin, editor sidebar, dashboard, and REST API.', 'creatorstack-ai' ) . '</p>';
+	}
+
+	/**
+	 * Render feature toggles.
+	 */
+	public function render_features_field(): void {
+		?>
+		<div class="wttba-feature-toggles" role="group" aria-label="<?php esc_attr_e( 'Available CreatorStack AI workflows', 'creatorstack-ai' ); ?>">
+			<?php foreach ( self::get_feature_definitions() as $key => $definition ) : ?>
+				<?php
+				$enabled  = self::is_feature_enabled( $key );
+				$input_id = $definition['option'];
+				?>
+				<label class="wttba-feature-toggle" for="<?php echo esc_attr( $input_id ); ?>">
+					<input
+						type="hidden"
+						name="<?php echo esc_attr( $definition['option'] ); ?>"
+						value="0"
+					/>
+					<input
+						type="checkbox"
+						id="<?php echo esc_attr( $input_id ); ?>"
+						name="<?php echo esc_attr( $definition['option'] ); ?>"
+						value="1"
+						<?php checked( $enabled ); ?>
+					/>
+					<span class="wttba-feature-toggle__body">
+						<span class="wttba-feature-toggle__header">
+							<span class="wttba-feature-toggle__title"><?php echo esc_html( $definition['label'] ); ?></span>
+						</span>
+						<span class="wttba-feature-toggle__description"><?php echo esc_html( $definition['description'] ); ?></span>
+					</span>
+				</label>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * YouTube section description.
 	 */
 	public function render_youtube_section(): void {
@@ -653,47 +873,47 @@ class Settings {
 
 		if ( $this->is_youtube_auth_setup_complete( $status ) ) {
 			?>
-			<p><?php esc_html_e( 'YouTube authentication is configured. You can update credentials below when they change.', 'wp-tube-to-blog-ai' ); ?></p>
+			<p><?php esc_html_e( 'YouTube authentication is configured. You can update credentials below when they change.', 'creatorstack-ai' ); ?></p>
 			<?php
 			return;
 		}
 		?>
-		<p><?php esc_html_e( 'Enter your YouTube Data API v3 credentials to connect your channel. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit.', 'wp-tube-to-blog-ai' ); ?></p>
+		<p><?php esc_html_e( 'Enter your YouTube Data API v3 credentials to connect your channel. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit.', 'creatorstack-ai' ); ?></p>
 		<div class="notice notice-info inline wttba-auth-checklist-notice">
-			<p><strong><?php esc_html_e( 'YouTube authentication setup', 'wp-tube-to-blog-ai' ); ?></strong></p>
-			<ul class="wttba-auth-checklist" aria-label="<?php esc_attr_e( 'YouTube authentication setup status', 'wp-tube-to-blog-ai' ); ?>">
+			<p><strong><?php esc_html_e( 'YouTube authentication setup', 'creatorstack-ai' ); ?></strong></p>
+			<ul class="wttba-auth-checklist" aria-label="<?php esc_attr_e( 'YouTube authentication setup status', 'creatorstack-ai' ); ?>">
 				<?php
 				$this->render_auth_setup_item(
 					'api-key',
-					__( 'YouTube API key saved', 'wp-tube-to-blog-ai' ),
+					__( 'YouTube API key saved', 'creatorstack-ai' ),
 					$status['apiKeyConfigured'],
-					__( 'Required for listing channel videos and loading video details.', 'wp-tube-to-blog-ai' )
+					__( 'Required for listing channel videos and loading video details.', 'creatorstack-ai' )
 				);
 				$this->render_auth_setup_item(
 					'channel-id',
-					__( 'YouTube Channel ID saved', 'wp-tube-to-blog-ai' ),
+					__( 'YouTube Channel ID saved', 'creatorstack-ai' ),
 					$status['channelConfigured'],
-					__( 'Required for browsing videos from the correct channel.', 'wp-tube-to-blog-ai' )
+					__( 'Required for browsing videos from the correct channel.', 'creatorstack-ai' )
 				);
 				$this->render_auth_setup_item(
 					'oauth-credentials',
-					__( 'OAuth client credentials saved', 'wp-tube-to-blog-ai' ),
+					__( 'OAuth client credentials saved', 'creatorstack-ai' ),
 					$status['oauthCredentialsConfigured'],
-					__( 'Required before WordPress can start the Google OAuth flow.', 'wp-tube-to-blog-ai' )
+					__( 'Required before WordPress can start the Google OAuth flow.', 'creatorstack-ai' )
 				);
 				$this->render_auth_setup_item(
 					'redirect-uri',
-					__( 'Authorized redirect URI verified', 'wp-tube-to-blog-ai' ),
+					__( 'Authorized redirect URI verified', 'creatorstack-ai' ),
 					$status['redirectUriVerified'],
 					$status['redirectUriVerified']
-						? __( 'Google returned to WordPress successfully, so the redirect URI is accepted.', 'wp-tube-to-blog-ai' )
-						: __( 'Verified after Google redirects back to WordPress. If Google reports redirect_uri_mismatch, copy the URI shown below into Google Cloud.', 'wp-tube-to-blog-ai' )
+						? __( 'Google returned to WordPress successfully, so the redirect URI is accepted.', 'creatorstack-ai' )
+						: __( 'Verified after Google redirects back to WordPress. If Google reports redirect_uri_mismatch, copy the URI shown below into Google Cloud.', 'creatorstack-ai' )
 				);
 				$this->render_auth_setup_item(
 					'youtube-account',
-					__( 'YouTube account connected', 'wp-tube-to-blog-ai' ),
+					__( 'YouTube account connected', 'creatorstack-ai' ),
 					$status['oauthConnected'],
-					__( 'Required for official caption downloads from editable videos.', 'wp-tube-to-blog-ai' )
+					__( 'Required for official caption downloads from editable videos.', 'creatorstack-ai' )
 				);
 				?>
 			</ul>
@@ -709,55 +929,55 @@ class Settings {
 		$redirect_uri = YouTube_OAuth::get_redirect_uri();
 		?>
 		<div id="wttba-oauth-setup-wizard" class="wttba-oauth-wizard" aria-labelledby="wttba-oauth-wizard-title">
-			<h3 id="wttba-oauth-wizard-title"><?php esc_html_e( 'YouTube setup wizard', 'wp-tube-to-blog-ai' ); ?></h3>
-			<p><?php esc_html_e( 'Use these steps to collect the YouTube and Google Cloud values WordPress needs for video listing, details, and official caption downloads.', 'wp-tube-to-blog-ai' ); ?></p>
+			<h3 id="wttba-oauth-wizard-title"><?php esc_html_e( 'YouTube setup wizard', 'creatorstack-ai' ); ?></h3>
+			<p><?php esc_html_e( 'Use these steps to collect the YouTube and Google Cloud values WordPress needs for video listing, details, and official caption downloads.', 'creatorstack-ai' ); ?></p>
 			<ol class="wttba-oauth-wizard__steps">
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Prepare Google Cloud', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Open the Google Cloud project that owns the YouTube channel integration, then enable the YouTube Data API v3 if it is not already enabled.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Prepare Google Cloud', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Open the Google Cloud project that owns the YouTube channel integration, then enable the YouTube Data API v3 if it is not already enabled.', 'creatorstack-ai' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Open YouTube Data API v3', 'wp-tube-to-blog-ai' ); ?>
-							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+							<?php esc_html_e( 'Open YouTube Data API v3', 'creatorstack-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'creatorstack-ai' ); ?></span>
 						</a>
 					</p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Create a YouTube Data API key', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an API key, and paste it into the YouTube API Key field below. The API key is used for public video listing and video details.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Create a YouTube Data API key', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an API key, and paste it into the YouTube API Key field below. The API key is used for public video listing and video details.', 'creatorstack-ai' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Open Google credentials', 'wp-tube-to-blog-ai' ); ?>
-							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+							<?php esc_html_e( 'Open Google credentials', 'creatorstack-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'creatorstack-ai' ); ?></span>
 						</a>
 					</p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Find the YouTube Channel ID', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Open YouTube account advanced settings, copy the value labeled Channel ID, and paste it into the YouTube Channel ID field below. Channel IDs usually start with UC.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Find the YouTube Channel ID', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Open YouTube account advanced settings, copy the value labeled Channel ID, and paste it into the YouTube Channel ID field below. Channel IDs usually start with UC.', 'creatorstack-ai' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="https://support.google.com/youtube/answer/3250431" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Find Channel ID help', 'wp-tube-to-blog-ai' ); ?>
-							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+							<?php esc_html_e( 'Find Channel ID help', 'creatorstack-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'creatorstack-ai' ); ?></span>
 						</a>
 					</p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Create a Web application OAuth client', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an OAuth client ID, and choose Web application as the application type.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Create a Web application OAuth client', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an OAuth client ID, and choose Web application as the application type.', 'creatorstack-ai' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Create OAuth client', 'wp-tube-to-blog-ai' ); ?>
-							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+							<?php esc_html_e( 'Create OAuth client', 'creatorstack-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'creatorstack-ai' ); ?></span>
 						</a>
 					</p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Add this Authorized redirect URI', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Paste this exact URI into the Authorized redirect URIs field for the Web application client. Google requires an exact match.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Add this Authorized redirect URI', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Paste this exact URI into the Authorized redirect URIs field for the Web application client. Google requires an exact match.', 'creatorstack-ai' ); ?></p>
 					<div class="wttba-oauth-wizard__copy-row">
 						<label class="screen-reader-text" for="wttba-oauth-wizard-redirect-uri">
-							<?php esc_html_e( 'Authorized redirect URI', 'wp-tube-to-blog-ai' ); ?>
+							<?php esc_html_e( 'Authorized redirect URI', 'creatorstack-ai' ); ?>
 						</label>
 						<input
 							type="text"
@@ -767,31 +987,31 @@ class Settings {
 							readonly
 						/>
 						<button type="button" class="button button-secondary" id="wttba-copy-redirect-uri">
-							<?php esc_html_e( 'Copy URI', 'wp-tube-to-blog-ai' ); ?>
+							<?php esc_html_e( 'Copy URI', 'creatorstack-ai' ); ?>
 						</button>
 					</div>
 					<p id="wttba-copy-redirect-uri-status" class="description" aria-live="polite"></p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Download or copy the client secret JSON', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p id="wttba-oauth-client-json-help"><?php esc_html_e( 'After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Download or copy the client secret JSON', 'creatorstack-ai' ); ?></strong>
+					<p id="wttba-oauth-client-json-help"><?php esc_html_e( 'After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes.', 'creatorstack-ai' ); ?></p>
 					<textarea
 						id="wttba-oauth-client-json"
 						class="large-text code"
 						rows="5"
 						aria-describedby="wttba-oauth-client-json-help"
-						placeholder="<?php esc_attr_e( 'Paste client_secret.json contents here', 'wp-tube-to-blog-ai' ); ?>"
+						placeholder="<?php esc_attr_e( 'Paste client_secret.json contents here', 'creatorstack-ai' ); ?>"
 					></textarea>
 					<p>
 						<button type="button" class="button button-secondary" id="wttba-fill-oauth-fields">
-							<?php esc_html_e( 'Fill OAuth fields', 'wp-tube-to-blog-ai' ); ?>
+							<?php esc_html_e( 'Fill OAuth fields', 'creatorstack-ai' ); ?>
 						</button>
 					</p>
 					<p id="wttba-oauth-client-json-result" class="description" aria-live="polite"></p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Save, then connect YouTube', 'wp-tube-to-blog-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Click Save Changes so WordPress stores the Client ID and Client Secret. After the page reloads, use Connect YouTube to finish the Google account consent flow.', 'wp-tube-to-blog-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Save, then connect YouTube', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Click Save Changes so WordPress stores the Client ID and Client Secret. After the page reloads, use Connect YouTube to finish the Google account consent flow.', 'creatorstack-ai' ); ?></p>
 				</li>
 			</ol>
 		</div>
@@ -835,7 +1055,7 @@ class Settings {
 	 */
 	private function render_auth_setup_item( string $step, string $label, bool $is_complete, string $description ): void {
 		$status_key   = $is_complete ? 'complete' : 'missing';
-		$status_label = $is_complete ? __( 'Done', 'wp-tube-to-blog-ai' ) : __( 'Pending', 'wp-tube-to-blog-ai' );
+		$status_label = $is_complete ? __( 'Done', 'creatorstack-ai' ) : __( 'Pending', 'creatorstack-ai' );
 		$icon_class   = $is_complete ? 'dashicons dashicons-yes-alt' : 'dashicons dashicons-no-alt';
 		?>
 		<li
@@ -859,7 +1079,7 @@ class Settings {
 	 * Content section description.
 	 */
 	public function render_content_section(): void {
-		echo '<p>' . esc_html__( 'Configure the default language and style for generated content. You can override these settings for individual video or audio generations.', 'wp-tube-to-blog-ai' ) . '</p>';
+		echo '<p>' . esc_html__( 'Configure the default language and style for generated content. You can override these settings for individual video or audio generations.', 'creatorstack-ai' ) . '</p>';
 	}
 
 	/**
@@ -877,7 +1097,7 @@ class Settings {
 			<?php endforeach; ?>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'Controls the target article length and AI token budget for generated posts.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Controls the target article length and AI token budget for generated posts.', 'creatorstack-ai' ); ?>
 		</p>
 		<ul class="description wttba-settings-option-help">
 			<?php foreach ( $options as $option ) : ?>
@@ -894,39 +1114,45 @@ class Settings {
 		$config_url = AI_Provider_Status::get_configuration_url();
 		$localhost  = self::get_localhost_status();
 		$message    = AI_Provider_Status::is_text_generation_supported()
-			? __( 'A text-generation AI provider is available. Provider credentials are managed by WordPress Connectors, not by this plugin.', 'wp-tube-to-blog-ai' )
+			? __( 'A text-generation AI provider is available. Provider credentials are managed by WordPress Connectors, not by this plugin.', 'creatorstack-ai' )
 			: AI_Provider_Status::get_unavailable_message();
+		$audio_to_post_message = self::is_audio_to_post_enabled()
+			? ( AI_Provider_Status::is_audio_input_generation_supported() ? __( 'Audio-to-post generation is available.', 'creatorstack-ai' ) : __( 'Audio-to-post generation requires an AI provider with audio input support.', 'creatorstack-ai' ) )
+			: __( 'Audio-to-post generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
+		$post_to_audio_message = self::is_post_to_audio_enabled()
+			? ( AI_Provider_Status::is_text_to_speech_supported() ? __( 'Post-to-audio generation is available.', 'creatorstack-ai' ) : __( 'Post-to-audio generation requires an AI provider with text-to-speech support.', 'creatorstack-ai' ) )
+			: __( 'Post-to-audio generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
 		?>
 		<p><?php echo esc_html( $message ); ?></p>
 		<ul>
-			<li><?php echo esc_html( AI_Provider_Status::is_audio_input_generation_supported() ? __( 'Audio-to-post generation is available.', 'wp-tube-to-blog-ai' ) : __( 'Audio-to-post generation requires an AI provider with audio input support.', 'wp-tube-to-blog-ai' ) ); ?></li>
-			<li><?php echo esc_html( AI_Provider_Status::is_text_to_speech_supported() ? __( 'Post-to-audio generation is available.', 'wp-tube-to-blog-ai' ) : __( 'Post-to-audio generation requires an AI provider with text-to-speech support.', 'wp-tube-to-blog-ai' ) ); ?></li>
+			<li><?php echo esc_html( $audio_to_post_message ); ?></li>
+			<li><?php echo esc_html( $post_to_audio_message ); ?></li>
 		</ul>
 		<p>
 			<a href="<?php echo esc_url( $config_url ); ?>" class="button button-secondary">
-				<?php esc_html_e( 'Manage AI Providers', 'wp-tube-to-blog-ai' ); ?>
+				<?php esc_html_e( 'Manage AI Providers', 'creatorstack-ai' ); ?>
 			</a>
 		</p>
 		<div id="wttba-ai-test" class="wttba-ai-test">
-			<h3><?php esc_html_e( 'Connection Test', 'wp-tube-to-blog-ai' ); ?></h3>
-			<p><?php esc_html_e( 'Run a quick text generation to confirm the configured AI provider can respond from this WordPress site.', 'wp-tube-to-blog-ai' ); ?></p>
+			<h3><?php esc_html_e( 'Connection Test', 'creatorstack-ai' ); ?></h3>
+			<p><?php esc_html_e( 'Run a quick text generation to confirm the configured AI provider can respond from this WordPress site.', 'creatorstack-ai' ); ?></p>
 			<p>
 				<button type="button" class="button button-secondary" id="wttba-ai-test-button">
-					<?php esc_html_e( 'Test AI Connection', 'wp-tube-to-blog-ai' ); ?>
+					<?php esc_html_e( 'Test AI Connection', 'creatorstack-ai' ); ?>
 				</button>
 				<span class="spinner" id="wttba-ai-test-spinner"></span>
 			</p>
 			<div id="wttba-ai-test-result" aria-live="polite"></div>
 			<div id="wttba-ai-test-sample" class="notice notice-info inline" hidden></div>
 		</div>
-		<h3><?php esc_html_e( 'Localhost Compatibility', 'wp-tube-to-blog-ai' ); ?></h3>
+		<h3><?php esc_html_e( 'Localhost Compatibility', 'creatorstack-ai' ); ?></h3>
 		<p><?php echo esc_html( $localhost['message'] ); ?></p>
 		<p class="description">
 			<?php
 			printf(
 				/* translators: %s: current site host. */
-				esc_html__( 'Current detected host: %s', 'wp-tube-to-blog-ai' ),
-				esc_html( '' !== $localhost['host'] ? $localhost['host'] : __( 'unknown', 'wp-tube-to-blog-ai' ) )
+				esc_html__( 'Current detected host: %s', 'creatorstack-ai' ),
+				esc_html( '' !== $localhost['host'] ? $localhost['host'] : __( 'unknown', 'creatorstack-ai' ) )
 			);
 			?>
 		</p>
@@ -948,7 +1174,7 @@ class Settings {
 			<?php endforeach; ?>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'This is a preference passed to the WordPress AI Client. If the selected model is unavailable, the AI Client can use another compatible configured model.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'This is a preference passed to the WordPress AI Client. If the selected model is unavailable, the AI Client can use another compatible configured model.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -960,20 +1186,20 @@ class Settings {
 		$entries = Generation_Logger::get_recent_entries( 10 );
 
 		if ( empty( $entries ) ) {
-			echo '<p>' . esc_html__( 'No AI generations have been recorded yet.', 'wp-tube-to-blog-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'No AI generations have been recorded yet.', 'creatorstack-ai' ) . '</p>';
 			return;
 		}
 		?>
-		<p><?php esc_html_e( 'Recent AI generations are recorded to help administrators review feature usage and token consumption.', 'wp-tube-to-blog-ai' ); ?></p>
+		<p><?php esc_html_e( 'Recent AI generations are recorded to help administrators review feature usage and token consumption.', 'creatorstack-ai' ); ?></p>
 		<table class="widefat striped">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Date', 'wp-tube-to-blog-ai' ); ?></th>
-					<th><?php esc_html_e( 'Source', 'wp-tube-to-blog-ai' ); ?></th>
-					<th><?php esc_html_e( 'Status', 'wp-tube-to-blog-ai' ); ?></th>
-					<th><?php esc_html_e( 'Provider', 'wp-tube-to-blog-ai' ); ?></th>
-					<th><?php esc_html_e( 'Model', 'wp-tube-to-blog-ai' ); ?></th>
-					<th><?php esc_html_e( 'Tokens', 'wp-tube-to-blog-ai' ); ?></th>
+					<th><?php esc_html_e( 'Date', 'creatorstack-ai' ); ?></th>
+					<th><?php esc_html_e( 'Source', 'creatorstack-ai' ); ?></th>
+					<th><?php esc_html_e( 'Status', 'creatorstack-ai' ); ?></th>
+					<th><?php esc_html_e( 'Provider', 'creatorstack-ai' ); ?></th>
+					<th><?php esc_html_e( 'Model', 'creatorstack-ai' ); ?></th>
+					<th><?php esc_html_e( 'Tokens', 'creatorstack-ai' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1007,7 +1233,7 @@ class Settings {
 			autocomplete="off"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Your YouTube Data API v3 key. Get one from the Google Cloud Console.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Your YouTube Data API v3 key. Get one from the Google Cloud Console.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -1026,7 +1252,7 @@ class Settings {
 			class="regular-text"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Your YouTube Channel ID (e.g., UCxxxxxxxxxxxxxxxx).', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Your YouTube Channel ID (e.g., UCxxxxxxxxxxxxxxxx).', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -1046,7 +1272,7 @@ class Settings {
 			autocomplete="off"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Create a Web application OAuth client in Google Cloud and paste its client ID here.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Create a Web application OAuth client in Google Cloud and paste its client ID here.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -1066,7 +1292,7 @@ class Settings {
 			autocomplete="off"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Store this only on trusted WordPress environments. Google shows the client secret only when the OAuth client is created.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Store this only on trusted WordPress environments. Google shows the client secret only when the OAuth client is created.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -1085,19 +1311,19 @@ class Settings {
 		);
 		$is_connected   = YouTube_OAuth::is_connected();
 		$has_credentials = YouTube_OAuth::has_credentials();
-		$status_message  = __( 'OAuth credentials have not been saved yet.', 'wp-tube-to-blog-ai' );
+		$status_message  = __( 'OAuth credentials have not been saved yet.', 'creatorstack-ai' );
 
 		if ( $is_connected && $has_credentials ) {
-			$status_message = __( 'YouTube is connected.', 'wp-tube-to-blog-ai' );
+			$status_message = __( 'YouTube is connected.', 'creatorstack-ai' );
 		} elseif ( $is_connected ) {
-			$status_message = __( 'YouTube is connected, but OAuth client credentials are missing. Save them before reconnecting.', 'wp-tube-to-blog-ai' );
+			$status_message = __( 'YouTube is connected, but OAuth client credentials are missing. Save them before reconnecting.', 'creatorstack-ai' );
 		} elseif ( $has_credentials ) {
-			$status_message = __( 'OAuth credentials are saved. You can connect YouTube.', 'wp-tube-to-blog-ai' );
+			$status_message = __( 'OAuth credentials are saved. You can connect YouTube.', 'creatorstack-ai' );
 		}
 		?>
 		<p>
 			<label for="wttba_youtube_oauth_redirect_uri">
-				<?php esc_html_e( 'Authorized redirect URI', 'wp-tube-to-blog-ai' ); ?>
+				<?php esc_html_e( 'Authorized redirect URI', 'creatorstack-ai' ); ?>
 			</label>
 		</p>
 		<input
@@ -1108,7 +1334,7 @@ class Settings {
 			readonly
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Add this exact URI to the OAuth client in Google Cloud before connecting.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Add this exact URI to the OAuth client in Google Cloud before connecting.', 'creatorstack-ai' ); ?>
 		</p>
 		<p>
 			<strong><?php echo esc_html( $status_message ); ?></strong>
@@ -1116,21 +1342,21 @@ class Settings {
 		<p>
 			<?php if ( $has_credentials ) : ?>
 				<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-secondary">
-					<?php echo esc_html( $is_connected ? __( 'Reconnect YouTube', 'wp-tube-to-blog-ai' ) : __( 'Connect YouTube', 'wp-tube-to-blog-ai' ) ); ?>
+					<?php echo esc_html( $is_connected ? __( 'Reconnect YouTube', 'creatorstack-ai' ) : __( 'Connect YouTube', 'creatorstack-ai' ) ); ?>
 				</a>
 			<?php else : ?>
 				<button type="button" class="button button-secondary" disabled>
-					<?php esc_html_e( 'Save OAuth credentials first', 'wp-tube-to-blog-ai' ); ?>
+					<?php esc_html_e( 'Save OAuth credentials first', 'creatorstack-ai' ); ?>
 				</button>
 			<?php endif; ?>
 			<?php if ( $is_connected ) : ?>
 				<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button button-link-delete">
-					<?php esc_html_e( 'Disconnect YouTube', 'wp-tube-to-blog-ai' ); ?>
+					<?php esc_html_e( 'Disconnect YouTube', 'creatorstack-ai' ); ?>
 				</a>
 			<?php endif; ?>
 		</p>
 		<p class="description">
-			<?php echo esc_html( $has_credentials ? __( 'The connected account must be able to edit the videos whose captions you want to use.', 'wp-tube-to-blog-ai' ) : __( 'Enter the OAuth Client ID and Client Secret, save changes, then return here to connect YouTube.', 'wp-tube-to-blog-ai' ) ); ?>
+			<?php echo esc_html( $has_credentials ? __( 'The connected account must be able to edit the videos whose captions you want to use.', 'creatorstack-ai' ) : __( 'Enter the OAuth Client ID and Client Secret, save changes, then return here to connect YouTube.', 'creatorstack-ai' ) ); ?>
 		</p>
 		<?php
 	}
@@ -1148,7 +1374,7 @@ class Settings {
 			class="large-text"
 		><?php echo esc_textarea( $value ); ?></textarea>
 		<p class="description">
-			<?php esc_html_e( 'Describe the writing style for generated posts (e.g., tone, structure, audience). This will be used as default guidance for the AI. Leave empty for a generic professional tone.', 'wp-tube-to-blog-ai' ); ?>
+			<?php esc_html_e( 'Describe the writing style for generated posts (e.g., tone, structure, audience). This will be used as default guidance for the AI. Leave empty for a generic professional tone.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -1195,26 +1421,26 @@ class Settings {
 		$status = sanitize_key( wp_unslash( $_GET['wttba_youtube_oauth'] ) );
 
 		$messages = array(
-			'connected'           => array( 'success', __( 'YouTube OAuth is connected.', 'wp-tube-to-blog-ai' ) ),
-			'disconnected'        => array( 'success', __( 'YouTube OAuth has been disconnected.', 'wp-tube-to-blog-ai' ) ),
-			'missing_credentials' => array( 'error', __( 'Save the OAuth client ID and client secret before connecting YouTube.', 'wp-tube-to-blog-ai' ) ),
-			'invalid_state'       => array( 'error', __( 'The OAuth callback could not be verified. Please try connecting again.', 'wp-tube-to-blog-ai' ) ),
-			'missing_code'        => array( 'error', __( 'Google did not return an authorization code. Please try connecting again.', 'wp-tube-to-blog-ai' ) ),
-			'wttba_youtube_oauth_failed' => array( 'error', __( 'The OAuth token exchange failed. Check the OAuth client configuration and try reconnecting.', 'wp-tube-to-blog-ai' ) ),
-			'access_denied'       => array( 'error', __( 'YouTube OAuth access was denied.', 'wp-tube-to-blog-ai' ) ),
+			'connected'           => array( 'success', __( 'YouTube OAuth is connected.', 'creatorstack-ai' ) ),
+			'disconnected'        => array( 'success', __( 'YouTube OAuth has been disconnected.', 'creatorstack-ai' ) ),
+			'missing_credentials' => array( 'error', __( 'Save the OAuth client ID and client secret before connecting YouTube.', 'creatorstack-ai' ) ),
+			'invalid_state'       => array( 'error', __( 'The OAuth callback could not be verified. Please try connecting again.', 'creatorstack-ai' ) ),
+			'missing_code'        => array( 'error', __( 'Google did not return an authorization code. Please try connecting again.', 'creatorstack-ai' ) ),
+			'wttba_youtube_oauth_failed' => array( 'error', __( 'The OAuth token exchange failed. Check the OAuth client configuration and try reconnecting.', 'creatorstack-ai' ) ),
+			'access_denied'       => array( 'error', __( 'YouTube OAuth access was denied.', 'creatorstack-ai' ) ),
 			'redirect_uri_mismatch' => array(
 				'error',
 				sprintf(
 					/* translators: %s: OAuth redirect URI. */
-					__( 'Google rejected the redirect URI. Add this exact Authorized redirect URI to the OAuth client in Google Cloud: %s', 'wp-tube-to-blog-ai' ),
+					__( 'Google rejected the redirect URI. Add this exact Authorized redirect URI to the OAuth client in Google Cloud: %s', 'creatorstack-ai' ),
 					YouTube_OAuth::get_redirect_uri()
 				),
 			),
-			'invalid_client'      => array( 'error', __( 'Google rejected the OAuth client. Check the saved Client ID and Client Secret, then reconnect YouTube.', 'wp-tube-to-blog-ai' ) ),
-			'unauthorized_client' => array( 'error', __( 'Google rejected this OAuth client for the requested YouTube scope. Check the OAuth consent screen and client type in Google Cloud.', 'wp-tube-to-blog-ai' ) ),
+			'invalid_client'      => array( 'error', __( 'Google rejected the OAuth client. Check the saved Client ID and Client Secret, then reconnect YouTube.', 'creatorstack-ai' ) ),
+			'unauthorized_client' => array( 'error', __( 'Google rejected this OAuth client for the requested YouTube scope. Check the OAuth consent screen and client type in Google Cloud.', 'creatorstack-ai' ) ),
 		);
 
-		$notice = $messages[ $status ] ?? array( 'error', __( 'YouTube OAuth could not be completed. Please try again.', 'wp-tube-to-blog-ai' ) );
+		$notice = $messages[ $status ] ?? array( 'error', __( 'YouTube OAuth could not be completed. Please try again.', 'creatorstack-ai' ) );
 		?>
 		<div class="notice notice-<?php echo esc_attr( $notice[0] ); ?> is-dismissible">
 			<p><?php echo esc_html( $notice[1] ); ?></p>
