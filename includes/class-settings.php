@@ -622,17 +622,25 @@ class Settings {
 	 */
 	public function render_settings_page(): void {
 		?>
-		<div class="wrap">
-			<h1><?php esc_html_e( 'AI Content Suite Settings', 'wp-tube-to-blog-ai' ); ?></h1>
-			<?php $this->render_oauth_status_notice(); ?>
-			<?php Admin_Navigation::render( 'settings' ); ?>
-			<form method="post" action="options.php" class="wttba-settings-form">
-				<?php
-				settings_fields( 'wttba_settings' );
-				do_settings_sections( 'wttba-settings' );
-				submit_button();
-				?>
-			</form>
+		<div class="wrap wttba-settings-page">
+			<div class="wttba-settings-shell">
+				<header class="wttba-settings-hero">
+					<div class="wttba-settings-hero__content">
+						<p class="wttba-settings-eyebrow"><?php esc_html_e( 'WP Tube-to-Blog AI', 'wp-tube-to-blog-ai' ); ?></p>
+						<h1><?php esc_html_e( 'AI Content Suite Settings', 'wp-tube-to-blog-ai' ); ?></h1>
+						<p class="wttba-settings-hero__description"><?php esc_html_e( 'Connect YouTube, tune generated posts, and verify your AI provider from one focused workspace.', 'wp-tube-to-blog-ai' ); ?></p>
+					</div>
+				</header>
+				<?php $this->render_oauth_status_notice(); ?>
+				<?php Admin_Navigation::render( 'settings' ); ?>
+				<form method="post" action="options.php" class="wttba-settings-form">
+					<?php
+					settings_fields( 'wttba_settings' );
+					do_settings_sections( 'wttba-settings' );
+					submit_button();
+					?>
+				</form>
+			</div>
 		</div>
 		<?php
 	}
