@@ -69,6 +69,18 @@ The **WP Tube-to-Blog AI** plugin bridges the gap between video content creation
 4.  (Optional) Select a target language in the appearing modal.
 5.  Once processing is complete, a success message will appear with a link to edit your new **Draft Post**.
 
+## User Documentation
+
+User guides are available in:
+
+*   [English](docs/user-guide-en.md)
+*   [Portuguese](docs/user-guide-pt.md)
+*   [Spanish](docs/user-guide-es.md)
+
+Implementation article:
+
+*   [Implementing CreatorStack AI With WordPress AI Client And Connectors](docs/implementing-creatorstack-ai-with-ai-connectors.md)
+
 ## 🔒 Security
 
 *   **Backend Prompting:** All AI prompts and system instructions are handled securely on the backend (PHP).
