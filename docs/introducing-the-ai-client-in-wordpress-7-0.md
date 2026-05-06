@@ -153,7 +153,8 @@ $text_result = wp_ai_client_prompt( 'Summarize the history of the printing press
     ->using_temperature( 0.1 )
     ->using_model_preference(
         'claude-sonnet-4-6',
-        'gemini-3.1-pro-preview',
+        'gemini-3-flash-preview',
+        'gemini-3-pro-preview',
         'gpt-5.4'
     )
     ->generate_text_result();

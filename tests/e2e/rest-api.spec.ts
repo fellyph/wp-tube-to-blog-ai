@@ -109,6 +109,21 @@ test( '/preview rejects missing video_id with a 400', async () => {
 	expect( res.status ).toBe( 400 );
 } );
 
+test( '/preview validates short manual transcripts before generation', async () => {
+	const res = await directRestRequest( 'POST', '/wttba/v1/preview', {
+		video_id: 'abc123xyz',
+		language: 'en',
+		manual_transcript: 'Too short.',
+	} );
+
+	expect( res.status ).toBe( 400 );
+	expect( res.body ).toHaveProperty(
+		'code',
+		'wttba_manual_transcript_too_short'
+	);
+	expect( res.body ).toHaveProperty( 'data.error_category', 'validation' );
+} );
+
 test( 'authenticated /capabilities returns AI feature flags and audio limits', async () => {
 	const res = await directRestRequest( 'GET', '/wttba/v1/capabilities' );
 

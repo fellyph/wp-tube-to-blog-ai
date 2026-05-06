@@ -17,22 +17,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Post_Generator {
 
 	/**
+	 * Minimum accepted manual transcript length in characters.
+	 */
+	private const MIN_MANUAL_TRANSCRIPT_LENGTH = 50;
+
+	/**
 	 * Generate a preview of the blog post content without creating a WordPress draft.
 	 *
-	 * @param string $video_id The YouTube video ID.
-	 * @param string $language The target language code.
-	 * @param string $persona  Optional writing style persona.
+	 * @param string $video_id          The YouTube video ID.
+	 * @param string $language          The target language code.
+	 * @param string $persona           Optional writing style persona.
+	 * @param string $manual_transcript Optional manually supplied transcript.
 	 * @return array{title: string, content: string, video_id: string, ai_metadata: array<string, mixed>}|\WP_Error
 	 */
-	public function preview( ?string $video_id, ?string $language, ?string $persona = '' ): array|\WP_Error {
-		$video_id = (string) $video_id;
-		$language = (string) $language;
-		$persona  = (string) $persona;
+	public function preview( ?string $video_id, ?string $language, ?string $persona = '', ?string $manual_transcript = '' ): array|\WP_Error {
+		$video_id          = (string) $video_id;
+		$language          = (string) $language;
+		$persona           = (string) $persona;
+		$manual_transcript = trim( (string) $manual_transcript );
 
 		if ( '' === $video_id || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $video_id ) ) {
 			return new \WP_Error(
 				'wttba_invalid_video_id',
 				__( 'A valid YouTube video ID is required.', 'wp-tube-to-blog-ai' )
+			);
+		}
+
+		if ( '' !== $manual_transcript && mb_strlen( $manual_transcript ) < self::MIN_MANUAL_TRANSCRIPT_LENGTH ) {
+			return new \WP_Error(
+				'wttba_manual_transcript_too_short',
+				__( 'Paste a manual transcript with at least 50 characters, or leave the manual transcript field empty to fetch captions automatically.', 'wp-tube-to-blog-ai' )
 			);
 		}
 
@@ -66,9 +80,15 @@ class Post_Generator {
 				return $video;
 			}
 
-			// Step 2: Fetch transcript.
-			$fetcher    = new Transcript_Fetcher();
-			$transcript = $fetcher->fetch( $video_id, $language );
+			// Step 2: Use the provided transcript or fetch captions automatically.
+			if ( '' !== $manual_transcript ) {
+				$transcript  = $manual_transcript;
+				$source_type = 'manual_transcript';
+			} else {
+				$fetcher     = new Transcript_Fetcher();
+				$transcript  = $fetcher->fetch( $video_id, $language );
+				$source_type = 'youtube_video';
+			}
 
 			if ( is_wp_error( $transcript ) ) {
 				return $transcript;
@@ -76,10 +96,10 @@ class Post_Generator {
 
 			// Step 3: Generate content via AI.
 			$generator = new Content_Generator();
-			$ai_result = $generator->generate_from_text( $transcript, $language, $video['title'], $persona, 'youtube_video' );
+			$ai_result = $generator->generate_from_text( $transcript, $language, $video['title'], $persona, $source_type );
 
 			if ( is_wp_error( $ai_result ) ) {
-				Generation_Logger::record( null, Generation_Logger::metadata_from_error( 'youtube_video', $ai_result ) );
+				Generation_Logger::record( null, Generation_Logger::metadata_from_error( $source_type, $ai_result ) );
 				return $ai_result;
 			}
 

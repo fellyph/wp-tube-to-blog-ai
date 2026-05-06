@@ -42,6 +42,36 @@ class Settings {
 	);
 
 	/**
+	 * Preferred model option values.
+	 *
+	 * @var array<int, string>
+	 */
+	public const AI_MODEL_IDS = array(
+		'',
+		'claude-sonnet-4-6',
+		'gpt-5.4',
+		'gemini-3-flash-preview',
+		'gemini-3-pro-preview',
+		'gemini-3.1-pro-preview',
+		'gemini-3.1-flash-lite-preview',
+		'gemma-4-31b-it',
+		'gemini-2.5-flash',
+		'gpt-4o-mini',
+	);
+
+	/**
+	 * Default post length option.
+	 */
+	public const DEFAULT_POST_LENGTH = 'medium';
+
+	/**
+	 * Post length option values.
+	 *
+	 * @var array<int, string>
+	 */
+	public const POST_LENGTH_IDS = array( 'short', 'medium', 'long' );
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -73,7 +103,7 @@ class Settings {
 			'wttba_youtube_api_key',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => array( $this, 'sanitize_youtube_api_key' ),
 				'default'           => '',
 			)
 		);
@@ -84,7 +114,7 @@ class Settings {
 			'wttba_youtube_channel_id',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => array( $this, 'sanitize_youtube_channel_id' ),
 				'default'           => '',
 			)
 		);
@@ -95,7 +125,7 @@ class Settings {
 			'wttba_youtube_oauth_client_id',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => array( $this, 'sanitize_oauth_client_id' ),
 				'default'           => '',
 			)
 		);
@@ -106,7 +136,7 @@ class Settings {
 			'wttba_youtube_oauth_client_secret',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => array( $this, 'sanitize_oauth_client_secret' ),
 				'default'           => '',
 			)
 		);
@@ -133,12 +163,35 @@ class Settings {
 			)
 		);
 
+		// Default post length.
+		register_setting(
+			'wttba_settings',
+			'wttba_post_length',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_post_length' ),
+				'default'           => self::DEFAULT_POST_LENGTH,
+			)
+		);
+
+		// Preferred AI model.
+		register_setting(
+			'wttba_settings',
+			'wttba_ai_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_ai_model' ),
+				'default'           => '',
+			)
+		);
+
 		// YouTube section.
 		add_settings_section(
 			'wttba_youtube_section',
 			__( 'YouTube Integration', 'wp-tube-to-blog-ai' ),
 			array( $this, 'render_youtube_section' ),
-			'wttba-settings'
+			'wttba-settings',
+			$this->get_settings_section_args( 'youtube' )
 		);
 
 		add_settings_field(
@@ -186,13 +239,22 @@ class Settings {
 			'wttba_content_section',
 			__( 'Content Settings', 'wp-tube-to-blog-ai' ),
 			array( $this, 'render_content_section' ),
-			'wttba-settings'
+			'wttba-settings',
+			$this->get_settings_section_args( 'content' )
 		);
 
 		add_settings_field(
 			'wttba_default_language',
 			__( 'Default Output Language', 'wp-tube-to-blog-ai' ),
 			array( $this, 'render_language_field' ),
+			'wttba-settings',
+			'wttba_content_section'
+		);
+
+		add_settings_field(
+			'wttba_post_length',
+			__( 'Post Length', 'wp-tube-to-blog-ai' ),
+			array( $this, 'render_post_length_field' ),
 			'wttba-settings',
 			'wttba_content_section'
 		);
@@ -210,14 +272,38 @@ class Settings {
 			'wttba_ai_section',
 			__( 'AI Provider', 'wp-tube-to-blog-ai' ),
 			array( $this, 'render_ai_section' ),
-			'wttba-settings'
+			'wttba-settings',
+			$this->get_settings_section_args( 'ai-provider' )
+		);
+
+		add_settings_field(
+			'wttba_ai_model',
+			__( 'Preferred AI Model', 'wp-tube-to-blog-ai' ),
+			array( $this, 'render_ai_model_field' ),
+			'wttba-settings',
+			'wttba_ai_section'
 		);
 
 		add_settings_section(
 			'wttba_usage_section',
 			__( 'AI Usage', 'wp-tube-to-blog-ai' ),
 			array( $this, 'render_usage_section' ),
-			'wttba-settings'
+			'wttba-settings',
+			$this->get_settings_section_args( 'usage' )
+		);
+	}
+
+	/**
+	 * Build section wrapper arguments for Settings API output.
+	 *
+	 * @param string $modifier Section modifier slug.
+	 * @return array{before_section: string, after_section: string, section_class: string}
+	 */
+	private function get_settings_section_args( string $modifier ): array {
+		return array(
+			'before_section' => '<div class="%s">',
+			'after_section'  => '</div>',
+			'section_class'  => 'wttba-settings-section wttba-settings-section--' . sanitize_html_class( $modifier ),
 		);
 	}
 
@@ -232,6 +318,223 @@ class Settings {
 			return $value;
 		}
 		return 'en';
+	}
+
+	/**
+	 * Sanitize the preferred AI model option.
+	 *
+	 * @param string $value Submitted model ID.
+	 * @return string
+	 */
+	public function sanitize_ai_model( string $value ): string {
+		$value = sanitize_text_field( trim( $value ) );
+
+		return in_array( $value, self::AI_MODEL_IDS, true ) ? $value : '';
+	}
+
+	/**
+	 * Sanitize the default post length option.
+	 *
+	 * @param string $value Submitted post length.
+	 * @return string
+	 */
+	public function sanitize_post_length( string $value ): string {
+		$value = sanitize_key( $value );
+
+		return in_array( $value, self::POST_LENGTH_IDS, true ) ? $value : self::DEFAULT_POST_LENGTH;
+	}
+
+	/**
+	 * Get AI model choices for settings UI.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function get_ai_model_options(): array {
+		return array(
+			''                                => __( 'Automatic (recommended)', 'wp-tube-to-blog-ai' ),
+			'claude-sonnet-4-6'               => 'Claude Sonnet 4.6',
+			'gpt-5.4'                         => 'GPT-5.4',
+			'gemini-3-flash-preview'          => 'Gemini 3 Flash Preview',
+			'gemini-3-pro-preview'            => 'Gemini 3 Pro Preview',
+			'gemini-3.1-pro-preview'          => 'Gemini 3.1 Pro Preview',
+			'gemini-3.1-flash-lite-preview'   => 'Gemini 3.1 Flash Lite Preview',
+			'gemma-4-31b-it'                  => 'Gemma 4 31B IT',
+			'gemini-2.5-flash'                => 'Gemini 2.5 Flash',
+			'gpt-4o-mini'                     => 'GPT-4o mini',
+		);
+	}
+
+	/**
+	 * Get post length choices for settings UI.
+	 *
+	 * @return array<string, array{label: string, description: string}>
+	 */
+	public static function get_post_length_options(): array {
+		return array(
+			'short'  => array(
+				'label'       => __( 'Short', 'wp-tube-to-blog-ai' ),
+				'description' => __( 'About 600 to 900 words.', 'wp-tube-to-blog-ai' ),
+			),
+			'medium' => array(
+				'label'       => __( 'Medium', 'wp-tube-to-blog-ai' ),
+				'description' => __( 'About 1,000 to 1,500 words.', 'wp-tube-to-blog-ai' ),
+			),
+			'long'   => array(
+				'label'       => __( 'Long', 'wp-tube-to-blog-ai' ),
+				'description' => __( 'About 1,800 to 2,500 words.', 'wp-tube-to-blog-ai' ),
+			),
+		);
+	}
+
+	/**
+	 * Get generation settings for the selected post length.
+	 *
+	 * @param string|null $length Optional length key.
+	 * @return array{max_tokens: int, instruction: string}
+	 */
+	public static function get_post_length_generation_config( ?string $length = null ): array {
+		$length = null === $length ? (string) get_option( 'wttba_post_length', self::DEFAULT_POST_LENGTH ) : $length;
+		$length = in_array( $length, self::POST_LENGTH_IDS, true ) ? $length : self::DEFAULT_POST_LENGTH;
+
+		if ( 'short' === $length ) {
+			return array(
+				'max_tokens'  => 3500,
+				'instruction' => __( 'Aim for a concise post of about 600 to 900 words. Focus on the core takeaways and avoid extended background.', 'wp-tube-to-blog-ai' ),
+			);
+		}
+
+		if ( 'long' === $length ) {
+			return array(
+				'max_tokens'  => 8000,
+				'instruction' => __( 'Aim for a detailed post of about 1,800 to 2,500 words. Expand important sections with context, examples, and practical takeaways.', 'wp-tube-to-blog-ai' ),
+			);
+		}
+
+		return array(
+			'max_tokens'  => 5500,
+			'instruction' => __( 'Aim for a balanced post of about 1,000 to 1,500 words. Cover the main ideas with enough context and examples.', 'wp-tube-to-blog-ai' ),
+		);
+	}
+
+	/**
+	 * Sanitize and validate the YouTube API key option.
+	 *
+	 * @param string $value Submitted API key.
+	 * @return string
+	 */
+	public function sanitize_youtube_api_key( string $value ): string {
+		$value = sanitize_text_field( trim( $value ) );
+
+		if ( '' === $value || self::is_valid_youtube_api_key( $value ) ) {
+			return $value;
+		}
+
+		add_settings_error(
+			'wttba_youtube_api_key',
+			'wttba_youtube_api_key_invalid',
+			__( 'Enter a valid YouTube Data API key from Google Cloud.', 'wp-tube-to-blog-ai' )
+		);
+
+		return $this->get_previous_valid_option( 'wttba_youtube_api_key', array( self::class, 'is_valid_youtube_api_key' ) );
+	}
+
+	/**
+	 * Sanitize and validate the YouTube Channel ID option.
+	 *
+	 * @param string $value Submitted Channel ID.
+	 * @return string
+	 */
+	public function sanitize_youtube_channel_id( string $value ): string {
+		$value = sanitize_text_field( trim( $value ) );
+
+		if ( '' === $value || self::is_valid_youtube_channel_id( $value ) ) {
+			return $value;
+		}
+
+		add_settings_error(
+			'wttba_youtube_channel_id',
+			'wttba_youtube_channel_id_invalid',
+			__( 'Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters.', 'wp-tube-to-blog-ai' )
+		);
+
+		return $this->get_previous_valid_option( 'wttba_youtube_channel_id', array( self::class, 'is_valid_youtube_channel_id' ) );
+	}
+
+	/**
+	 * Sanitize and validate the OAuth client ID option.
+	 *
+	 * @param string $value Submitted OAuth client ID.
+	 * @return string
+	 */
+	public function sanitize_oauth_client_id( string $value ): string {
+		$value = sanitize_text_field( trim( $value ) );
+
+		if ( '' === $value || YouTube_OAuth::is_valid_client_id( $value ) ) {
+			return $value;
+		}
+
+		add_settings_error(
+			'wttba_youtube_oauth_client_id',
+			'wttba_youtube_oauth_client_id_invalid',
+			__( 'Enter a valid Google OAuth Web application Client ID ending in .apps.googleusercontent.com.', 'wp-tube-to-blog-ai' )
+		);
+
+		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_id', array( YouTube_OAuth::class, 'is_valid_client_id' ) );
+	}
+
+	/**
+	 * Sanitize and validate the OAuth client secret option.
+	 *
+	 * @param string $value Submitted OAuth client secret.
+	 * @return string
+	 */
+	public function sanitize_oauth_client_secret( string $value ): string {
+		$value = sanitize_text_field( trim( $value ) );
+
+		if ( '' === $value || YouTube_OAuth::is_valid_client_secret( $value ) ) {
+			return $value;
+		}
+
+		add_settings_error(
+			'wttba_youtube_oauth_client_secret',
+			'wttba_youtube_oauth_client_secret_invalid',
+			__( 'Enter a valid Google OAuth Client Secret from the Web application client.', 'wp-tube-to-blog-ai' )
+		);
+
+		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_secret', array( YouTube_OAuth::class, 'is_valid_client_secret' ) );
+	}
+
+	/**
+	 * Get the previously saved option only when it is still valid.
+	 *
+	 * @param string   $option    Option name.
+	 * @param callable $validator Validator callback.
+	 * @return string
+	 */
+	private function get_previous_valid_option( string $option, callable $validator ): string {
+		$previous = trim( (string) get_option( $option, '' ) );
+
+		return $validator( $previous ) ? $previous : '';
+	}
+
+	/**
+	 * Whether a value looks like a YouTube Data API key.
+	 *
+	 * @param string $api_key API key.
+	 * @return bool
+	 */
+	private static function is_valid_youtube_api_key( string $api_key ): bool {
+		return 1 === preg_match( '/^AIza[0-9A-Za-z_-]{35}$/', trim( $api_key ) );
+	}
+
+	/**
+	 * Whether a value looks like a YouTube Channel ID.
+	 *
+	 * @param string $channel_id Channel ID.
+	 * @return bool
+	 */
+	private static function is_valid_youtube_channel_id( string $channel_id ): bool {
+		return 1 === preg_match( '/^UC[0-9A-Za-z_-]{22}$/', trim( $channel_id ) );
 	}
 
 	/**
@@ -309,6 +612,7 @@ class Settings {
 				'configurationUrl'  => AI_Provider_Status::get_configuration_url(),
 				'localhost'         => self::get_localhost_status(),
 				'configurationLabel' => __( 'Configure AI Provider', 'wp-tube-to-blog-ai' ),
+				'redirectUri'       => YouTube_OAuth::get_redirect_uri(),
 			)
 		);
 	}
@@ -322,7 +626,7 @@ class Settings {
 			<h1><?php esc_html_e( 'AI Content Suite Settings', 'wp-tube-to-blog-ai' ); ?></h1>
 			<?php $this->render_oauth_status_notice(); ?>
 			<?php Admin_Navigation::render( 'settings' ); ?>
-			<form method="post" action="options.php">
+			<form method="post" action="options.php" class="wttba-settings-form">
 				<?php
 				settings_fields( 'wttba_settings' );
 				do_settings_sections( 'wttba-settings' );
@@ -338,11 +642,18 @@ class Settings {
 	 */
 	public function render_youtube_section(): void {
 		$status = $this->get_youtube_auth_setup_status();
+
+		if ( $this->is_youtube_auth_setup_complete( $status ) ) {
+			?>
+			<p><?php esc_html_e( 'YouTube authentication is configured. You can update credentials below when they change.', 'wp-tube-to-blog-ai' ); ?></p>
+			<?php
+			return;
+		}
 		?>
 		<p><?php esc_html_e( 'Enter your YouTube Data API v3 credentials to connect your channel. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit.', 'wp-tube-to-blog-ai' ); ?></p>
 		<div class="notice notice-info inline wttba-auth-checklist-notice">
 			<p><strong><?php esc_html_e( 'YouTube authentication setup', 'wp-tube-to-blog-ai' ); ?></strong></p>
-			<ul class="wttba-auth-checklist">
+			<ul class="wttba-auth-checklist" aria-label="<?php esc_attr_e( 'YouTube authentication setup status', 'wp-tube-to-blog-ai' ); ?>">
 				<?php
 				$this->render_auth_setup_item(
 					'api-key',
@@ -379,6 +690,103 @@ class Settings {
 				?>
 			</ul>
 		</div>
+		<?php $this->render_youtube_setup_wizard(); ?>
+		<?php
+	}
+
+	/**
+	 * Render helper instructions for collecting YouTube and Google credentials.
+	 */
+	private function render_youtube_setup_wizard(): void {
+		$redirect_uri = YouTube_OAuth::get_redirect_uri();
+		?>
+		<div id="wttba-oauth-setup-wizard" class="wttba-oauth-wizard" aria-labelledby="wttba-oauth-wizard-title">
+			<h3 id="wttba-oauth-wizard-title"><?php esc_html_e( 'YouTube setup wizard', 'wp-tube-to-blog-ai' ); ?></h3>
+			<p><?php esc_html_e( 'Use these steps to collect the YouTube and Google Cloud values WordPress needs for video listing, details, and official caption downloads.', 'wp-tube-to-blog-ai' ); ?></p>
+			<ol class="wttba-oauth-wizard__steps">
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Prepare Google Cloud', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Open the Google Cloud project that owns the YouTube channel integration, then enable the YouTube Data API v3 if it is not already enabled.', 'wp-tube-to-blog-ai' ); ?></p>
+					<p>
+						<a class="button button-secondary" href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Open YouTube Data API v3', 'wp-tube-to-blog-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+						</a>
+					</p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Create a YouTube Data API key', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an API key, and paste it into the YouTube API Key field below. The API key is used for public video listing and video details.', 'wp-tube-to-blog-ai' ); ?></p>
+					<p>
+						<a class="button button-secondary" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Open Google credentials', 'wp-tube-to-blog-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+						</a>
+					</p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Find the YouTube Channel ID', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Open YouTube account advanced settings, copy the value labeled Channel ID, and paste it into the YouTube Channel ID field below. Channel IDs usually start with UC.', 'wp-tube-to-blog-ai' ); ?></p>
+					<p>
+						<a class="button button-secondary" href="https://support.google.com/youtube/answer/3250431" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Find Channel ID help', 'wp-tube-to-blog-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+						</a>
+					</p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Create a Web application OAuth client', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an OAuth client ID, and choose Web application as the application type.', 'wp-tube-to-blog-ai' ); ?></p>
+					<p>
+						<a class="button button-secondary" href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Create OAuth client', 'wp-tube-to-blog-ai' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'wp-tube-to-blog-ai' ); ?></span>
+						</a>
+					</p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Add this Authorized redirect URI', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Paste this exact URI into the Authorized redirect URIs field for the Web application client. Google requires an exact match.', 'wp-tube-to-blog-ai' ); ?></p>
+					<div class="wttba-oauth-wizard__copy-row">
+						<label class="screen-reader-text" for="wttba-oauth-wizard-redirect-uri">
+							<?php esc_html_e( 'Authorized redirect URI', 'wp-tube-to-blog-ai' ); ?>
+						</label>
+						<input
+							type="text"
+							id="wttba-oauth-wizard-redirect-uri"
+							class="large-text code"
+							value="<?php echo esc_attr( $redirect_uri ); ?>"
+							readonly
+						/>
+						<button type="button" class="button button-secondary" id="wttba-copy-redirect-uri">
+							<?php esc_html_e( 'Copy URI', 'wp-tube-to-blog-ai' ); ?>
+						</button>
+					</div>
+					<p id="wttba-copy-redirect-uri-status" class="description" aria-live="polite"></p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Download or copy the client secret JSON', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p id="wttba-oauth-client-json-help"><?php esc_html_e( 'After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes.', 'wp-tube-to-blog-ai' ); ?></p>
+					<textarea
+						id="wttba-oauth-client-json"
+						class="large-text code"
+						rows="5"
+						aria-describedby="wttba-oauth-client-json-help"
+						placeholder="<?php esc_attr_e( 'Paste client_secret.json contents here', 'wp-tube-to-blog-ai' ); ?>"
+					></textarea>
+					<p>
+						<button type="button" class="button button-secondary" id="wttba-fill-oauth-fields">
+							<?php esc_html_e( 'Fill OAuth fields', 'wp-tube-to-blog-ai' ); ?>
+						</button>
+					</p>
+					<p id="wttba-oauth-client-json-result" class="description" aria-live="polite"></p>
+				</li>
+				<li class="wttba-oauth-wizard__step">
+					<strong><?php esc_html_e( 'Save, then connect YouTube', 'wp-tube-to-blog-ai' ); ?></strong>
+					<p><?php esc_html_e( 'Click Save Changes so WordPress stores the Client ID and Client Secret. After the page reloads, use Connect YouTube to finish the Google account consent flow.', 'wp-tube-to-blog-ai' ); ?></p>
+				</li>
+			</ol>
+		</div>
 		<?php
 	}
 
@@ -391,12 +799,22 @@ class Settings {
 		$oauth_connected = YouTube_OAuth::is_connected();
 
 		return array(
-			'apiKeyConfigured'           => '' !== trim( (string) get_option( 'wttba_youtube_api_key', '' ) ),
-			'channelConfigured'          => '' !== trim( (string) get_option( 'wttba_youtube_channel_id', '' ) ),
+			'apiKeyConfigured'           => self::is_valid_youtube_api_key( (string) get_option( 'wttba_youtube_api_key', '' ) ),
+			'channelConfigured'          => self::is_valid_youtube_channel_id( (string) get_option( 'wttba_youtube_channel_id', '' ) ),
 			'oauthCredentialsConfigured' => YouTube_OAuth::has_credentials(),
 			'redirectUriVerified'        => YouTube_OAuth::is_redirect_uri_verified(),
 			'oauthConnected'             => $oauth_connected,
 		);
+	}
+
+	/**
+	 * Determine whether all YouTube authentication setup steps are complete.
+	 *
+	 * @param array{apiKeyConfigured: bool, channelConfigured: bool, oauthCredentialsConfigured: bool, redirectUriVerified: bool, oauthConnected: bool} $status Setup status.
+	 * @return bool
+	 */
+	private function is_youtube_auth_setup_complete( array $status ): bool {
+		return ! in_array( false, $status, true );
 	}
 
 	/**
@@ -421,7 +839,9 @@ class Settings {
 			<span class="wttba-auth-checklist__body">
 				<strong class="wttba-auth-checklist__label"><?php echo esc_html( $label ); ?></strong>:
 				<span class="wttba-auth-checklist__status"><?php echo esc_html( $status_label ); ?></span>
-				<span class="description wttba-auth-checklist__description"><?php echo esc_html( $description ); ?></span>
+				<?php if ( ! $is_complete ) : ?>
+					<span class="description wttba-auth-checklist__description"><?php echo esc_html( $description ); ?></span>
+				<?php endif; ?>
 			</span>
 		</li>
 		<?php
@@ -432,6 +852,31 @@ class Settings {
 	 */
 	public function render_content_section(): void {
 		echo '<p>' . esc_html__( 'Configure the default language and style for generated content. You can override these settings for individual video or audio generations.', 'wp-tube-to-blog-ai' ) . '</p>';
+	}
+
+	/**
+	 * Render Post Length field.
+	 */
+	public function render_post_length_field(): void {
+		$value   = $this->sanitize_post_length( (string) get_option( 'wttba_post_length', self::DEFAULT_POST_LENGTH ) );
+		$options = self::get_post_length_options();
+		?>
+		<select id="wttba_post_length" name="wttba_post_length">
+			<?php foreach ( $options as $length => $option ) : ?>
+				<option value="<?php echo esc_attr( $length ); ?>" <?php selected( $value, $length ); ?>>
+					<?php echo esc_html( $option['label'] ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'Controls the target article length and AI token budget for generated posts.', 'wp-tube-to-blog-ai' ); ?>
+		</p>
+		<ul class="description wttba-settings-option-help">
+			<?php foreach ( $options as $option ) : ?>
+				<li><?php echo esc_html( $option['label'] . ': ' . $option['description'] ); ?></li>
+			<?php endforeach; ?>
+		</ul>
+		<?php
 	}
 
 	/**
@@ -476,6 +921,26 @@ class Settings {
 				esc_html( '' !== $localhost['host'] ? $localhost['host'] : __( 'unknown', 'wp-tube-to-blog-ai' ) )
 			);
 			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Preferred AI Model field.
+	 */
+	public function render_ai_model_field(): void {
+		$value   = $this->sanitize_ai_model( (string) get_option( 'wttba_ai_model', '' ) );
+		$options = self::get_ai_model_options();
+		?>
+		<select id="wttba_ai_model" name="wttba_ai_model">
+			<?php foreach ( $options as $model_id => $label ) : ?>
+				<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $value, $model_id ); ?>>
+					<?php echo esc_html( $label ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'This is a preference passed to the WordPress AI Client. If the selected model is unavailable, the AI Client can use another compatible configured model.', 'wp-tube-to-blog-ai' ); ?>
 		</p>
 		<?php
 	}

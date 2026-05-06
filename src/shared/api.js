@@ -69,12 +69,18 @@ export function fetchCapabilities() {
 /**
  * Generate a blog post preview from a video (no draft created).
  *
- * @param {string} videoId  The YouTube video ID.
- * @param {string} language Target language code.
- * @param {string} persona  Optional writing style persona.
+ * @param {string} videoId          The YouTube video ID.
+ * @param {string} language         Target language code.
+ * @param {string} persona          Optional writing style persona.
+ * @param {string} manualTranscript Optional manually supplied transcript.
  * @return {Promise<Object>} Preview data { title, content, video_id }.
  */
-export function previewPost( videoId, language, persona = '' ) {
+export function previewPost(
+	videoId,
+	language,
+	persona = '',
+	manualTranscript = ''
+) {
 	return apiFetch( {
 		path: '/wttba/v1/preview',
 		method: 'POST',
@@ -82,6 +88,7 @@ export function previewPost( videoId, language, persona = '' ) {
 			video_id: videoId,
 			language,
 			persona,
+			manual_transcript: manualTranscript,
 		},
 	} );
 }

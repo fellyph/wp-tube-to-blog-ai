@@ -22,6 +22,11 @@ class Content_Generator {
 	private const MAX_SOURCE_LENGTH = 30000;
 
 	/**
+	 * Timeout for AI Client requests in seconds.
+	 */
+	private const AI_REQUEST_TIMEOUT = 90;
+
+	/**
 	 * Maximum uploaded audio size accepted for audio-to-post.
 	 */
 	public const MAX_AUDIO_BYTES = 26214400; // 25 MB.
@@ -40,8 +45,9 @@ class Content_Generator {
 	 */
 	private const TEXT_MODEL_PREFERENCES = array(
 		'claude-sonnet-4-6',
-		'gemini-3.1-pro-preview',
 		'gpt-5.4',
+		'gemini-3-flash-preview',
+		'gemini-3-pro-preview',
 		'gemini-2.5-flash',
 		'gpt-4o-mini',
 	);
@@ -60,15 +66,21 @@ class Content_Generator {
 			);
 		}
 
-		$builder = wp_ai_client_prompt(
-			__( 'Reply with a short confirmation that the WordPress AI content generation test succeeded.', 'wp-tube-to-blog-ai' )
-		)
-			->using_system_instruction( __( 'You verify AI provider connectivity for a WordPress plugin. Keep the response under 20 words.', 'wp-tube-to-blog-ai' ) )
-			->using_temperature( 0 )
-			->using_max_tokens( 80 )
-			->using_model_preference( ...self::TEXT_MODEL_PREFERENCES );
+		$this->add_ai_request_timeout_filter();
 
-		$result = $builder->generate_text_result();
+		try {
+			$builder = wp_ai_client_prompt(
+				__( 'Reply with a short confirmation that the WordPress AI content generation test succeeded.', 'wp-tube-to-blog-ai' )
+			)
+				->using_system_instruction( __( 'You verify AI provider connectivity for a WordPress plugin. Keep the response under 20 words.', 'wp-tube-to-blog-ai' ) )
+				->using_temperature( 0 )
+				->using_max_tokens( 80 )
+				->using_model_preference( ...$this->get_text_model_preferences() );
+
+			$result = $builder->generate_text_result();
+		} finally {
+			$this->remove_ai_request_timeout_filter();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			error_log( sprintf( '[WP Tube-to-Blog AI] AI connection test failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
@@ -123,17 +135,24 @@ class Content_Generator {
 			);
 		}
 
-		$source_text = $this->truncate_source_text( $source_text );
-		$prompt      = $this->build_text_prompt( $source_text, $language, $source_title, $persona, $source_type );
+		$source_text  = $this->truncate_source_text( $source_text );
+		$post_length  = Settings::get_post_length_generation_config();
+		$prompt       = $this->build_text_prompt( $source_text, $language, $source_title, $persona, $source_type, $post_length['instruction'] );
 
-		$builder = wp_ai_client_prompt( $prompt )
-			->using_system_instruction( __( 'You are a professional blog writer creating accurate, SEO-friendly WordPress content.', 'wp-tube-to-blog-ai' ) )
-			->using_temperature( 0.7 )
-			->using_max_tokens( 8000 )
-			->using_model_preference( ...self::TEXT_MODEL_PREFERENCES )
-			->as_json_response( $this->get_article_schema() );
+		$this->add_ai_request_timeout_filter();
 
-		return $this->generate_article_from_builder( $builder, $source_type );
+		try {
+			$builder = wp_ai_client_prompt( $prompt )
+				->using_system_instruction( __( 'You are a professional blog writer creating accurate, SEO-friendly WordPress content.', 'wp-tube-to-blog-ai' ) )
+				->using_temperature( 0.7 )
+				->using_max_tokens( $post_length['max_tokens'] )
+				->using_model_preference( ...$this->get_text_model_preferences() )
+				->as_json_response( $this->get_article_schema() );
+
+			return $this->generate_article_from_builder( $builder, $source_type );
+		} finally {
+			$this->remove_ai_request_timeout_filter();
+		}
 	}
 
 	/**
@@ -161,6 +180,7 @@ class Content_Generator {
 
 		$language_name = Settings::LANGUAGES[ $language ] ?? 'English';
 		$persona       = $this->get_persona( $persona );
+		$post_length   = Settings::get_post_length_generation_config();
 
 		$persona_section = '';
 		if ( '' !== $persona ) {
@@ -180,21 +200,30 @@ class Content_Generator {
 - Structure the article with valid HTML headings (h2, h3), paragraphs, and lists where useful.
 - Write as an original article, not as a summary of an audio recording.
 - Preserve factual details from the audio and do not invent dates, names, or claims not present in the source.
-%2$s',
+- Follow the selected post length: %3$s
+%2$s
+',
 			$language_name,
-			$persona_section
+			$persona_section,
+			$post_length['instruction']
 		);
 
-		$builder = wp_ai_client_prompt()
-			->with_text( $prompt )
-			->with_file( $audio['path'], $audio['mime_type'] )
-			->using_system_instruction( __( 'You are a professional editor turning spoken source material into accurate WordPress articles.', 'wp-tube-to-blog-ai' ) )
-			->using_temperature( 0.5 )
-			->using_max_tokens( 8000 )
-			->using_model_preference( ...self::TEXT_MODEL_PREFERENCES )
-			->as_json_response( $this->get_article_schema() );
+		$this->add_ai_request_timeout_filter();
 
-		$result = $this->generate_article_from_builder( $builder, 'audio_upload' );
+		try {
+			$builder = wp_ai_client_prompt()
+				->with_text( $prompt )
+				->with_file( $audio['path'], $audio['mime_type'] )
+				->using_system_instruction( __( 'You are a professional editor turning spoken source material into accurate WordPress articles.', 'wp-tube-to-blog-ai' ) )
+				->using_temperature( 0.5 )
+				->using_max_tokens( $post_length['max_tokens'] )
+				->using_model_preference( ...$this->get_text_model_preferences() )
+				->as_json_response( $this->get_article_schema() );
+
+			$result = $this->generate_article_from_builder( $builder, 'audio_upload' );
+		} finally {
+			$this->remove_ai_request_timeout_filter();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -317,16 +346,56 @@ class Content_Generator {
 	}
 
 	/**
+	 * Increase AI Client HTTP timeout while this plugin is issuing a generation request.
+	 */
+	private function add_ai_request_timeout_filter(): void {
+		add_filter( 'wp_ai_client_default_request_timeout', array( $this, 'filter_ai_request_timeout' ) );
+	}
+
+	/**
+	 * Remove the scoped AI Client HTTP timeout filter.
+	 */
+	private function remove_ai_request_timeout_filter(): void {
+		remove_filter( 'wp_ai_client_default_request_timeout', array( $this, 'filter_ai_request_timeout' ) );
+	}
+
+	/**
+	 * Filter the AI Client request timeout.
+	 *
+	 * @param int $timeout Current timeout in seconds.
+	 * @return int
+	 */
+	public function filter_ai_request_timeout( int $timeout ): int {
+		return max( $timeout, self::AI_REQUEST_TIMEOUT );
+	}
+
+	/**
+	 * Get model preferences with the saved administrator choice first.
+	 *
+	 * @return array<int, string>
+	 */
+	private function get_text_model_preferences(): array {
+		$preferred_model = (string) get_option( 'wttba_ai_model', '' );
+
+		if ( in_array( $preferred_model, Settings::AI_MODEL_IDS, true ) && '' !== $preferred_model ) {
+			return array_values( array_unique( array_merge( array( $preferred_model ), self::TEXT_MODEL_PREFERENCES ) ) );
+		}
+
+		return self::TEXT_MODEL_PREFERENCES;
+	}
+
+	/**
 	 * Build the text-source article prompt.
 	 *
-	 * @param string $source_text  Source text.
-	 * @param string $language     Language code.
-	 * @param string $source_title Source title.
-	 * @param string $persona      Optional persona.
-	 * @param string $source_type  Source type.
+	 * @param string $source_text        Source text.
+	 * @param string $language           Language code.
+	 * @param string $source_title       Source title.
+	 * @param string $persona            Optional persona.
+	 * @param string $source_type        Source type.
+	 * @param string $length_instruction Post length instruction.
 	 * @return string Prompt text.
 	 */
-	private function build_text_prompt( string $source_text, string $language, string $source_title, string $persona, string $source_type ): string {
+	private function build_text_prompt( string $source_text, string $language, string $source_title, string $persona, string $source_type, string $length_instruction ): string {
 		$language_name = Settings::LANGUAGES[ $language ] ?? 'English';
 		$persona       = $this->get_persona( $persona );
 
@@ -341,6 +410,8 @@ class Content_Generator {
 		$source_label = 'source material';
 		if ( 'youtube_video' === $source_type ) {
 			$source_label = 'YouTube video transcript';
+		} elseif ( 'manual_transcript' === $source_type ) {
+			$source_label = 'manually provided YouTube transcript';
 		} elseif ( 'post_content' === $source_type ) {
 			$source_label = 'WordPress post content';
 		}
@@ -356,6 +427,7 @@ class Content_Generator {
 - Write in a clear, informative tone suitable for a blog audience.
 - Do not include references to the source format, transcript, or AI generation process.
 - Ensure the content is cohesive and flows naturally.
+- Follow the selected post length: %6$s.
 %4$s
 
 ## Source:
@@ -364,7 +436,8 @@ class Content_Generator {
 			$language_name,
 			$source_title,
 			$persona_section,
-			$source_text
+			$source_text,
+			$length_instruction
 		);
 	}
 

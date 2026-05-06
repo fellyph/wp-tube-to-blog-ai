@@ -8,6 +8,183 @@ import './style.scss';
 
 const config = window.wttbaSettingsConfig || {};
 const root = document.getElementById( 'wttba-ai-test' );
+const wizard = document.getElementById( 'wttba-oauth-setup-wizard' );
+
+if ( wizard ) {
+	const redirectUri = wizard.querySelector(
+		'#wttba-oauth-wizard-redirect-uri'
+	);
+	const copyButton = wizard.querySelector( '#wttba-copy-redirect-uri' );
+	const copyStatus = wizard.querySelector(
+		'#wttba-copy-redirect-uri-status'
+	);
+	const clientJson = wizard.querySelector( '#wttba-oauth-client-json' );
+	const fillButton = wizard.querySelector( '#wttba-fill-oauth-fields' );
+	const fillStatus = wizard.querySelector(
+		'#wttba-oauth-client-json-result'
+	);
+	const clientIdInput = document.getElementById(
+		'wttba_youtube_oauth_client_id'
+	);
+	const clientSecretInput = document.getElementById(
+		'wttba_youtube_oauth_client_secret'
+	);
+	const oauthClientIdPattern =
+		/^[0-9]+-[0-9A-Za-z_-]+\.apps\.googleusercontent\.com$/;
+	const oauthClientSecretPattern = /^[0-9A-Za-z_-]{8,}$/;
+
+	const setStatus = ( element, message, type = '' ) => {
+		if ( ! element ) {
+			return;
+		}
+
+		element.textContent = message;
+		element.classList.toggle(
+			'wttba-settings-message--success',
+			'success' === type
+		);
+		element.classList.toggle(
+			'wttba-settings-message--error',
+			'error' === type
+		);
+		element.classList.toggle(
+			'wttba-settings-message--warning',
+			'warning' === type
+		);
+	};
+
+	const writeInputValue = ( input, value ) => {
+		if ( ! input ) {
+			return;
+		}
+
+		input.value = value;
+		input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+	};
+
+	const fallbackCopy = ( input ) => {
+		input.focus();
+		input.select();
+		return document.execCommand( 'copy' );
+	};
+
+	copyButton?.addEventListener( 'click', async () => {
+		const value = redirectUri?.value || config.redirectUri || '';
+
+		if ( ! value ) {
+			setStatus(
+				copyStatus,
+				__(
+					'No redirect URI was available to copy.',
+					'wp-tube-to-blog-ai'
+				),
+				'error'
+			);
+			return;
+		}
+
+		try {
+			if ( window.navigator.clipboard?.writeText ) {
+				await window.navigator.clipboard.writeText( value );
+			} else if ( ! redirectUri || ! fallbackCopy( redirectUri ) ) {
+				throw new Error( 'Copy failed' );
+			}
+
+			setStatus(
+				copyStatus,
+				__( 'Redirect URI copied.', 'wp-tube-to-blog-ai' ),
+				'success'
+			);
+		} catch ( err ) {
+			setStatus(
+				copyStatus,
+				__(
+					'Copy failed. Select and copy the redirect URI manually.',
+					'wp-tube-to-blog-ai'
+				),
+				'error'
+			);
+		}
+	} );
+
+	fillButton?.addEventListener( 'click', () => {
+		const rawJson = clientJson?.value?.trim() || '';
+
+		if ( ! rawJson ) {
+			setStatus(
+				fillStatus,
+				__(
+					'Paste the client_secret.json contents first.',
+					'wp-tube-to-blog-ai'
+				),
+				'error'
+			);
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse( rawJson );
+			const webClient = parsed.web;
+			const clientId =
+				'string' === typeof webClient?.client_id
+					? webClient.client_id.trim()
+					: '';
+			const clientSecret =
+				'string' === typeof webClient?.client_secret
+					? webClient.client_secret.trim()
+					: '';
+
+			if (
+				! oauthClientIdPattern.test( clientId ) ||
+				! oauthClientSecretPattern.test( clientSecret )
+			) {
+				setStatus(
+					fillStatus,
+					__(
+						'This does not look like a valid Web application client_secret.json file.',
+						'wp-tube-to-blog-ai'
+					),
+					'error'
+				);
+				return;
+			}
+
+			writeInputValue( clientIdInput, clientId );
+			writeInputValue( clientSecretInput, clientSecret );
+
+			const redirectUris = Array.isArray( webClient.redirect_uris )
+				? webClient.redirect_uris
+				: [];
+			const currentRedirectUri =
+				redirectUri?.value || config.redirectUri || '';
+			const hasRedirectUri = redirectUris.includes( currentRedirectUri );
+			const successMessage = __(
+				'OAuth fields filled. Save changes, then connect YouTube.',
+				'wp-tube-to-blog-ai'
+			);
+			const warningMessage = __(
+				'OAuth fields filled. Make sure the Authorized redirect URI above is also saved in Google Cloud before connecting.',
+				'wp-tube-to-blog-ai'
+			);
+
+			setStatus(
+				fillStatus,
+				hasRedirectUri ? successMessage : warningMessage,
+				hasRedirectUri ? 'success' : 'warning'
+			);
+		} catch ( err ) {
+			setStatus(
+				fillStatus,
+				__(
+					'The pasted text is not valid JSON. Download client_secret.json from Google Cloud and paste the full file contents.',
+					'wp-tube-to-blog-ai'
+				),
+				'error'
+			);
+		}
+	} );
+}
 
 if ( root ) {
 	const button = root.querySelector( '#wttba-ai-test-button' );

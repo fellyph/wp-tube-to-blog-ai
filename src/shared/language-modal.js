@@ -1,7 +1,7 @@
 /**
  * Language selection modal component.
  */
-import { createElement, useState } from '@wordpress/element';
+import { createElement, useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -12,7 +12,7 @@ import { __ } from '@wordpress/i18n';
  * @param {Object}   props.languages      Language map { code: label }.
  * @param {string}   props.defaultLang    Default selected language.
  * @param {string}   props.defaultPersona Default writing persona.
- * @param {Function} props.onConfirm      Callback with selected language code.
+ * @param {Function} props.onConfirm      Callback with selected language, persona, and manual transcript.
  * @param {Function} props.onCancel       Callback to close the modal.
  * @param {string}   props.videoTitle     The video title being generated.
  * @return {Element|null} The modal element or null.
@@ -28,10 +28,24 @@ export default function LanguageModal( {
 } ) {
 	const [ selectedLang, setSelectedLang ] = useState( defaultLang );
 	const [ persona, setPersona ] = useState( defaultPersona || '' );
+	const [ useManualTranscript, setUseManualTranscript ] = useState( false );
+	const [ manualTranscript, setManualTranscript ] = useState( '' );
+
+	useEffect( () => {
+		if ( isOpen ) {
+			setSelectedLang( defaultLang );
+			setPersona( defaultPersona || '' );
+			setUseManualTranscript( false );
+			setManualTranscript( '' );
+		}
+	}, [ isOpen, defaultLang, defaultPersona ] );
 
 	if ( ! isOpen ) {
 		return null;
 	}
+
+	const isGenerateDisabled =
+		useManualTranscript && manualTranscript.trim().length < 50;
 
 	return createElement(
 		'div',
@@ -90,6 +104,53 @@ export default function LanguageModal( {
 				),
 			} ),
 			createElement(
+				'label',
+				{ className: 'wttba-modal__checkbox-label' },
+				createElement( 'input', {
+					type: 'checkbox',
+					checked: useManualTranscript,
+					onChange: ( e ) =>
+						setUseManualTranscript( e.target.checked ),
+				} ),
+				__(
+					'Use a custom transcript instead of fetching captions',
+					'wp-tube-to-blog-ai'
+				)
+			),
+			useManualTranscript &&
+				createElement(
+					'div',
+					{ className: 'wttba-modal__manual-transcript' },
+					createElement(
+						'label',
+						{
+							className: 'wttba-modal__label',
+							htmlFor: 'wttba-manual-transcript-textarea',
+						},
+						__( 'Manual Transcript:', 'wp-tube-to-blog-ai' )
+					),
+					createElement( 'textarea', {
+						id: 'wttba-manual-transcript-textarea',
+						className: 'wttba-modal__textarea',
+						rows: 8,
+						value: manualTranscript,
+						onChange: ( e ) =>
+							setManualTranscript( e.target.value ),
+						placeholder: __(
+							'Paste the transcript text for this video.',
+							'wp-tube-to-blog-ai'
+						),
+					} ),
+					createElement(
+						'p',
+						{ className: 'wttba-modal__description' },
+						__(
+							'Paste at least 50 characters. When provided, this transcript is used as the source material and YouTube captions are not fetched.',
+							'wp-tube-to-blog-ai'
+						)
+					)
+				),
+			createElement(
 				'div',
 				{ className: 'wttba-modal__actions' },
 				createElement(
@@ -105,7 +166,15 @@ export default function LanguageModal( {
 					'button',
 					{
 						className: 'button button-primary',
-						onClick: () => onConfirm( selectedLang, persona ),
+						onClick: () =>
+							onConfirm(
+								selectedLang,
+								persona,
+								useManualTranscript
+									? manualTranscript.trim()
+									: ''
+							),
+						disabled: isGenerateDisabled,
 						type: 'button',
 					},
 					__( 'Generate', 'wp-tube-to-blog-ai' )

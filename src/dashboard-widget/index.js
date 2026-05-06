@@ -67,7 +67,7 @@ function DashboardWidget() {
 			} );
 	}, [ config.isConfigured ] );
 
-	const handleGenerate = ( language, persona ) => {
+	const handleGenerate = ( language, persona, manualTranscript = '' ) => {
 		if ( ! modalVideo ) {
 			return;
 		}
@@ -97,9 +97,14 @@ function DashboardWidget() {
 		setSuccess( null );
 		setError( null );
 		setFailedVideo( null );
-		setLastGenParams( { videoId: videoToGenerate.id, language, persona } );
+		setLastGenParams( {
+			videoId: videoToGenerate.id,
+			language,
+			persona,
+			manualTranscript,
+		} );
 
-		previewPost( videoToGenerate.id, language, persona )
+		previewPost( videoToGenerate.id, language, persona, manualTranscript )
 			.then( ( result ) => {
 				setGenerating( null );
 				setPreview( result );
@@ -146,7 +151,8 @@ function DashboardWidget() {
 		previewPost(
 			lastGenParams.videoId,
 			lastGenParams.language,
-			lastGenParams.persona
+			lastGenParams.persona,
+			lastGenParams.manualTranscript || ''
 		)
 			.then( ( result ) => {
 				setRegenerating( false );

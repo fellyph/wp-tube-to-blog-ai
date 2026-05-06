@@ -53,7 +53,27 @@ class YouTube_OAuth {
 	 * @return bool
 	 */
 	public static function has_credentials(): bool {
-		return '' !== self::get_client_id() && '' !== self::get_client_secret();
+		return self::is_valid_client_id( self::get_client_id() ) && self::is_valid_client_secret( self::get_client_secret() );
+	}
+
+	/**
+	 * Whether a value looks like a Google OAuth client ID.
+	 *
+	 * @param string $client_id OAuth client ID.
+	 * @return bool
+	 */
+	public static function is_valid_client_id( string $client_id ): bool {
+		return 1 === preg_match( '/^[0-9]+-[0-9A-Za-z_-]+\.apps\.googleusercontent\.com$/', trim( $client_id ) );
+	}
+
+	/**
+	 * Whether a value looks like a Google OAuth client secret.
+	 *
+	 * @param string $client_secret OAuth client secret.
+	 * @return bool
+	 */
+	public static function is_valid_client_secret( string $client_secret ): bool {
+		return 1 === preg_match( '/^[0-9A-Za-z_-]{8,}$/', trim( $client_secret ) );
 	}
 
 	/**
@@ -522,7 +542,7 @@ class YouTube_OAuth {
 	 * @return string
 	 */
 	private static function get_client_id(): string {
-		return (string) get_option( self::CLIENT_ID_OPTION, '' );
+		return trim( (string) get_option( self::CLIENT_ID_OPTION, '' ) );
 	}
 
 	/**
@@ -531,7 +551,7 @@ class YouTube_OAuth {
 	 * @return string
 	 */
 	private static function get_client_secret(): string {
-		return (string) get_option( self::CLIENT_SECRET_OPTION, '' );
+		return trim( (string) get_option( self::CLIENT_SECRET_OPTION, '' ) );
 	}
 
 	/**

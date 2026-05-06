@@ -1,5 +1,127 @@
+.wttba-settings-form {
+	max-width: 1100px;
+}
+
+.wttba-settings-section {
+	margin: 22px 0;
+	padding: 18px 20px 20px;
+	border: 1px solid #dcdcde;
+	border-left-width: 4px;
+	border-radius: 6px;
+	background: #fff;
+}
+
+.wttba-settings-section--youtube {
+	border-left-color: #d63638;
+}
+
+.wttba-settings-section--content {
+	border-left-color: #2271b1;
+}
+
+.wttba-settings-section--ai-provider {
+	border-left-color: #00a32a;
+}
+
+.wttba-settings-section--usage {
+	border-left-color: #8c8f94;
+}
+
+.wttba-settings-section > h2 {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 1.25rem;
+	line-height: 1.35;
+}
+
+.wttba-settings-section .form-table {
+	margin-top: 14px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.wttba-settings-section .form-table th {
+	padding-left: 0;
+}
+
+.wttba-settings-section .form-table td {
+	padding-right: 0;
+}
+
+.wttba-settings-option-help {
+	margin: 6px 0 0;
+}
+
+.wttba-settings-option-help li {
+	margin: 2px 0;
+}
+
+.wttba-oauth-wizard {
+	max-width: 820px;
+	margin: 18px 0;
+	padding: 16px 0 2px;
+	border-top: 1px solid #dcdcde;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wttba-oauth-wizard h3 {
+	margin: 0 0 6px;
+	font-size: 1rem;
+	line-height: 1.4;
+}
+
+.wttba-oauth-wizard__steps {
+	margin: 14px 0 0;
+	padding-left: 24px;
+}
+
+.wttba-oauth-wizard__step {
+	margin: 0 0 16px;
+	padding-left: 4px;
+}
+
+.wttba-oauth-wizard__step p {
+	max-width: 760px;
+	margin: 6px 0;
+}
+
+.wttba-settings-section > p:first-of-type {
+	max-width: 760px;
+	margin-top: 0;
+}
+
+.wttba-oauth-wizard__copy-row {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	max-width: 760px;
+}
+
+.wttba-oauth-wizard__copy-row input {
+	min-width: 0;
+}
+
+#wttba-oauth-client-json {
+	max-width: 760px;
+	margin-top: 4px;
+	font-family: Consolas, Monaco, monospace;
+}
+
+.wttba-settings-message--success {
+	color: #008a20;
+}
+
+.wttba-settings-message--error {
+	color: #b32d2e;
+}
+
+.wttba-settings-message--warning {
+	color: #8a4b00;
+}
+
 .wttba-auth-checklist-notice {
 	max-width: 760px;
+	margin-top: 14px;
+	padding-block: 4px;
 }
 
 .wttba-auth-checklist {
@@ -13,6 +135,11 @@
 	align-items: flex-start;
 	gap: 8px;
 	margin: 10px 0;
+}
+
+.wttba-auth-checklist__item--complete {
+	align-items: center;
+	margin: 6px 0;
 }
 
 .wttba-auth-checklist__icon {
