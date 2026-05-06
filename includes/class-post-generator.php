@@ -2,7 +2,7 @@
 /**
  * AI-powered blog post generator.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
@@ -39,14 +39,14 @@ class Post_Generator {
 		if ( '' === $video_id || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $video_id ) ) {
 			return new \WP_Error(
 				'wttba_invalid_video_id',
-				__( 'A valid YouTube video ID is required.', 'wp-tube-to-blog-ai' )
+				__( 'A valid YouTube video ID is required.', 'creatorstack-ai' )
 			);
 		}
 
 		if ( '' !== $manual_transcript && mb_strlen( $manual_transcript ) < self::MIN_MANUAL_TRANSCRIPT_LENGTH ) {
 			return new \WP_Error(
 				'wttba_manual_transcript_too_short',
-				__( 'Paste a manual transcript with at least 50 characters, or leave the manual transcript field empty to fetch captions automatically.', 'wp-tube-to-blog-ai' )
+				__( 'Paste a manual transcript with at least 50 characters, or leave the manual transcript field empty to fetch captions automatically.', 'creatorstack-ai' )
 			);
 		}
 
@@ -65,7 +65,7 @@ class Post_Generator {
 		if ( get_transient( $lock_key ) ) {
 			return new \WP_Error(
 				'wttba_rate_limited',
-				__( 'A post is already being generated. Please wait for it to complete.', 'wp-tube-to-blog-ai' )
+				__( 'A post is already being generated. Please wait for it to complete.', 'creatorstack-ai' )
 			);
 		}
 
@@ -229,10 +229,10 @@ https://www.youtube.com/watch?v=%1$s
 		$attachment_id = media_sideload_image( $image_url, $post_id, $title, 'id' );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			error_log( sprintf( '[WP Tube-to-Blog AI] Featured image failed for post %d: %s', $post_id, $attachment_id->get_error_message() ) );
+			error_log( sprintf( '[CreatorStack AI] Featured image failed for post %d: %s', $post_id, $attachment_id->get_error_message() ) );
 			return new \WP_Error(
 				'wttba_featured_image_failed',
-				__( 'The post was created, but the featured image could not be set from the video thumbnail.', 'wp-tube-to-blog-ai' )
+				__( 'The post was created, but the featured image could not be set from the video thumbnail.', 'creatorstack-ai' )
 			);
 		}
 
