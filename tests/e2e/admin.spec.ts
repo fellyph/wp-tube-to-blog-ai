@@ -19,22 +19,28 @@ test( 'plugin is listed and active on the Plugins screen', async ( {
 } ) => {
 	await page.goto( `${ serverUrl }/wp-admin/plugins.php` );
 
-	const row = page.locator( 'tr[data-slug="wp-tube-to-blog-ai"]' );
+	const row = page.locator( 'tr[data-slug="creatorstack-ai"]' );
 	await expect( row ).toBeVisible();
 	await expect( row ).toHaveClass( /active/ );
 	await expect( row.locator( '.plugin-title strong' ).first() ).toHaveText(
-		/WP Tube-to-Blog AI/
+		/CreatorStack AI/
 	);
 } );
 
-test( 'top-level "Tube-to-Blog" menu opens the videos admin page', async ( {
+test( 'top-level "CreatorStack" menu opens the videos admin page', async ( {
 	page,
 } ) => {
 	await page.goto( `${ serverUrl }/wp-admin/admin.php?page=wttba-videos` );
 
 	await expect(
-		page.getByRole( 'heading', { name: 'YouTube Videos' } )
+		page.getByRole( 'heading', { name: 'YouTube Content' } )
 	).toBeVisible();
+	await expect( page.locator( '.wttba-admin-hero' ) ).toBeVisible();
+	await expect(
+		page
+			.getByRole( 'navigation', { name: 'CreatorStack AI sections' } )
+			.getByRole( 'link', { name: 'YouTube Content' } )
+	).toHaveCSS( 'background-color', 'rgb(29, 35, 39)' );
 	await expect( page.locator( '#wttba-admin-videos' ) ).toBeVisible();
 } );
 
@@ -44,7 +50,7 @@ test( 'plugin admin tabs switch between content screens', async ( {
 	await page.goto( `${ serverUrl }/wp-admin/admin.php?page=wttba-videos` );
 
 	const nav = page.getByRole( 'navigation', {
-		name: 'AI Content Suite sections',
+		name: 'CreatorStack AI sections',
 	} );
 
 	await expect(
@@ -59,19 +65,31 @@ test( 'plugin admin tabs switch between content screens', async ( {
 	await expect(
 		page.getByRole( 'heading', { name: 'Audio to Post', level: 1 } )
 	).toBeVisible();
+	await expect( page.locator( '.wttba-admin-hero' ) ).toBeVisible();
 	await expect(
 		nav.getByRole( 'link', { name: 'Audio to Post' } )
 	).toHaveAttribute( 'aria-current', 'page' );
+	await expect(
+		nav.getByRole( 'link', { name: 'Audio to Post' } )
+	).toHaveCSS( 'background-color', 'rgb(29, 35, 39)' );
+	await expect(
+		page.getByRole( 'heading', {
+			name: 'Record audio and create a draft',
+		} )
+	).toBeVisible();
+	await expect(
+		page.getByRole( 'button', { name: 'Start Recording' } )
+	).toBeVisible();
 
 	await nav.getByRole( 'link', { name: 'Settings' } ).click();
 	await expect(
 		page.getByRole( 'heading', {
-			name: 'AI Content Suite Settings',
+			name: 'CreatorStack AI Settings',
 		} )
 	).toBeVisible();
 	await expect(
 		page
-			.getByRole( 'navigation', { name: 'AI Content Suite sections' } )
+			.getByRole( 'navigation', { name: 'CreatorStack AI sections' } )
 			.getByRole( 'link', { name: 'Settings' } )
 	).toHaveAttribute( 'aria-current', 'page' );
 } );
