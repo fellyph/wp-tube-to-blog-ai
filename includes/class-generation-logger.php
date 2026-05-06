@@ -2,7 +2,7 @@
 /**
  * AI generation metadata and usage logging.
  *
- * @package WP_Tube_To_Blog_AI
+ * @package CreatorStack_AI
  */
 
 namespace WTTBA;
