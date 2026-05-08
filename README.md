@@ -52,7 +52,9 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 ## 📦 Releases
 
-GitHub Actions builds release zips automatically when a version tag is pushed:
+CreatorStack AI uses a two-branch release model: `develop` for staging builds and `main` for production-ready releases. See the full [release strategy](docs/release-strategy.md).
+
+GitHub Actions builds production release zips automatically when a version tag is pushed from `main`:
 
 ```bash
 git tag v1.0.0
@@ -60,6 +62,8 @@ git push origin v1.0.0
 ```
 
 The release workflow uses the tag version as the source of truth. For `v1.0.0`, it syncs the plugin header, `WTTBA_VERSION`, and `package.json` to `1.0.0`, validates PHP and JavaScript, builds production assets, packages `creatorstack-ai.zip`, uploads it as a workflow artifact, and attaches it to the GitHub Release.
+
+Every push to `develop` creates a staging artifact named `creatorstack-ai-staging-<short_sha>.zip` with a package-only version such as `0.0.0-develop.123`.
 
 Release notes are generated automatically from merged pull requests. GitHub uses `.github/release.yml` to group changes by labels such as `feature`, `bug`, `documentation`, `ci`, `tests`, and `dependencies`.
 
