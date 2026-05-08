@@ -21,6 +21,8 @@
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js",
 		"lint:css": "wp-scripts lint-style",
+		"test": "npm run test:node && npm run test:e2e",
+		"test:node": "node --test tests/node/*.test.mjs",
 		"version:set": "node scripts/sync-version.mjs",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",

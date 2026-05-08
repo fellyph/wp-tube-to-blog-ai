@@ -36,8 +36,7 @@ function replaceOrFail( contents, pattern, replacement, label ) {
 
 const packageJson = JSON.parse( readProjectFile( 'package.json' ) );
 packageJson.version = version;
-writeProjectFile( 'package.json', `${ JSON.stringify( packageJson, null, '\t' ) }\n` );
-
+const updatedPackageJson = `${ JSON.stringify( packageJson, null, '\t' ) }\n`;
 let pluginFile = readProjectFile( 'creatorstack-ai.php' );
 pluginFile = replaceOrFail(
 	pluginFile,
@@ -51,6 +50,8 @@ pluginFile = replaceOrFail(
 	`define( 'WTTBA_VERSION', '${ version }' );`,
 	'WTTBA_VERSION constant'
 );
+
+writeProjectFile( 'package.json', updatedPackageJson );
 writeProjectFile( 'creatorstack-ai.php', pluginFile );
 
 console.log( `Synced CreatorStack AI version to ${ version }.` );

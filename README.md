@@ -67,6 +67,20 @@ To update the version locally before tagging, run:
 npm run version:set -- 1.0.0
 ```
 
+## 🧪 Testing
+
+Run the lightweight Node tests:
+
+```bash
+npm run test:node
+```
+
+Run the full test suite:
+
+```bash
+npm test
+```
+
 ## ⚙️ Configuration
 
 1.  Navigate to **Settings > CreatorStack AI** in your WordPress dashboard.
