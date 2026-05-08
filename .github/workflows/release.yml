@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, for example v1.0.0'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark this GitHub release as a prerelease'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build Plugin Zip And Publish Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag="${INPUT_TAG:-$REF_NAME}"
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "Release tag must look like v1.0.0 or v1.0.0-beta.1." >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sync plugin version from release tag
+        run: npm run version:set -- "${{ steps.release.outputs.version }}"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+
+      - name: Validate Composer configuration
+        run: composer validate --strict --no-check-lock
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Lint PHP files
+        run: find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint JavaScript
+        run: npm run lint:js
+
+      - name: Lint styles
+        run: npm run lint:css
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Build plugin zip
+        run: npm run plugin-zip -- --root-folder=creatorstack-ai
+
+      - name: Verify plugin zip contents
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          test -f creatorstack-ai.zip
+          unzip -l creatorstack-ai.zip | grep 'creatorstack-ai/creatorstack-ai.php'
+          unzip -l creatorstack-ai.zip | grep 'creatorstack-ai/wp-tube-to-blog-ai.php'
+          unzip -l creatorstack-ai.zip | grep 'creatorstack-ai/build/'
+          unzip -p creatorstack-ai.zip creatorstack-ai/creatorstack-ai.php | grep -F "Version:           $VERSION"
+          unzip -p creatorstack-ai.zip creatorstack-ai/creatorstack-ai.php | grep -F "define( 'WTTBA_VERSION', '$VERSION' );"
+          unzip -p creatorstack-ai.zip creatorstack-ai/package.json | grep -F "\"version\": \"$VERSION\""
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: creatorstack-ai-${{ steps.release.outputs.version }}
+          path: creatorstack-ai.zip
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: CreatorStack AI ${{ steps.release.outputs.version }}
+          files: creatorstack-ai.zip
+          generate_release_notes: true
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}

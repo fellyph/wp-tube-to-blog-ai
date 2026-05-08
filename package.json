@@ -7,11 +7,21 @@
 		"url": "https://github.com/fellyph"
 	},
 	"private": true,
+	"files": [
+		"README.md",
+		"creatorstack-ai.php",
+		"wp-tube-to-blog-ai.php",
+		"uninstall.php",
+		"build",
+		"includes",
+		"languages"
+	],
 	"scripts": {
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js",
 		"lint:css": "wp-scripts lint-style",
+		"version:set": "node scripts/sync-version.mjs",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"test:e2e": "npm run build && playwright test",
