@@ -44,6 +44,9 @@ jobs:
       - name: Lint styles
         run: npm run lint:css
 
+      - name: Run Node tests
+        run: npm run test:node
+
       - name: Build assets
         run: npm run build
 

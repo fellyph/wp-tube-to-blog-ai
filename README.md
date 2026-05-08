@@ -50,6 +50,37 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 4.  Activate the plugin through the 'Plugins' menu in WordPress.
 
+## 📦 Releases
+
+GitHub Actions builds release zips automatically when a version tag is pushed:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The release workflow uses the tag version as the source of truth. For `v1.0.0`, it syncs the plugin header, `WTTBA_VERSION`, and `package.json` to `1.0.0`, validates PHP and JavaScript, builds production assets, packages `creatorstack-ai.zip`, uploads it as a workflow artifact, and attaches it to the GitHub Release.
+
+To update the version locally before tagging, run:
+
+```bash
+npm run version:set -- 1.0.0
+```
+
+## 🧪 Testing
+
+Run the lightweight Node tests:
+
+```bash
+npm run test:node
+```
+
+Run the full test suite:
+
+```bash
+npm test
+```
+
 ## ⚙️ Configuration
 
 1.  Navigate to **Settings > CreatorStack AI** in your WordPress dashboard.
