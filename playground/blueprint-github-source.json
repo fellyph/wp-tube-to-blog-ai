@@ -1,0 +1,43 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/wp-admin/admin.php?page=wttba-videos",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "nightly"
+	},
+	"meta": {
+		"title": "CreatorStack AI From GitHub Source",
+		"author": "Fellyph Cintra",
+		"description": "Installs CreatorStack AI directly from the GitHub source branch."
+	},
+	"features": {
+		"networking": true,
+		"intl": true
+	},
+	"login": true,
+	"siteOptions": {
+		"blogname": "CreatorStack AI Playground",
+		"blogdescription": "Disposable WordPress site for plugin testing"
+	},
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "git:directory",
+				"url": "https://github.com/fellyph/wp-tube-to-blog-ai",
+				"ref": "main",
+				"refType": "branch",
+				"path": "/"
+			},
+			"options": {
+				"activate": true,
+				"targetFolderName": "creatorstack-ai"
+			},
+			"ifAlreadyInstalled": "overwrite"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nif ( ! defined( 'WTTBA_VERSION' ) ) {\n\tthrow new Exception( 'CreatorStack AI did not load.' );\n}\n"
+		}
+	]
+}
