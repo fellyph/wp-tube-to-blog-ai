@@ -61,6 +61,8 @@ git push origin v1.0.0
 
 The release workflow uses the tag version as the source of truth. For `v1.0.0`, it syncs the plugin header, `WTTBA_VERSION`, and `package.json` to `1.0.0`, validates PHP and JavaScript, builds production assets, packages `creatorstack-ai.zip`, uploads it as a workflow artifact, and attaches it to the GitHub Release.
 
+Release notes are generated automatically from merged pull requests. GitHub uses `.github/release.yml` to group changes by labels such as `feature`, `bug`, `documentation`, `ci`, `tests`, and `dependencies`.
+
 To update the version locally before tagging, run:
 
 ```bash
