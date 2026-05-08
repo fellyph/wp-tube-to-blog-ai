@@ -1,0 +1,33 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/wp-admin/admin.php?page=wttba-videos",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "nightly"
+	},
+	"meta": {
+		"title": "CreatorStack AI Playground",
+		"author": "Fellyph Cintra",
+		"description": "A local WordPress Playground setup for testing CreatorStack AI."
+	},
+	"login": true,
+	"siteOptions": {
+		"blogname": "CreatorStack AI Playground",
+		"blogdescription": "Disposable WordPress site for plugin testing"
+	},
+	"constants": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_DISPLAY": true,
+		"SCRIPT_DEBUG": true
+	},
+	"steps": [
+		{
+			"step": "activatePlugin",
+			"pluginPath": "creatorstack-ai/creatorstack-ai.php"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nif ( ! defined( 'WTTBA_VERSION' ) ) {\n\tthrow new Exception( 'CreatorStack AI did not load.' );\n}\n\nif ( ! class_exists( '\\\\WTTBA\\\\Plugin' ) ) {\n\tthrow new Exception( 'CreatorStack AI plugin class is unavailable.' );\n}\n"
+		}
+	]
+}

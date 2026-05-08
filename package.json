@@ -28,7 +28,12 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"test:e2e": "npm run build && playwright test",
 		"test:e2e:ui": "npm run build && playwright test --ui",
-		"test:e2e:debug": "npm run build && playwright test --debug"
+		"test:e2e:debug": "npm run build && playwright test --debug",
+		"playground:start": "npm run build && wp-playground-cli server --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login",
+		"playground:debug": "npm run build && wp-playground-cli server --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login --xdebug",
+		"playground:check": "npm run build && wp-playground-cli run-blueprint --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login",
+		"playground:url": "node scripts/playground-url.mjs",
+		"playground:url:source": "node scripts/playground-url.mjs playground/blueprint-github-source.json"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.59.0",

@@ -81,6 +81,42 @@ Run the full test suite:
 npm test
 ```
 
+## 🧪 WordPress Playground
+
+Launch a disposable WordPress Playground instance with CreatorStack AI mounted and activated:
+
+```bash
+npm run playground:start
+```
+
+The command builds the assets, starts WordPress nightly on PHP 8.3, logs in as admin, and sets the landing page to `/wp-admin/admin.php?page=wttba-videos`.
+
+Run the same Blueprint as a headless smoke check:
+
+```bash
+npm run playground:check
+```
+
+Start with Xdebug enabled:
+
+```bash
+npm run playground:debug
+```
+
+Generate a browser Playground URL that installs the latest GitHub release zip:
+
+```bash
+npm run playground:url
+```
+
+Generate a browser Playground URL that installs directly from the GitHub source branch:
+
+```bash
+npm run playground:url:source
+```
+
+The release URL is recommended for demos because it installs the built plugin zip with compiled assets. The source URL is useful for PHP smoke testing, but GitHub source installs do not run `npm run build` inside Playground.
+
 ## ⚙️ Configuration
 
 1.  Navigate to **Settings > CreatorStack AI** in your WordPress dashboard.

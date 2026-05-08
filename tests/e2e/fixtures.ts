@@ -10,7 +10,7 @@ type PlaygroundCLI = Awaited< ReturnType< typeof runCLI > >;
 const pluginRoot = process.cwd();
 const blueprint = JSON.parse(
 	fs.readFileSync(
-		path.join( pluginRoot, 'tests', 'e2e', 'blueprint.json' ),
+		path.join( pluginRoot, 'playground', 'blueprint.json' ),
 		'utf8'
 	)
 );
