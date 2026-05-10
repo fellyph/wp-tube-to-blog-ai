@@ -6,7 +6,7 @@ This document explains how CreatorStack AI integrates with the WordPress AI Clie
 
 The plugin uses the WordPress AI Client's fluent API (`wp_ai_client_prompt()`) to send source material to an AI provider and receive structured blog post content (title + HTML body) in return. YouTube generation is handled through `Post_Generator::call_ai()`, while audio-to-post and post-to-audio workflows are handled by the content and audio generator services.
 
-## WordPress 7.0+ (Recommended)
+## WordPress 7.0+
 
 WordPress 7.0 ships with the AI Client and Connectors API built into Core. No Composer package or additional plugin is needed beyond an AI provider plugin.
 
@@ -17,7 +17,7 @@ WordPress 7.0 ships with the AI Client and Connectors API built into Core. No Co
    - **AI Provider for Google** (Gemini models)
    - **AI Provider for OpenAI** (GPT models)
 2. Configure your API key in **Settings > Connectors**. WordPress checks connector credentials in this order: environment variable, PHP constant, then database setting.
-3. The plugin automatically detects WordPress 7.0+ and skips manual SDK initialization.
+3. The plugin uses the WordPress 7.0+ AI Client APIs directly.
 4. The plugin does not store AI provider credentials. It only checks whether a text-generation provider is available before showing generation actions.
 
 ### Feature Detection
@@ -35,26 +35,7 @@ if ( ! wp_ai_client_prompt( 'test' )->is_supported_for_text_generation() ) {
 
 This check is deterministic (no API call) and returns `false` if no provider supports text generation or if the `wp_ai_client_prevent_prompt` filter blocks it.
 
-AI configuration URLs and unavailable-state messages are centralized in `AI_Provider_Status`, which points WordPress 7.0+ sites to **Settings > Connectors** and pre-7.0 sites to the legacy WP AI Client settings page.
-
-## Pre-WordPress 7.0
-
-For WordPress versions before 7.0, the plugin depends on the `wordpress/wp-ai-client` ^0.4 Composer package:
-
-```bash
-composer install
-```
-
-The plugin conditionally initializes the SDK only on pre-7.0:
-
-```php
-// In class-plugin.php
-if ( version_compare( wp_get_wp_version(), '7.0', '<' ) ) {
-    \WordPress\AI_Client\AI_Client::init();
-}
-```
-
-The `wordpress/wp-ai-client` package also auto-detects WordPress 7.0 and disables its own SDK infrastructure to avoid conflicts.
+AI configuration URLs and unavailable-state messages are centralized in `AI_Provider_Status`, which points supported sites to **Settings > Connectors**.
 
 ## How Generation Works
 
