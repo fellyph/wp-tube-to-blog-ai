@@ -229,7 +229,6 @@ https://www.youtube.com/watch?v=%1$s
 		$attachment_id = media_sideload_image( $image_url, $post_id, $title, 'id' );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			error_log( sprintf( '[CreatorStack AI] Featured image failed for post %d: %s', $post_id, $attachment_id->get_error_message() ) );
 			return new \WP_Error(
 				'wttba_featured_image_failed',
 				__( 'The post was created, but the featured image could not be set from the video thumbnail.', 'creatorstack-ai' )
