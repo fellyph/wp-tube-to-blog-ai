@@ -105,7 +105,6 @@ class Transcript_Fetcher {
 		if ( null !== $captions_json ) {
 			$data = json_decode( $captions_json, true );
 			if ( ! is_array( $data ) ) {
-				error_log( '[CreatorStack AI] Failed to parse caption JSON data from YouTube page.' );
 				return new \WP_Error(
 					'wttba_captions_parse_error',
 					__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'creatorstack-ai' )
@@ -120,7 +119,6 @@ class Transcript_Fetcher {
 
 		$tracks_json = $this->extract_json_value_after_key( $html, '"captionTracks"', '[' );
 		if ( null === $tracks_json ) {
-			error_log( '[CreatorStack AI] No captions found in YouTube page HTML.' );
 			return new \WP_Error(
 				'wttba_no_captions',
 				__( 'No captions found for this video. The video may not have subtitles available.', 'creatorstack-ai' )
@@ -129,7 +127,6 @@ class Transcript_Fetcher {
 
 		$tracks = json_decode( $tracks_json, true );
 		if ( ! is_array( $tracks ) ) {
-			error_log( '[CreatorStack AI] Failed to parse caption JSON data from YouTube page.' );
 			return new \WP_Error(
 				'wttba_captions_parse_error',
 				__( 'Failed to parse the video caption data. YouTube may have changed its format. Please try again later.', 'creatorstack-ai' )
@@ -472,7 +469,7 @@ class Transcript_Fetcher {
 	 */
 	private function normalize_transcript_line( string $text ): string {
 		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-		$text = trim( strip_tags( $text ) );
+		$text = trim( wp_strip_all_tags( $text ) );
 
 		return preg_replace( '/\s+/', ' ', $text ) ?? $text;
 	}
@@ -518,8 +515,6 @@ class Transcript_Fetcher {
 	 * @return \WP_Error Parse error.
 	 */
 	private function transcript_parse_error( string $format ): \WP_Error {
-		error_log( sprintf( '[CreatorStack AI] Failed to parse transcript %s from YouTube timedtext endpoint.', $format ) );
-
 		return new \WP_Error(
 			'wttba_xml_parse_error',
 			__( 'Failed to parse the transcript data. Please try again or choose a different video.', 'creatorstack-ai' )
