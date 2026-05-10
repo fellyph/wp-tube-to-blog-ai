@@ -8,7 +8,7 @@ CreatorStack AI helps you turn YouTube videos and uploaded audio files into Word
 
 You need:
 
-- A WordPress site running a build with the WordPress AI Client APIs available. This plugin currently expects WordPress 7.0 beta or newer.
+- A WordPress 7.0 or newer site with the WordPress AI Client APIs available.
 - An AI provider configured in WordPress. Use **Settings > Connectors** when the Connectors screen is available.
 - A YouTube Data API v3 key and YouTube Channel ID for YouTube video workflows.
 - A Google OAuth Web application client if you want CreatorStack AI to read captions through the official YouTube Captions API.
