@@ -1414,11 +1414,11 @@ class Settings {
 	 * Render a notice after OAuth actions redirect back to settings.
 	 */
 	private function render_oauth_status_notice(): void {
-		if ( empty( $_GET['wttba_youtube_oauth'] ) ) {
+		$status = YouTube_OAuth::consume_status_notice();
+
+		if ( '' === $status ) {
 			return;
 		}
-
-		$status = sanitize_key( wp_unslash( $_GET['wttba_youtube_oauth'] ) );
 
 		$messages = array(
 			'connected'           => array( 'success', __( 'YouTube OAuth is connected.', 'creatorstack-ai' ) ),
@@ -1438,6 +1438,7 @@ class Settings {
 			),
 			'invalid_client'      => array( 'error', __( 'Google rejected the OAuth client. Check the saved Client ID and Client Secret, then reconnect YouTube.', 'creatorstack-ai' ) ),
 			'unauthorized_client' => array( 'error', __( 'Google rejected this OAuth client for the requested YouTube scope. Check the OAuth consent screen and client type in Google Cloud.', 'creatorstack-ai' ) ),
+			'oauth_redirect_failed' => array( 'error', __( 'CreatorStack AI could not redirect to Google OAuth. Please try again.', 'creatorstack-ai' ) ),
 		);
 
 		$notice = $messages[ $status ] ?? array( 'error', __( 'YouTube OAuth could not be completed. Please try again.', 'creatorstack-ai' ) );
