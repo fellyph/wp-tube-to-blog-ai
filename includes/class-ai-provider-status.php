@@ -24,7 +24,7 @@ class AI_Provider_Status {
 	/**
 	 * Minimum WordPress version with the Core AI Client and Connectors APIs.
 	 */
-	private const MINIMUM_WORDPRESS_VERSION = '7.0-beta';
+	private const MINIMUM_WORDPRESS_VERSION = '7.0';
 
 	/**
 	 * Check whether AI features are enabled for this site.
@@ -59,9 +59,6 @@ class AI_Provider_Status {
 
 	/**
 	 * Check whether the current WordPress version can satisfy the plugin requirement.
-	 *
-	 * WordPress beta and release-candidate builds compare lower than the matching
-	 * final release, so the minimum intentionally starts at 7.0-beta.
 	 *
 	 * @return bool Whether the current WordPress version is supported.
 	 */
@@ -203,7 +200,7 @@ class AI_Provider_Status {
 		if ( ! self::is_ai_client_available() ) {
 			if ( ! self::is_supported_wordpress_version() ) {
 				return __(
-					'The WordPress AI Client is not available. Upgrade to WordPress 7.0 beta or newer.',
+					'The WordPress AI Client is not available. Upgrade to WordPress 7.0 or newer.',
 					'creatorstack-ai'
 				);
 			}
