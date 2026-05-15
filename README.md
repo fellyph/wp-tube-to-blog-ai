@@ -19,13 +19,11 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 ## 🛠️ Requirements
 
-*   **WordPress:** 6.7 or higher (7.0+ recommended for built-in AI Client support).
+*   **WordPress:** 7.0 or higher.
 *   **PHP:** 8.1 or higher.
 *   **YouTube connector:** The included **CreatorStack AI YouTube Connector** plugin activated, a YouTube Data API key managed through WordPress Connectors, and a YouTube Channel ID for video workflows.
 *   **AI Provider:** A compatible provider configured through the WordPress AI Client and Connectors API. Audio workflows require provider support for audio input or text-to-speech.
-*   **WordPress AI Client:**
-    *   **WordPress 7.0+:** The AI Client and Connectors API are built into Core. Configure provider plugins and credentials via **Settings > Connectors**.
-    *   **WordPress < 7.0:** Requires the `wordpress/wp-ai-client` Composer package (installed automatically via `composer install`).
+*   **WordPress AI Client:** The AI Client and Connectors API are built into WordPress 7.0+. Configure provider plugins and credentials via **Settings > Connectors**.
 
 ## 🚀 Installation
 

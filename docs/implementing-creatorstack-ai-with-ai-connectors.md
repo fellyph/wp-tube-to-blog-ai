@@ -64,7 +64,7 @@ public static function get_configuration_url(): string {
 }
 ```
 
-This means the plugin can work with the modern WordPress 7.0 Connectors screen while still retaining a fallback URL for older AI Client installations.
+This means the plugin sends supported WordPress 7.0+ sites to the modern Connectors screen.
 
 ## 2. Let Connectors Own Credentials
 

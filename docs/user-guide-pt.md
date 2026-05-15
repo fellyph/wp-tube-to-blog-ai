@@ -8,7 +8,7 @@ O CreatorStack AI ajuda a transformar vídeos do YouTube e ficheiros de áudio e
 
 Precisa de:
 
-- Um site WordPress com as APIs do WordPress AI Client disponíveis. Este plugin espera atualmente WordPress 7.0 beta ou mais recente.
+- Um site WordPress 7.0 ou mais recente com as APIs do WordPress AI Client disponíveis.
 - Um fornecedor de IA configurado no WordPress. Use **Definições > Connectors** quando esse ecrã estiver disponível.
 - O plugin **CreatorStack AI YouTube Connector** ativado, uma chave do conector do YouTube e o ID do canal do YouTube para os fluxos baseados em vídeos.
 - Um cliente OAuth da Google do tipo **Web application** se quiser que o CreatorStack AI leia legendas através da API oficial YouTube Captions.

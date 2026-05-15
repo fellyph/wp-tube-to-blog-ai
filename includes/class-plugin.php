@@ -49,19 +49,7 @@ class Plugin {
 
 		add_filter( 'plugin_action_links_' . plugin_basename( WTTBA_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
 		add_action( 'rest_api_init', array( new REST_Controller(), 'register_routes' ) );
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'register_post_meta' ) );
-	}
-
-	/**
-	 * Load plugin text domain.
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'creatorstack-ai',
-			false,
-			dirname( plugin_basename( WTTBA_PLUGIN_FILE ) ) . '/languages'
-		);
 	}
 
 	/**
@@ -109,7 +97,7 @@ class Plugin {
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() ) {
 			$message = sprintf(
 				/* translators: %s: current WordPress version. */
-				__( 'CreatorStack AI requires WordPress 7.0 beta or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'creatorstack-ai' ),
+				__( 'CreatorStack AI requires WordPress 7.0 or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'creatorstack-ai' ),
 				AI_Provider_Status::get_wordpress_version()
 			);
 		}

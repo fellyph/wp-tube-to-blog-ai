@@ -83,14 +83,12 @@ class Content_Generator {
 		}
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[CreatorStack AI] AI connection test failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$text = trim( $result->toText() );
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[CreatorStack AI] AI connection test result parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
 				__( 'The AI provider responded, but the test response could not be read.', 'creatorstack-ai' )
@@ -317,14 +315,12 @@ class Content_Generator {
 		$result = $builder->generate_text_result();
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[CreatorStack AI] AI call failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$json = $result->toText();
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[CreatorStack AI] AI result parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
 				__( 'The AI returned an unexpected response format. Please try generating again.', 'creatorstack-ai' )
@@ -334,7 +330,6 @@ class Content_Generator {
 		$parsed = json_decode( $json, true );
 
 		if ( ! is_array( $parsed ) || empty( $parsed['title'] ) || empty( $parsed['content'] ) ) {
-			error_log( '[CreatorStack AI] AI parse error - response could not be decoded or is missing required fields.' );
 			return new \WP_Error(
 				'wttba_ai_parse_error',
 				__( 'The AI returned an unexpected response format. Please try generating again.', 'creatorstack-ai' )

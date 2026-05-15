@@ -9,6 +9,7 @@
 	"private": true,
 	"files": [
 		"README.md",
+		"readme.txt",
 		"creatorstack-ai.php",
 		"creatorstack-youtube-connector.php",
 		"wp-tube-to-blog-ai.php",

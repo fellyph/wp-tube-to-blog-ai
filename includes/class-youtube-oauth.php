@@ -26,6 +26,7 @@ class YouTube_OAuth {
 	private const EXPIRES_AT_OPTION    = 'wttba_youtube_oauth_expires_at';
 	private const REDIRECT_URI_OPTION  = 'wttba_youtube_oauth_verified_redirect_uri';
 	private const STATE_PREFIX         = 'wttba_youtube_oauth_state_';
+	private const NOTICE_PREFIX        = 'wttba_youtube_oauth_notice_';
 
 	/**
 	 * Constructor.
@@ -173,8 +174,7 @@ class YouTube_OAuth {
 			PHP_QUERY_RFC3986
 		);
 
-		wp_redirect( esc_url_raw( $url ) );
-		exit;
+		$this->redirect_to_auth_url( $url );
 	}
 
 	/**
@@ -185,6 +185,7 @@ class YouTube_OAuth {
 			wp_die( esc_html__( 'You are not allowed to connect YouTube.', 'creatorstack-ai' ) );
 		}
 
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Google OAuth callbacks are verified with the stored OAuth state parameter.
 		$state        = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
 		$stored_state = (string) get_transient( self::STATE_PREFIX . get_current_user_id() );
 		delete_transient( self::STATE_PREFIX . get_current_user_id() );
@@ -198,6 +199,7 @@ class YouTube_OAuth {
 		}
 
 		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( '' === $code ) {
 			$this->redirect_with_status( 'missing_code' );
 		}
@@ -582,16 +584,63 @@ class YouTube_OAuth {
 	}
 
 	/**
+	 * Consume the current user's pending OAuth status notice.
+	 *
+	 * @return string Status code.
+	 */
+	public static function consume_status_notice(): string {
+		$key    = self::NOTICE_PREFIX . get_current_user_id();
+		$status = sanitize_key( (string) get_transient( $key ) );
+
+		delete_transient( $key );
+
+		return $status;
+	}
+
+	/**
+	 * Redirect to the Google authorization URL.
+	 *
+	 * @param string $url Authorization URL.
+	 */
+	private function redirect_to_auth_url( string $url ): void {
+		$auth_host             = (string) wp_parse_url( self::AUTH_URL, PHP_URL_HOST );
+		$allowed_google_hosts = static function ( array $hosts ) use ( $auth_host ): array {
+			$hosts[] = $auth_host;
+			return array_values( array_unique( $hosts ) );
+		};
+
+		add_filter( 'allowed_redirect_hosts', $allowed_google_hosts );
+		$redirected = wp_safe_redirect( esc_url_raw( $url ) );
+		remove_filter( 'allowed_redirect_hosts', $allowed_google_hosts );
+
+		if ( ! $redirected ) {
+			$this->redirect_with_status( 'oauth_redirect_failed' );
+		}
+
+		exit;
+	}
+
+	/**
+	 * Store a short-lived OAuth status notice for the current user.
+	 *
+	 * @param string $status Status code.
+	 */
+	private static function store_status_notice( string $status ): void {
+		set_transient( self::NOTICE_PREFIX . get_current_user_id(), sanitize_key( $status ), MINUTE_IN_SECONDS );
+	}
+
+	/**
 	 * Redirect to settings with an OAuth status.
 	 *
 	 * @param string $status Status code.
 	 */
 	private function redirect_with_status( string $status ): void {
+		self::store_status_notice( $status );
+
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'                => 'wttba-settings',
-					'wttba_youtube_oauth' => sanitize_key( $status ),
+					'page' => 'wttba-settings',
 				),
 				admin_url( 'options-general.php' )
 			)
