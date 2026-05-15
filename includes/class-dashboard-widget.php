@@ -91,8 +91,9 @@ class Dashboard_Widget {
 				'defaultLanguage' => get_option( 'wttba_default_language', 'en' ),
 				'defaultPersona'  => get_option( 'wttba_default_persona', '' ),
 				'languages'       => Settings::LANGUAGES,
-				'isConfigured'    => ( new YouTube_API() )->is_configured(),
+				'isConfigured'    => YouTube_Connector::is_configured(),
 				'settingsUrl'     => admin_url( 'options-general.php?page=wttba-settings' ),
+				'youtube'         => YouTube_Connector::get_admin_config(),
 				'features'        => Settings::get_feature_states(),
 				'ai'              => AI_Provider_Status::get_admin_config(),
 			)

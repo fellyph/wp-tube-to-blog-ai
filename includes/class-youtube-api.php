@@ -32,7 +32,7 @@ class YouTube_API {
 	 * @return string
 	 */
 	private function get_api_key(): string {
-		return (string) get_option( 'wttba_youtube_api_key', '' );
+		return YouTube_Connector::get_api_key();
 	}
 
 	/**
@@ -41,7 +41,7 @@ class YouTube_API {
 	 * @return string
 	 */
 	private function get_channel_id(): string {
-		return (string) get_option( 'wttba_youtube_channel_id', '' );
+		return YouTube_Connector::get_channel_id();
 	}
 
 	/**
@@ -50,7 +50,20 @@ class YouTube_API {
 	 * @return bool
 	 */
 	public function is_configured(): bool {
-		return '' !== $this->get_api_key() && '' !== $this->get_channel_id();
+		return YouTube_Connector::is_configured();
+	}
+
+	/**
+	 * Build a standardized configuration error.
+	 *
+	 * @return \WP_Error
+	 */
+	private function get_configuration_error(): \WP_Error {
+		return new \WP_Error(
+			'wttba_not_configured',
+			__( 'A valid YouTube Data API key and Channel ID are required before CreatorStack AI can load YouTube videos.', 'creatorstack-ai' ),
+			YouTube_Connector::get_configuration_error_data()
+		);
 	}
 
 	/**
@@ -65,13 +78,10 @@ class YouTube_API {
 		$max_results = $max_results ? absint( $max_results ) : 5;
 
 		if ( ! $this->is_configured() ) {
-			return new \WP_Error(
-				'wttba_not_configured',
-				__( 'YouTube API key and Channel ID are required. Please configure them in Settings > CreatorStack AI.', 'creatorstack-ai' )
-			);
+			return $this->get_configuration_error();
 		}
 
-		$cache_key = 'wttba_videos_' . md5( $page_token . $max_results );
+		$cache_key = 'wttba_videos_' . md5( $this->get_channel_id() . $page_token . $max_results );
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached ) {
@@ -127,7 +137,11 @@ class YouTube_API {
 	 * @return array{id: string, title: string, description: string, thumbnail: string, publishedAt: string}|\WP_Error
 	 */
 	public function get_video( string $video_id ): array|\WP_Error {
-		$cache_key = 'wttba_video_' . $video_id;
+		if ( ! $this->is_configured() ) {
+			return $this->get_configuration_error();
+		}
+
+		$cache_key = 'wttba_video_' . md5( $this->get_channel_id() . $video_id );
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached ) {

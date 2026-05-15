@@ -10,7 +10,7 @@ Precisa de:
 
 - Um site WordPress 7.0 ou mais recente com as APIs do WordPress AI Client disponíveis.
 - Um fornecedor de IA configurado no WordPress. Use **Definições > Connectors** quando esse ecrã estiver disponível.
-- Uma chave da YouTube Data API v3 e o ID do canal do YouTube para os fluxos baseados em vídeos.
+- O plugin **CreatorStack AI YouTube Connector** ativado, uma chave do conector do YouTube e o ID do canal do YouTube para os fluxos baseados em vídeos.
 - Um cliente OAuth da Google do tipo **Web application** se quiser que o CreatorStack AI leia legendas através da API oficial YouTube Captions.
 - Uma conta WordPress com as permissões adequadas:
   - Administradores podem configurar as definições do plugin.
@@ -35,15 +35,16 @@ Se o WordPress não mostrar **Definições > Connectors**, use o ecrã de defini
 
 ## Configurar O YouTube
 
-1. Abra **Definições > AI Content Suite**.
-2. Em **YouTube Integration**, siga o assistente de configuração.
-3. Ative a **YouTube Data API v3** na Google Cloud.
-4. Crie uma chave da YouTube Data API e cole-a em **YouTube API Key**.
-5. Encontre o ID do seu canal do YouTube e cole-o em **YouTube Channel ID**.
-6. Crie um cliente OAuth da Google com **Web application** como tipo de aplicação.
-7. Copie o **Authorized redirect URI** mostrado pelo WordPress e adicione-o ao cliente OAuth na Google Cloud.
-8. Cole o conteúdo do `client_secret.json` no assistente, clique em **Fill OAuth fields** e depois em **Save Changes**.
-9. Depois de a página recarregar, clique em **Connect YouTube** e conclua o fluxo de consentimento da Google.
+1. Ative **CreatorStack AI YouTube Connector** no ecrã de plugins.
+2. Abra **Definições > AI Content Suite**.
+3. Em **YouTube Integration**, siga o assistente de configuração.
+4. Ative a **YouTube Data API v3** na Google Cloud.
+5. Crie uma chave da YouTube Data API e adicione-a ao conector **YouTube** em **Definições > Connectors**. Também pode usar a variável de ambiente ou constante PHP `YOUTUBE_DATA_API_KEY`.
+6. Encontre o ID do seu canal do YouTube e cole-o em **YouTube Channel ID** em **Definições > CreatorStack AI**.
+7. Crie um cliente OAuth da Google com **Web application** como tipo de aplicação.
+8. Copie o **Authorized redirect URI** mostrado pelo WordPress e adicione-o ao cliente OAuth na Google Cloud.
+9. Cole o conteúdo do `client_secret.json` no assistente, clique em **Fill OAuth fields** e depois em **Save Changes**.
+10. Depois de a página recarregar, clique em **Connect YouTube** e conclua o fluxo de consentimento da Google.
 
 O OAuth é usado para descarregar legendas pela via oficial. A conta do YouTube ligada tem de conseguir editar os vídeos cujas legendas pretende usar.
 

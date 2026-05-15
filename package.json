@@ -11,6 +11,7 @@
 		"README.md",
 		"readme.txt",
 		"creatorstack-ai.php",
+		"creatorstack-youtube-connector.php",
 		"wp-tube-to-blog-ai.php",
 		"uninstall.php",
 		"build",
@@ -31,8 +32,10 @@
 		"test:e2e:ui": "npm run build && playwright test --ui",
 		"test:e2e:debug": "npm run build && playwright test --debug",
 		"playground:start": "npm run build && wp-playground-cli server --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login",
+		"playground:start:both": "npm run build && wp-playground-cli server --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --mount=../ai-provider-for-google:/wordpress/wp-content/plugins/ai-provider-for-google --blueprint=playground/blueprint-both-plugins.json --login",
 		"playground:debug": "npm run build && wp-playground-cli server --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login --xdebug",
 		"playground:check": "npm run build && wp-playground-cli run-blueprint --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --blueprint=playground/blueprint.json --login",
+		"playground:check:both": "npm run build && wp-playground-cli run-blueprint --php=8.3 --wp=nightly --mount=.:/wordpress/wp-content/plugins/creatorstack-ai --mount=../ai-provider-for-google:/wordpress/wp-content/plugins/ai-provider-for-google --blueprint=playground/blueprint-both-plugins.json --login",
 		"playground:url": "node scripts/playground-url.mjs",
 		"playground:url:source": "node scripts/playground-url.mjs playground/blueprint-github-source.json"
 	},

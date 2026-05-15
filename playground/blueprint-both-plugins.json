@@ -1,0 +1,45 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/wp-admin/plugins.php",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "nightly"
+	},
+	"meta": {
+		"title": "CreatorStack AI With Google Provider",
+		"author": "Fellyph Cintra",
+		"description": "A local WordPress Playground setup for testing CreatorStack AI with the AI Provider for Google."
+	},
+	"login": true,
+	"siteOptions": {
+		"blogname": "CreatorStack AI Playground",
+		"blogdescription": "Disposable WordPress site for multi-plugin testing"
+	},
+	"constants": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_DISPLAY": true,
+		"SCRIPT_DEBUG": true
+	},
+	"steps": [
+		{
+			"step": "runPHP",
+			"code": "<?php\n$plugins = array(\n\t'/wordpress/wp-content/plugins/creatorstack-ai/creatorstack-youtube-connector.php' => 'CreatorStack AI YouTube Connector',\n\t'/wordpress/wp-content/plugins/creatorstack-ai/creatorstack-ai.php'               => 'CreatorStack AI',\n\t'/wordpress/wp-content/plugins/ai-provider-for-google/plugin.php'                 => 'AI Provider for Google',\n);\n\nforeach ( $plugins as $file => $name ) {\n\tif ( ! file_exists( $file ) ) {\n\t\tthrow new Exception( $name . ' plugin file is missing at ' . $file );\n\t}\n}\n"
+		},
+		{
+			"step": "activatePlugin",
+			"pluginPath": "creatorstack-ai/creatorstack-youtube-connector.php"
+		},
+		{
+			"step": "activatePlugin",
+			"pluginPath": "ai-provider-for-google/plugin.php"
+		},
+		{
+			"step": "activatePlugin",
+			"pluginPath": "creatorstack-ai/creatorstack-ai.php"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nif ( ! defined( 'WTTBA_VERSION' ) ) {\n\tthrow new Exception( 'CreatorStack AI did not load.' );\n}\n\nif ( ! class_exists( '\\\\WTTBA\\\\Plugin' ) ) {\n\tthrow new Exception( 'CreatorStack AI plugin class is unavailable.' );\n}\n\nif ( ! function_exists( '\\\\WordPress\\\\GoogleAiProvider\\\\register_provider' ) ) {\n\tthrow new Exception( 'AI Provider for Google did not load.' );\n}\n\nif ( ! function_exists( 'wp_is_connector_registered' ) || ! wp_is_connector_registered( 'youtube' ) ) {\n\tthrow new Exception( 'The YouTube connector is not registered.' );\n}\n\n$connector = function_exists( 'wp_get_connector' ) ? wp_get_connector( 'youtube' ) : null;\nif ( ! is_array( $connector ) || 'creatorstack-ai/creatorstack-youtube-connector.php' !== ( $connector['plugin']['file'] ?? '' ) ) {\n\tthrow new Exception( 'The YouTube connector is not associated with the YouTube connector plugin.' );\n}\n\n$active_plugins = (array) get_option( 'active_plugins', array() );\n$required       = array(\n\t'creatorstack-ai/creatorstack-youtube-connector.php',\n\t'ai-provider-for-google/plugin.php',\n\t'creatorstack-ai/creatorstack-ai.php',\n);\n\nforeach ( $required as $plugin ) {\n\tif ( ! in_array( $plugin, $active_plugins, true ) ) {\n\t\tthrow new Exception( $plugin . ' is not active.' );\n\t}\n}\n"
+		}
+	]
+}

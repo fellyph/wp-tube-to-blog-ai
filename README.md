@@ -21,7 +21,7 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 *   **WordPress:** 7.0 or higher.
 *   **PHP:** 8.1 or higher.
-*   **YouTube Data API Key:** Required to fetch video information and channel data.
+*   **YouTube connector:** The included **CreatorStack AI YouTube Connector** plugin activated, a YouTube Data API key managed through WordPress Connectors, and a YouTube Channel ID for video workflows.
 *   **AI Provider:** A compatible provider configured through the WordPress AI Client and Connectors API. Audio workflows require provider support for audio input or text-to-speech.
 *   **WordPress AI Client:** The AI Client and Connectors API are built into WordPress 7.0+. Configure provider plugins and credentials via **Settings > Connectors**.
 
@@ -119,13 +119,16 @@ The release URL is recommended for demos because it installs the built plugin zi
 
 ## ⚙️ Configuration
 
-1.  Navigate to **Settings > CreatorStack AI** in your WordPress dashboard.
-2.  Enter your **YouTube Data API Key** and **Channel ID**.
-3.  Configure your preferred AI Provider:
-    *   Go to **Settings > Connectors** to install, activate, and configure an AI provider connector.
+1.  Activate **CreatorStack AI YouTube Connector** from the Plugins screen.
+2.  Navigate to **Settings > Connectors** in your WordPress dashboard and configure the **YouTube** connector with a YouTube Data API key. You can also provide the key with the `YOUTUBE_DATA_API_KEY` environment variable or PHP constant.
+3.  Navigate to **Settings > CreatorStack AI** and enter your **YouTube Channel ID**.
+4.  Configure your preferred AI Provider:
+    *   **WordPress 7.0+:** Go to **Settings > Connectors** to install, activate, and configure an AI provider connector.
+    *   **WordPress < 7.0:** Configure the provider within the WordPress AI Client plugin settings.
     *   Connector API keys can be supplied by environment variable, PHP constant, or the database; WordPress checks them in that order.
-4.  Select your default output language and optional writing persona.
-5.  Save the settings.
+5.  If you want official caption downloads, add the Google OAuth Web application credentials in **Settings > CreatorStack AI** and connect YouTube.
+6.  Select your default output language and optional writing persona.
+7.  Save the settings.
 
 ## 📝 Usage
 

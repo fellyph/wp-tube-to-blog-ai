@@ -10,7 +10,7 @@ You need:
 
 - A WordPress 7.0 or newer site with the WordPress AI Client APIs available.
 - An AI provider configured in WordPress. Use **Settings > Connectors** when the Connectors screen is available.
-- A YouTube Data API v3 key and YouTube Channel ID for YouTube video workflows.
+- The CreatorStack AI YouTube Connector plugin activated, plus a YouTube connector API key and YouTube Channel ID for YouTube video workflows.
 - A Google OAuth Web application client if you want CreatorStack AI to read captions through the official YouTube Captions API.
 - A WordPress user account with the right permissions:
   - Administrators can configure plugin settings.
@@ -35,15 +35,16 @@ If WordPress does not show **Settings > Connectors**, use the AI Client settings
 
 ## Configure YouTube
 
-1. Open **Settings > AI Content Suite**.
-2. In **YouTube Integration**, follow the setup wizard.
-3. Enable **YouTube Data API v3** in Google Cloud.
-4. Create a YouTube Data API key and paste it into **YouTube API Key**.
-5. Find your YouTube Channel ID and paste it into **YouTube Channel ID**.
-6. Create a Google OAuth client with **Web application** as the application type.
-7. Copy the **Authorized redirect URI** shown by WordPress and add it to the OAuth client in Google Cloud.
-8. Paste the `client_secret.json` contents into the wizard, click **Fill OAuth fields**, then click **Save Changes**.
-9. After the page reloads, click **Connect YouTube** and complete the Google consent flow.
+1. Activate **CreatorStack AI YouTube Connector** from the Plugins screen.
+2. Open **Settings > AI Content Suite**.
+3. In **YouTube Integration**, follow the setup wizard.
+4. Enable **YouTube Data API v3** in Google Cloud.
+5. Create a YouTube Data API key and add it to the **YouTube** connector in **Settings > Connectors**. You can also use the `YOUTUBE_DATA_API_KEY` environment variable or PHP constant.
+6. Find your YouTube Channel ID and paste it into **YouTube Channel ID** in **Settings > CreatorStack AI**.
+7. Create a Google OAuth client with **Web application** as the application type.
+8. Copy the **Authorized redirect URI** shown by WordPress and add it to the OAuth client in Google Cloud.
+9. Paste the `client_secret.json` contents into the wizard, click **Fill OAuth fields**, then click **Save Changes**.
+10. After the page reloads, click **Connect YouTube** and complete the Google consent flow.
 
 OAuth is used for official caption downloads. The connected YouTube account must be able to edit the videos whose captions you want to use.
 

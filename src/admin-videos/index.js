@@ -45,6 +45,33 @@ function formatDate( dateStr ) {
 }
 
 /**
+ * Get YouTube configuration notice details.
+ *
+ * @param {Object} config Localized app config.
+ * @return {{ message: string, url: string, label: string }} Notice details.
+ */
+function getYoutubeConfigurationNotice( config ) {
+	const youtube = config.youtube || {};
+	const missingApiKey = youtube.apiKeyConfigured === false;
+
+	return {
+		message: missingApiKey
+			? __(
+					'Configure the YouTube connector API key.',
+					'creatorstack-ai'
+			  )
+			: __(
+					'Configure your YouTube channel settings.',
+					'creatorstack-ai'
+			  ),
+		url: youtube.configurationUrl || config.settingsUrl,
+		label:
+			youtube.configurationLabel ||
+			__( 'Go to Settings', 'creatorstack-ai' ),
+	};
+}
+
+/**
  * Render a recording status message.
  *
  * @param {Object} recorder Audio recorder state.
@@ -680,6 +707,8 @@ function AdminVideos() {
 	}
 
 	if ( ! config.isConfigured ) {
+		const youtubeNotice = getYoutubeConfigurationNotice( config );
+
 		return createElement(
 			'div',
 			{ className: 'wttba-videos' },
@@ -689,15 +718,12 @@ function AdminVideos() {
 				createElement(
 					'p',
 					null,
-					__(
-						'Please configure your YouTube API settings.',
-						'creatorstack-ai'
-					),
+					youtubeNotice.message,
 					' ',
 					createElement(
 						'a',
-						{ href: config.settingsUrl },
-						__( 'Go to Settings', 'creatorstack-ai' )
+						{ href: youtubeNotice.url },
+						youtubeNotice.label
 					)
 				)
 			)

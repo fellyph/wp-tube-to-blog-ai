@@ -102,6 +102,14 @@ test( 'authenticated /videos returns configuration error before YouTube is set',
 	const body = res.body;
 	expect( body ).toHaveProperty( 'code' );
 	expect( body ).toHaveProperty( 'data.error_category' );
+	expect( body ).toHaveProperty(
+		'data.configuration_label',
+		'Configure YouTube connector'
+	);
+	expect( body ).toHaveProperty(
+		'data.configuration_url',
+		expect.stringContaining( 'options-connectors.php' )
+	);
 } );
 
 test( '/preview rejects missing video_id with a 400', async () => {
