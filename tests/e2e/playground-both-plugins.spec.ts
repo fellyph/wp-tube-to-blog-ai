@@ -7,10 +7,10 @@ type PlaygroundCLI = Awaited< ReturnType< typeof runCLI > >;
 
 const pluginRoot = process.cwd();
 const googleProviderRoot = path.resolve(
-	pluginRoot,
-	'..',
-	'ai-provider-for-google'
+	process.env.GOOGLE_PROVIDER_ROOT ||
+		path.join( pluginRoot, '..', 'ai-provider-for-google' )
 );
+const googleProviderPluginFile = path.join( googleProviderRoot, 'plugin.php' );
 const blueprint = JSON.parse(
 	fs.readFileSync(
 		path.join( pluginRoot, 'playground', 'blueprint-both-plugins.json' ),
@@ -20,10 +20,10 @@ const blueprint = JSON.parse(
 
 test( 'Playground mounts and activates CreatorStack AI with the Google provider', async () => {
 	test.setTimeout( 180_000 );
-
-	expect(
-		fs.existsSync( path.join( googleProviderRoot, 'plugin.php' ) )
-	).toBe( true );
+	test.skip(
+		! fs.existsSync( googleProviderPluginFile ),
+		'Optional ai-provider-for-google sibling checkout is not available.'
+	);
 
 	let cli: PlaygroundCLI | undefined;
 
