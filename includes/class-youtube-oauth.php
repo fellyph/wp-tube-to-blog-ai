@@ -21,8 +21,6 @@ class YouTube_OAuth {
 	private const API_BASE  = 'https://www.googleapis.com/youtube/v3';
 	private const SCOPE     = 'https://www.googleapis.com/auth/youtube.force-ssl';
 
-	private const CLIENT_ID_OPTION     = 'wttba_youtube_oauth_client_id';
-	private const CLIENT_SECRET_OPTION = 'wttba_youtube_oauth_client_secret';
 	private const ACCESS_TOKEN_OPTION  = 'wttba_youtube_oauth_access_token';
 	private const REFRESH_TOKEN_OPTION = 'wttba_youtube_oauth_refresh_token';
 	private const EXPIRES_AT_OPTION    = 'wttba_youtube_oauth_expires_at';
@@ -53,7 +51,7 @@ class YouTube_OAuth {
 	 * @return bool
 	 */
 	public static function has_credentials(): bool {
-		return self::is_valid_client_id( self::get_client_id() ) && self::is_valid_client_secret( self::get_client_secret() );
+		return YouTube_Connector::has_oauth_credentials();
 	}
 
 	/**
@@ -63,7 +61,7 @@ class YouTube_OAuth {
 	 * @return bool
 	 */
 	public static function is_valid_client_id( string $client_id ): bool {
-		return 1 === preg_match( '/^[0-9]+-[0-9A-Za-z_-]+\.apps\.googleusercontent\.com$/', trim( $client_id ) );
+		return YouTube_Connector::is_valid_oauth_client_id( $client_id );
 	}
 
 	/**
@@ -73,7 +71,7 @@ class YouTube_OAuth {
 	 * @return bool
 	 */
 	public static function is_valid_client_secret( string $client_secret ): bool {
-		return 1 === preg_match( '/^[0-9A-Za-z_-]{8,}$/', trim( $client_secret ) );
+		return YouTube_Connector::is_valid_oauth_client_secret( $client_secret );
 	}
 
 	/**
@@ -542,7 +540,7 @@ class YouTube_OAuth {
 	 * @return string
 	 */
 	private static function get_client_id(): string {
-		return trim( (string) get_option( self::CLIENT_ID_OPTION, '' ) );
+		return YouTube_Connector::get_oauth_client_id();
 	}
 
 	/**
@@ -551,7 +549,7 @@ class YouTube_OAuth {
 	 * @return string
 	 */
 	private static function get_client_secret(): string {
-		return trim( (string) get_option( self::CLIENT_SECRET_OPTION, '' ) );
+		return YouTube_Connector::get_oauth_client_secret();
 	}
 
 	/**

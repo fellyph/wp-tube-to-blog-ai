@@ -12,6 +12,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 delete_option( 'wttba_youtube_api_key' );
+delete_option( 'connectors_content_source_youtube_api_key' );
 delete_option( 'wttba_youtube_channel_id' );
 delete_option( 'wttba_youtube_oauth_client_id' );
 delete_option( 'wttba_youtube_oauth_client_secret' );

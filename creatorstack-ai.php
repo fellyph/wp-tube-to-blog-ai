@@ -87,6 +87,7 @@ require_once WTTBA_PLUGIN_DIR . 'includes/class-settings.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-ai-provider-status.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-generation-logger.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-content-generator.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-connector.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-api.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-oauth.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-transcript-fetcher.php';
