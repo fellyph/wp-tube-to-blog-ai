@@ -68,6 +68,8 @@ test( 'wttba/v1 namespace is registered', async () => {
 			'/wttba/v1/audio-post/preview',
 			'/wttba/v1/audio-post/draft',
 			'/wttba/v1/posts/(?P<id>[\\d]+)/audio',
+			'/wttba/v1/posts/(?P<id>[\\d]+)/thumbnail/preview',
+			'/wttba/v1/posts/(?P<id>[\\d]+)/thumbnail',
 		] )
 	);
 	await ctx.dispose();
@@ -137,16 +139,22 @@ test( 'authenticated /capabilities returns AI feature flags and audio limits', a
 	expect( body ).toHaveProperty( 'textGenerationSupported' );
 	expect( body ).toHaveProperty( 'audioInputSupported' );
 	expect( body ).toHaveProperty( 'textToSpeechSupported' );
+	expect( body ).toHaveProperty( 'imageGenerationSupported' );
+	expect( body ).toHaveProperty( 'imageReferenceInputSupported' );
 	expect( body ).toHaveProperty( 'features', {
 		youtubeToPost: true,
 		audioToPost: true,
 		postToAudio: false,
+		thumbnailGenerator: true,
 	} );
 	expect( body.textToSpeechSupported ).toBe( false );
 	expect( audioUpload.allowedExtensions ).toEqual(
 		expect.arrayContaining( [ 'mp3', 'wav', 'm4a' ] )
 	);
 	expect( audioUpload.maxBytes ).toBeGreaterThan( 0 );
+	expect( body ).toHaveProperty( 'thumbnail' );
+	expect( body.thumbnail ).toHaveProperty( 'maxReferenceImages', 2 );
+	expect( body.thumbnail ).toHaveProperty( 'styles.bold_youtube' );
 } );
 
 test( 'authenticated /ai/test returns a structured error when no provider is configured', async () => {
@@ -217,4 +225,62 @@ echo wp_json_encode( array( 'attachment_id' => $attachment_id ) );
 	const body = res.body;
 	expect( body ).toHaveProperty( 'code' );
 	expect( body ).toHaveProperty( 'data.error_category' );
+} );
+
+test( 'thumbnail preview route returns a structured error when no image provider is configured', async () => {
+	const postRes = await directRestRequest( 'POST', '/wp/v2/posts', {
+		title: 'Thumbnail route test',
+		content:
+			'This post has enough content to describe a generated featured image.',
+		status: 'draft',
+	} );
+	expect( postRes.status ).toBe( 201 );
+	const post = postRes.body as { id: number };
+
+	const res = await directRestRequest(
+		'POST',
+		`/wttba/v1/posts/${ post.id }/thumbnail/preview`,
+		{
+			style: 'bold_youtube',
+			secondary_style: '',
+			author_attachment_id: 0,
+			reference_attachment_ids: [],
+		}
+	);
+
+	expect( res.status ).toBeGreaterThanOrEqual( 400 );
+	const body = res.body;
+	expect( body ).toHaveProperty(
+		'code',
+		'wttba_image_generation_not_supported'
+	);
+	expect( body ).toHaveProperty( 'data.error_category', 'configuration' );
+	expect( body ).toHaveProperty(
+		'data.configuration_label',
+		'Configure AI Provider'
+	);
+} );
+
+test( 'thumbnail save route rejects expired previews with a structured error', async () => {
+	const postRes = await directRestRequest( 'POST', '/wp/v2/posts', {
+		title: 'Expired thumbnail preview test',
+		content:
+			'Content for a post with an expired generated thumbnail preview.',
+		status: 'draft',
+	} );
+	expect( postRes.status ).toBe( 201 );
+	const post = postRes.body as { id: number };
+
+	const res = await directRestRequest(
+		'POST',
+		`/wttba/v1/posts/${ post.id }/thumbnail`,
+		{
+			preview_id: 'missing-preview',
+		}
+	);
+
+	expect( res.status ).toBe( 404 );
+	const body = res.body;
+	expect( body ).toHaveProperty( 'code', 'wttba_thumbnail_preview_expired' );
+	expect( body ).toHaveProperty( 'data.error_category', 'not_found' );
 } );

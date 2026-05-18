@@ -12,6 +12,7 @@
 		"creatorstack-ai.php",
 		"wp-tube-to-blog-ai.php",
 		"uninstall.php",
+		"assets",
 		"build",
 		"includes",
 		"languages"

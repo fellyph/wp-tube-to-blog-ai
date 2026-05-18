@@ -36,7 +36,7 @@ class Editor_Integration {
 			return;
 		}
 
-		if ( ! Settings::is_audio_to_post_enabled() && ! Settings::is_post_to_audio_enabled() ) {
+		if ( ! Settings::is_audio_to_post_enabled() && ! Settings::is_post_to_audio_enabled() && ! Settings::is_thumbnail_generator_enabled() ) {
 			return;
 		}
 
@@ -70,6 +70,7 @@ class Editor_Integration {
 		);
 
 		$content_generator = new Content_Generator();
+		$thumbnail_generator = new Thumbnail_Generator();
 
 		wp_localize_script(
 			'wttba-editor',
@@ -86,6 +87,10 @@ class Editor_Integration {
 				'ai'                     => AI_Provider_Status::get_admin_config(),
 				'allowedAudioExtensions' => Content_Generator::ALLOWED_AUDIO_EXTENSIONS,
 				'maxAudioBytes'          => $content_generator->get_max_audio_bytes(),
+				'thumbnailStyles'        => Thumbnail_Generator::get_public_style_presets(),
+				'allowedImageExtensions' => Thumbnail_Generator::ALLOWED_IMAGE_EXTENSIONS,
+				'maxImageBytes'          => $thumbnail_generator->get_max_image_bytes(),
+				'maxThumbnailReferences' => Thumbnail_Generator::MAX_REFERENCE_IMAGES,
 			)
 		);
 	}

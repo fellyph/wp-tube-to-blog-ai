@@ -144,6 +144,18 @@ class Plugin {
 
 		register_post_meta(
 			'post',
+			Thumbnail_Generator::THUMBNAIL_ATTACHMENT_META_KEY,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
 			Generation_Logger::META_KEY,
 			array(
 				'type'              => 'object',

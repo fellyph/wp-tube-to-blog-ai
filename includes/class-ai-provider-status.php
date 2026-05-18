@@ -22,6 +22,11 @@ class AI_Provider_Status {
 	private const DUMMY_AUDIO_DATA_URI = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=';
 
 	/**
+	 * Tiny 1x1 transparent PNG data URI for image-reference capability checks.
+	 */
+	private const DUMMY_IMAGE_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p94AAAAASUVORK5CYII=';
+
+	/**
 	 * Minimum WordPress version with the Core AI Client and Connectors APIs.
 	 */
 	private const MINIMUM_WORDPRESS_VERSION = '7.0-beta';
@@ -124,6 +129,40 @@ class AI_Provider_Status {
 	}
 
 	/**
+	 * Check whether a configured provider can generate images.
+	 *
+	 * @return bool
+	 */
+	public static function is_image_generation_supported(): bool {
+		return self::is_supported_for( 'is_supported_for_image_generation' );
+	}
+
+	/**
+	 * Check whether image generation supports image reference input.
+	 *
+	 * @return bool
+	 */
+	public static function is_image_reference_generation_supported(): bool {
+		if ( ! self::is_ai_client_available() ) {
+			return false;
+		}
+
+		$prompt = wp_ai_client_prompt( 'Create a simple editorial thumbnail from this reference.' );
+
+		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'with_file' ) ) ) {
+			return false;
+		}
+
+		$prompt = $prompt->with_file( self::DUMMY_IMAGE_DATA_URI, 'image/png' );
+
+		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'is_supported_for_image_generation' ) ) ) {
+			return false;
+		}
+
+		return true === $prompt->is_supported_for_image_generation();
+	}
+
+	/**
 	 * Get the admin URL where site owners should configure AI provider credentials.
 	 *
 	 * @return string
@@ -181,6 +220,8 @@ class AI_Provider_Status {
 			'textGenerationSupported' => self::is_text_generation_supported(),
 			'audioInputSupported'      => self::is_audio_input_generation_supported(),
 			'textToSpeechSupported'    => self::is_text_to_speech_supported(),
+			'imageGenerationSupported' => self::is_image_generation_supported(),
+			'imageReferenceInputSupported' => self::is_image_reference_generation_supported(),
 			'configurationUrl'        => self::get_configuration_url(),
 			'unavailableMessage'      => self::get_unavailable_message(),
 			'providers'               => self::get_registered_ai_connectors(),
