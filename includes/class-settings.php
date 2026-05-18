@@ -87,6 +87,11 @@ class Settings {
 	public const FEATURE_POST_TO_AUDIO = 'post_to_audio';
 
 	/**
+	 * Feature key for thumbnail generation.
+	 */
+	public const FEATURE_THUMBNAIL_GENERATOR = 'thumbnail_generator';
+
+	/**
 	 * Feature option map.
 	 *
 	 * @var array<string, array{option: string, default: bool, jsKey: string}>
@@ -106,6 +111,11 @@ class Settings {
 			'option'  => 'wttba_feature_post_to_audio',
 			'default' => false,
 			'jsKey'   => 'postToAudio',
+		),
+		self::FEATURE_THUMBNAIL_GENERATOR => array(
+			'option'  => 'wttba_feature_thumbnail_generator',
+			'default' => true,
+			'jsKey'   => 'thumbnailGenerator',
 		),
 	);
 
@@ -402,6 +412,13 @@ class Settings {
 				'label'       => __( 'Post to Audio', 'creatorstack-ai' ),
 				'description' => __( 'Generate narrated audio from post content and attach the result to the post.', 'creatorstack-ai' ),
 			),
+			self::FEATURE_THUMBNAIL_GENERATOR => array(
+				'option'      => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['option'],
+				'default'     => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['default'],
+				'jsKey'       => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['jsKey'],
+				'label'       => __( 'Thumbnail Generator', 'creatorstack-ai' ),
+				'description' => __( 'Generate AI featured images for posts with optional author, logo, and object references.', 'creatorstack-ai' ),
+			),
 		);
 	}
 
@@ -455,6 +472,13 @@ class Settings {
 	 */
 	public static function is_post_to_audio_enabled(): bool {
 		return self::is_feature_enabled( self::FEATURE_POST_TO_AUDIO );
+	}
+
+	/**
+	 * Check whether thumbnail generation is enabled.
+	 */
+	public static function is_thumbnail_generator_enabled(): bool {
+		return self::is_feature_enabled( self::FEATURE_THUMBNAIL_GENERATOR );
 	}
 
 	/**
@@ -807,6 +831,12 @@ class Settings {
 						<h1><?php esc_html_e( 'CreatorStack AI Settings', 'creatorstack-ai' ); ?></h1>
 						<p class="wttba-settings-hero__description"><?php esc_html_e( 'Enable creator workflows, connect YouTube, tune generated posts, and verify your AI provider from one focused workspace.', 'creatorstack-ai' ); ?></p>
 					</div>
+					<img
+						class="wttba-settings-hero__logo"
+						src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
+						alt=""
+						aria-hidden="true"
+					/>
 				</header>
 				<?php $this->render_oauth_status_notice(); ?>
 				<?php Admin_Navigation::render( 'settings' ); ?>
@@ -1122,11 +1152,15 @@ class Settings {
 		$post_to_audio_message = self::is_post_to_audio_enabled()
 			? ( AI_Provider_Status::is_text_to_speech_supported() ? __( 'Post-to-audio generation is available.', 'creatorstack-ai' ) : __( 'Post-to-audio generation requires an AI provider with text-to-speech support.', 'creatorstack-ai' ) )
 			: __( 'Post-to-audio generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
+		$thumbnail_message = self::is_thumbnail_generator_enabled()
+			? ( AI_Provider_Status::is_image_generation_supported() ? __( 'Thumbnail generation is available.', 'creatorstack-ai' ) : __( 'Thumbnail generation requires an AI provider with image generation support.', 'creatorstack-ai' ) )
+			: __( 'Thumbnail generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
 		?>
 		<p><?php echo esc_html( $message ); ?></p>
 		<ul>
 			<li><?php echo esc_html( $audio_to_post_message ); ?></li>
 			<li><?php echo esc_html( $post_to_audio_message ); ?></li>
+			<li><?php echo esc_html( $thumbnail_message ); ?></li>
 		</ul>
 		<p>
 			<a href="<?php echo esc_url( $config_url ); ?>" class="button button-secondary">

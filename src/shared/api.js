@@ -204,3 +204,49 @@ export function generatePostAudio( postId, voice = '', overwriteBlock = true ) {
 		},
 	} );
 }
+
+/**
+ * Generate a thumbnail preview for an existing post.
+ *
+ * @param {number}   postId                 Post ID.
+ * @param {string}   style                  Primary thumbnail style.
+ * @param {string}   secondaryStyle         Optional secondary style.
+ * @param {number}   authorAttachmentId     Optional author image attachment ID.
+ * @param {number[]} referenceAttachmentIds Optional logo/object image attachment IDs.
+ * @return {Promise<Object>} Thumbnail preview response.
+ */
+export function previewThumbnail(
+	postId,
+	style,
+	secondaryStyle = '',
+	authorAttachmentId = 0,
+	referenceAttachmentIds = []
+) {
+	return apiFetch( {
+		path: `/wttba/v1/posts/${ postId }/thumbnail/preview`,
+		method: 'POST',
+		data: {
+			style,
+			secondary_style: secondaryStyle,
+			author_attachment_id: authorAttachmentId,
+			reference_attachment_ids: referenceAttachmentIds,
+		},
+	} );
+}
+
+/**
+ * Save a generated thumbnail preview and set it as the post featured image.
+ *
+ * @param {number} postId    Post ID.
+ * @param {string} previewId Preview ID returned from previewThumbnail().
+ * @return {Promise<Object>} Saved thumbnail response.
+ */
+export function setGeneratedThumbnail( postId, previewId ) {
+	return apiFetch( {
+		path: `/wttba/v1/posts/${ postId }/thumbnail`,
+		method: 'POST',
+		data: {
+			preview_id: previewId,
+		},
+	} );
+}

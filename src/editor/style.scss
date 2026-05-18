@@ -154,6 +154,67 @@
 		margin-top: 10px;
 	}
 
+	&__image-chip-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	&__image-chip {
+		display: grid;
+		grid-template-columns: 42px minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 8px;
+		min-height: 44px;
+		padding: 6px;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		background: #fbfbfc;
+
+		.components-button {
+			width: auto;
+			min-height: 30px;
+			padding: 0 6px;
+		}
+	}
+
+	&__image-chip-thumb {
+		width: 42px;
+		height: 42px;
+		border-radius: 3px;
+		object-fit: cover;
+		background: #f0f0f1;
+	}
+
+	&__image-chip-label {
+		min-width: 0;
+		color: #1d2327;
+		font-size: 12px;
+		line-height: 1.35;
+		overflow-wrap: anywhere;
+	}
+
+	&__thumbnail-preview {
+		margin: 0;
+		overflow: hidden;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		background: #f0f0f1;
+
+		img {
+			display: block;
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			object-fit: cover;
+		}
+	}
+
+	&__thumbnail-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
 	.components-button {
 		justify-content: center;
 		width: 100%;

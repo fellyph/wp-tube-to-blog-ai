@@ -178,6 +178,12 @@ class Admin_Videos_Page {
 				<h1><?php echo esc_html( $title ); ?></h1>
 				<p class="wttba-admin-hero__description"><?php echo esc_html( $description ); ?></p>
 			</div>
+			<img
+				class="wttba-admin-hero__logo"
+				src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
+				alt=""
+				aria-hidden="true"
+			/>
 		</header>
 		<?php
 	}
