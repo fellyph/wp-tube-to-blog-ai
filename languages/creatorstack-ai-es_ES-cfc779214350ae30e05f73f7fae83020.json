@@ -1,0 +1,60 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "src\/settings\/index.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "es_ES",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Configure AI Provider": [
+                "Configurar proveedor de IA"
+            ],
+            "AI provider connection test succeeded.": [
+                "La prueba de conexi\u00f3n del proveedor de IA se complet\u00f3 correctamente."
+            ],
+            "Test AI Connection": [
+                "Probar conexi\u00f3n de IA"
+            ],
+            "unknown": [
+                "desconocido"
+            ],
+            "Redirect URI copied.": [
+                "URI de redirecci\u00f3n copiada."
+            ],
+            "Copy failed. Select and copy the redirect URI manually.": [
+                "Error al copiar. Selecciona y copia manualmente la URI de redirecci\u00f3n."
+            ],
+            "No redirect URI was available to copy.": [
+                "No hab\u00eda ninguna URI de redirecci\u00f3n disponible para copiar."
+            ],
+            "This does not look like a valid Web application client_secret.json file.": [
+                "Esto no parece un archivo client_secret.json v\u00e1lido de aplicaci\u00f3n web."
+            ],
+            "OAuth fields filled. Save changes, then connect YouTube.": [
+                "Campos OAuth rellenados. Guarda los cambios y conecta YouTube."
+            ],
+            "OAuth fields filled. Make sure the Authorized redirect URI above is also saved in Google Cloud before connecting.": [
+                "Campos OAuth rellenados. Aseg\u00farate de que la URI de redirecci\u00f3n autorizada anterior tambi\u00e9n est\u00e9 guardada en Google Cloud antes de conectar."
+            ],
+            "The pasted text is not valid JSON. Download client_secret.json from Google Cloud and paste the full file contents.": [
+                "El texto pegado no es JSON v\u00e1lido. Descarga client_secret.json desde Google Cloud y pega todo el contenido del archivo."
+            ],
+            "Paste the client_secret.json contents first.": [
+                "Pega primero el contenido de client_secret.json."
+            ],
+            "Testing\u2026": [
+                "Probando\u2026"
+            ],
+            "Test generation: %s": [
+                "Generaci\u00f3n de prueba: %s"
+            ],
+            "Provider: %1$s. Model: %2$s.": [
+                "Proveedor: %1$s. Modelo: %2$s."
+            ]
+        }
+    }
+}

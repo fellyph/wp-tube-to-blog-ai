@@ -1,0 +1,51 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "src\/dashboard-widget\/index.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "pt_BR",
+                "plural-forms": "nplurals=2; plural=(n > 1);"
+            },
+            "Configure AI Provider": [
+                "Configurar provedor de IA"
+            ],
+            "Go to Settings": [
+                "Ir para Configura\u00e7\u00f5es"
+            ],
+            "Configure the YouTube connector API key.": [
+                "Configure a chave de API do conector do YouTube."
+            ],
+            "Configure your YouTube channel settings.": [
+                "Configure as op\u00e7\u00f5es do seu canal do YouTube."
+            ],
+            "Loading videos\u2026": [
+                "Carregando v\u00eddeos\u2026"
+            ],
+            "Post generated successfully!": [
+                "Post gerado."
+            ],
+            "Edit Draft": [
+                "Editar rascunho"
+            ],
+            "Configure an AI provider before generating posts.": [
+                "Configure um provedor de IA antes de gerar posts."
+            ],
+            "Generating\u2026": [
+                "Gerando\u2026"
+            ],
+            "Generate Post": [
+                "Gerar post"
+            ],
+            "AI unavailable": [
+                "IA indispon\u00edvel"
+            ],
+            "See More \u2192": [
+                "Ver mais \u2192"
+            ]
+        }
+    }
+}
