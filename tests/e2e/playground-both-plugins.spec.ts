@@ -31,6 +31,7 @@ test( 'Playground mounts and activates CreatorStack AI with the Google provider'
 		cli = await runCLI( {
 			command: 'server',
 			php: blueprint.preferredVersions?.php || '8.3',
+			port: 0,
 			wp: blueprint.preferredVersions?.wp || 'nightly',
 			mount: [
 				{

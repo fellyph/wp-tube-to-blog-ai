@@ -254,6 +254,71 @@ class REST_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/posts/(?P<id>[\d]+)/thumbnail/preview',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'preview_post_thumbnail' ),
+				'permission_callback' => array( $this, 'can_generate_post_thumbnail' ),
+				'args'                => array(
+					'id'                       => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'style'                    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+						'validate_callback' => array( $this, 'validate_thumbnail_style' ),
+					),
+					'secondary_style'          => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'validate_callback' => array( $this, 'validate_optional_thumbnail_style' ),
+						'default'           => '',
+					),
+					'author_attachment_id'     => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'default'           => 0,
+					),
+					'reference_attachment_ids' => array(
+						'type'              => 'array',
+						'items'             => array(
+							'type' => 'integer',
+						),
+						'sanitize_callback' => array( $this, 'sanitize_attachment_ids_arg' ),
+						'validate_callback' => array( $this, 'validate_reference_attachment_ids' ),
+						'default'           => array(),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/posts/(?P<id>[\d]+)/thumbnail',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'save_post_thumbnail' ),
+				'permission_callback' => array( $this, 'can_generate_post_thumbnail' ),
+				'args'                => array(
+					'id'         => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'preview_id' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -296,6 +361,14 @@ class REST_Controller {
 		'wttba_audio_save_failed'   => 500,
 		'wttba_audio_draft_save_failed' => 500,
 		'wttba_feature_disabled'    => 403,
+		'wttba_image_generation_not_supported' => 422,
+		'wttba_image_reference_not_supported' => 422,
+		'wttba_invalid_image_attachment' => 400,
+		'wttba_image_too_large'     => 400,
+		'wttba_invalid_thumbnail_style' => 400,
+		'wttba_thumbnail_generation_failed' => 502,
+		'wttba_thumbnail_save_failed' => 500,
+		'wttba_thumbnail_preview_expired' => 404,
 	);
 
 	/**
@@ -338,6 +411,14 @@ class REST_Controller {
 		'wttba_audio_save_failed'   => 'internal',
 		'wttba_audio_draft_save_failed' => 'internal',
 		'wttba_feature_disabled'    => 'configuration',
+		'wttba_image_generation_not_supported' => 'configuration',
+		'wttba_image_reference_not_supported' => 'configuration',
+		'wttba_invalid_image_attachment' => 'validation',
+		'wttba_image_too_large'     => 'validation',
+		'wttba_invalid_thumbnail_style' => 'validation',
+		'wttba_thumbnail_generation_failed' => 'upstream',
+		'wttba_thumbnail_save_failed' => 'internal',
+		'wttba_thumbnail_preview_expired' => 'not_found',
 	);
 
 	/**
@@ -398,6 +479,68 @@ class REST_Controller {
 		$post_id = absint( $request->get_param( 'id' ) );
 
 		return $post_id > 0 && current_user_can( 'edit_post', $post_id );
+	}
+
+	/**
+	 * Permission check for post thumbnail generation.
+	 *
+	 * @param \WP_REST_Request $request Request object.
+	 * @return bool
+	 */
+	public function can_generate_post_thumbnail( \WP_REST_Request $request ): bool {
+		$post_id = absint( $request->get_param( 'id' ) );
+
+		return $post_id > 0
+			&& current_user_can( 'edit_post', $post_id )
+			&& current_user_can( 'upload_files' );
+	}
+
+	/**
+	 * Validate a thumbnail style key.
+	 *
+	 * @param mixed $value Submitted style value.
+	 * @return bool
+	 */
+	public function validate_thumbnail_style( mixed $value, mixed ...$unused ): bool {
+		return is_string( $value ) && array_key_exists( sanitize_key( $value ), Thumbnail_Generator::get_public_style_presets() );
+	}
+
+	/**
+	 * Validate an optional thumbnail style key.
+	 *
+	 * @param mixed $value Submitted secondary style value.
+	 * @return bool
+	 */
+	public function validate_optional_thumbnail_style( mixed $value, mixed ...$unused ): bool {
+		if ( '' === $value || null === $value ) {
+			return true;
+		}
+
+		return $this->validate_thumbnail_style( $value );
+	}
+
+	/**
+	 * Sanitize an array of attachment IDs.
+	 *
+	 * @param mixed $value Submitted attachment IDs.
+	 * @return array<int, int>
+	 */
+	public function sanitize_attachment_ids_arg( mixed $value, mixed ...$unused ): array {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		return array_values( array_unique( array_filter( array_map( 'absint', $value ) ) ) );
+	}
+
+	/**
+	 * Validate reference attachment count.
+	 *
+	 * @param mixed $value Submitted attachment IDs.
+	 * @return bool
+	 */
+	public function validate_reference_attachment_ids( mixed $value, mixed ...$unused ): bool {
+		return is_array( $value ) && count( $value ) <= Thumbnail_Generator::MAX_REFERENCE_IMAGES;
 	}
 
 	/**
@@ -486,6 +629,8 @@ class REST_Controller {
 				'textGenerationSupported' => AI_Provider_Status::is_text_generation_supported(),
 				'audioInputSupported'      => Settings::is_audio_to_post_enabled() && AI_Provider_Status::is_audio_input_generation_supported(),
 				'textToSpeechSupported'    => Settings::is_post_to_audio_enabled() && AI_Provider_Status::is_text_to_speech_supported(),
+				'imageGenerationSupported' => Settings::is_thumbnail_generator_enabled() && AI_Provider_Status::is_image_generation_supported(),
+				'imageReferenceInputSupported' => Settings::is_thumbnail_generator_enabled() && AI_Provider_Status::is_image_reference_generation_supported(),
 				'features'                 => Settings::get_feature_states(),
 				'configurationUrl'        => AI_Provider_Status::get_configuration_url(),
 				'configurationLabel'      => __( 'Configure AI Provider', 'creatorstack-ai' ),
@@ -494,6 +639,12 @@ class REST_Controller {
 				'audioUpload'             => array(
 					'maxBytes'          => $content_generator->get_max_audio_bytes(),
 					'allowedExtensions' => Content_Generator::ALLOWED_AUDIO_EXTENSIONS,
+				),
+				'thumbnail'              => array(
+					'styles'             => Thumbnail_Generator::get_public_style_presets(),
+					'maxReferenceImages' => Thumbnail_Generator::MAX_REFERENCE_IMAGES,
+					'maxBytes'           => ( new Thumbnail_Generator() )->get_max_image_bytes(),
+					'allowedExtensions'  => Thumbnail_Generator::ALLOWED_IMAGE_EXTENSIONS,
 				),
 			),
 			200
@@ -774,6 +925,57 @@ class REST_Controller {
 
 		if ( is_wp_error( $result ) ) {
 			Generation_Logger::record( $post_id, Generation_Logger::metadata_from_error( 'post_audio', $result ) );
+			return $this->prepare_error_response( $result );
+		}
+
+		return new \WP_REST_Response( $result, 201 );
+	}
+
+	/**
+	 * POST /posts/{id}/thumbnail/preview - Generate a thumbnail preview from post content.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function preview_post_thumbnail( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_thumbnail_generator_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_THUMBNAIL_GENERATOR ) );
+		}
+
+		$post_id                  = absint( $request->get_param( 'id' ) );
+		$style                    = sanitize_key( (string) $request->get_param( 'style' ) );
+		$secondary_style          = sanitize_key( (string) ( $request->get_param( 'secondary_style' ) ?? '' ) );
+		$author_attachment_id     = absint( $request->get_param( 'author_attachment_id' ) );
+		$reference_attachment_ids = $this->sanitize_attachment_ids_arg( $request->get_param( 'reference_attachment_ids' ) );
+
+		$generator = new Thumbnail_Generator();
+		$result    = $generator->preview_for_post( $post_id, $style, $secondary_style, $author_attachment_id, $reference_attachment_ids );
+
+		if ( is_wp_error( $result ) ) {
+			return $this->prepare_error_response( $result );
+		}
+
+		return new \WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * POST /posts/{id}/thumbnail - Save a generated thumbnail as the featured image.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function save_post_thumbnail( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! Settings::is_thumbnail_generator_enabled() ) {
+			return $this->prepare_error_response( $this->get_feature_disabled_error( Settings::FEATURE_THUMBNAIL_GENERATOR ) );
+		}
+
+		$post_id    = absint( $request->get_param( 'id' ) );
+		$preview_id = sanitize_key( (string) $request->get_param( 'preview_id' ) );
+
+		$generator = new Thumbnail_Generator();
+		$result    = $generator->save_preview_for_post( $post_id, $preview_id );
+
+		if ( is_wp_error( $result ) ) {
 			return $this->prepare_error_response( $result );
 		}
 

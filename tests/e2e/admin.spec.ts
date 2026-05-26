@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { runCLI } from '@wp-playground/cli';
+import { expectPluginLogoLoaded } from './assertions';
 import { startPlayground, stopPlayground } from './fixtures';
 
 let cli: Awaited< ReturnType< typeof runCLI > >;
@@ -56,6 +57,7 @@ test( 'top-level "CreatorStack" menu opens the videos admin page', async ( {
 		page.getByRole( 'heading', { name: 'YouTube Content' } )
 	).toBeVisible();
 	await expect( page.locator( '.wttba-admin-hero' ) ).toBeVisible();
+	await expectPluginLogoLoaded( page.locator( '.wttba-admin-hero__logo' ) );
 	await expect(
 		page
 			.getByRole( 'navigation', { name: 'CreatorStack AI sections' } )

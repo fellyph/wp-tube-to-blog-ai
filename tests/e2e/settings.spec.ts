@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { runCLI } from '@wp-playground/cli';
+import { expectPluginLogoLoaded } from './assertions';
 import { startPlayground, stopPlayground } from './fixtures';
 
 let cli: Awaited< ReturnType< typeof runCLI > >;
@@ -95,6 +96,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 			name: 'CreatorStack AI Settings',
 		} )
 	).toBeVisible();
+	await expectPluginLogoLoaded(
+		page.locator( '.wttba-settings-hero__logo' )
+	);
 	await expect(
 		page.getByRole( 'heading', { name: 'YouTube Integration' } )
 	).toBeVisible();
@@ -112,6 +116,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 	await expect(
 		page.locator( '#wttba_feature_post_to_audio' )
 	).not.toBeChecked();
+	await expect(
+		page.locator( '#wttba_feature_thumbnail_generator' )
+	).toBeChecked();
 	await expect(
 		page.locator(
 			'.wttba-settings-section--features .wttba-feature-toggle__badge'
@@ -257,24 +264,31 @@ test( 'saves enabled functionality toggles', async ( { page } ) => {
 	const youtubeToPost = page.locator( '#wttba_feature_youtube_to_post' );
 	const audioToPost = page.locator( '#wttba_feature_audio_to_post' );
 	const postToAudio = page.locator( '#wttba_feature_post_to_audio' );
+	const thumbnailGenerator = page.locator(
+		'#wttba_feature_thumbnail_generator'
+	);
 
 	await audioToPost.uncheck();
 	await postToAudio.check();
+	await thumbnailGenerator.uncheck();
 	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
 
 	await expect( page.getByText( 'Settings saved' ) ).toBeVisible();
 	await expect( youtubeToPost ).toBeChecked();
 	await expect( audioToPost ).not.toBeChecked();
 	await expect( postToAudio ).toBeChecked();
+	await expect( thumbnailGenerator ).not.toBeChecked();
 
 	await audioToPost.check();
 	await postToAudio.uncheck();
+	await thumbnailGenerator.check();
 	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
 
 	await expect( page.getByText( 'Settings saved' ) ).toBeVisible();
 	await expect( youtubeToPost ).toBeChecked();
 	await expect( audioToPost ).toBeChecked();
 	await expect( postToAudio ).not.toBeChecked();
+	await expect( thumbnailGenerator ).toBeChecked();
 } );
 
 test( 'AI connection test reports provider configuration state on localhost', async ( {
