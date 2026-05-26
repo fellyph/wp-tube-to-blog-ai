@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Editor_Integration {
 
+	private const AUDIO_NOTICE_PREFIX = 'wttba_audio_notice_';
+
 	/**
 	 * Constructor.
 	 */
@@ -36,7 +38,7 @@ class Editor_Integration {
 			return;
 		}
 
-		if ( ! Settings::is_audio_to_post_enabled() && ! Settings::is_post_to_audio_enabled() ) {
+		if ( ! Settings::is_audio_to_post_enabled() && ! Settings::is_post_to_audio_enabled() && ! Settings::is_thumbnail_generator_enabled() ) {
 			return;
 		}
 
@@ -70,6 +72,7 @@ class Editor_Integration {
 		);
 
 		$content_generator = new Content_Generator();
+		$thumbnail_generator = new Thumbnail_Generator();
 
 		wp_localize_script(
 			'wttba-editor',
@@ -86,6 +89,10 @@ class Editor_Integration {
 				'ai'                     => AI_Provider_Status::get_admin_config(),
 				'allowedAudioExtensions' => Content_Generator::ALLOWED_AUDIO_EXTENSIONS,
 				'maxAudioBytes'          => $content_generator->get_max_audio_bytes(),
+				'thumbnailStyles'        => Thumbnail_Generator::get_public_style_presets(),
+				'allowedImageExtensions' => Thumbnail_Generator::ALLOWED_IMAGE_EXTENSIONS,
+				'maxImageBytes'          => $thumbnail_generator->get_max_image_bytes(),
+				'maxThumbnailReferences' => Thumbnail_Generator::MAX_REFERENCE_IMAGES,
 			)
 		);
 	}
@@ -147,15 +154,9 @@ class Editor_Integration {
 		$status    = is_wp_error( $result ) ? 'error' : 'success';
 		$message   = is_wp_error( $result ) ? $result->get_error_message() : __( 'Audio generated and attached to the post.', 'creatorstack-ai' );
 
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'wttba_audio_status'  => $status,
-					'wttba_audio_message' => rawurlencode( $message ),
-				),
-				wp_get_referer() ?: admin_url( 'edit.php' )
-			)
-		);
+		$this->store_admin_notice( $status, $message );
+
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'edit.php' ) );
 		exit;
 	}
 
@@ -163,18 +164,56 @@ class Editor_Integration {
 	 * Render admin notices for post-list audio generation.
 	 */
 	public function render_admin_notices(): void {
-		if ( empty( $_GET['wttba_audio_status'] ) || empty( $_GET['wttba_audio_message'] ) ) {
+		$notice = $this->consume_admin_notice();
+
+		if ( empty( $notice ) ) {
 			return;
 		}
 
-		$status  = sanitize_key( wp_unslash( $_GET['wttba_audio_status'] ) );
-		$message = sanitize_text_field( rawurldecode( wp_unslash( $_GET['wttba_audio_message'] ) ) );
-		$class   = 'success' === $status ? 'notice-success' : 'notice-error';
+		$class = 'success' === $notice['status'] ? 'notice-success' : 'notice-error';
 
 		printf(
 			'<div class="notice %1$s is-dismissible"><p>%2$s</p></div>',
 			esc_attr( $class ),
-			esc_html( $message )
+			esc_html( $notice['message'] )
+		);
+	}
+
+	/**
+	 * Store a short-lived admin notice for the current user.
+	 *
+	 * @param string $status  Notice status.
+	 * @param string $message Notice message.
+	 */
+	private function store_admin_notice( string $status, string $message ): void {
+		set_transient(
+			self::AUDIO_NOTICE_PREFIX . get_current_user_id(),
+			array(
+				'status'  => sanitize_key( $status ),
+				'message' => sanitize_text_field( $message ),
+			),
+			MINUTE_IN_SECONDS
+		);
+	}
+
+	/**
+	 * Consume the current user's pending admin notice.
+	 *
+	 * @return array{status: string, message: string}|array{}
+	 */
+	private function consume_admin_notice(): array {
+		$key    = self::AUDIO_NOTICE_PREFIX . get_current_user_id();
+		$notice = get_transient( $key );
+
+		delete_transient( $key );
+
+		if ( ! is_array( $notice ) || empty( $notice['status'] ) || empty( $notice['message'] ) ) {
+			return array();
+		}
+
+		return array(
+			'status'  => sanitize_key( (string) $notice['status'] ),
+			'message' => sanitize_text_field( (string) $notice['message'] ),
 		);
 	}
 }

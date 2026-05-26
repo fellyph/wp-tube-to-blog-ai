@@ -24,6 +24,8 @@ import {
 	generatePostAudio,
 	parseError,
 	previewAudioPost,
+	previewThumbnail,
+	setGeneratedThumbnail,
 	uploadAudioAttachment,
 } from '../shared/api';
 import {
@@ -98,6 +100,50 @@ function getAudioAttachmentLabel( media ) {
 }
 
 /**
+ * Get a readable image attachment label from media responses.
+ *
+ * @param {Object} media Media object.
+ * @return {string} Attachment label.
+ */
+function getImageAttachmentLabel( media ) {
+	if ( media?.filename ) {
+		return media.filename;
+	}
+
+	if ( 'string' === typeof media?.title ) {
+		return media.title;
+	}
+
+	if ( media?.title?.raw ) {
+		return media.title.raw;
+	}
+
+	if ( media?.title?.rendered ) {
+		return media.title.rendered.replace( /<[^>]+>/g, '' );
+	}
+
+	return __( 'Selected image', 'creatorstack-ai' );
+}
+
+/**
+ * Get a preview URL from a media response.
+ *
+ * @param {Object} media Media object.
+ * @return {string} Image URL.
+ */
+function getImageAttachmentUrl( media ) {
+	return (
+		media?.sizes?.thumbnail?.url ||
+		media?.sizes?.medium?.url ||
+		media?.media_details?.sizes?.thumbnail?.source_url ||
+		media?.media_details?.sizes?.medium?.source_url ||
+		media?.source_url ||
+		media?.url ||
+		''
+	);
+}
+
+/**
  * Compact notice for the narrow editor sidebar.
  *
  * @param {Object}   props           Component props.
@@ -157,16 +203,30 @@ function ContentSuitePanel() {
 	const ai = config.ai || {};
 	const features = config.features || {};
 	const languages = config.languages || {};
+	const thumbnailStyles = config.thumbnailStyles || {};
+	const defaultThumbnailStyle =
+		Object.keys( thumbnailStyles )[ 0 ] || 'bold_youtube';
 	const isAudioToPostEnabled = features.audioToPost !== false;
 	const isPostToAudioEnabled = features.postToAudio === true;
+	const isThumbnailGeneratorEnabled = features.thumbnailGenerator !== false;
 	const [ selectedAudio, setSelectedAudio ] = useState( null );
 	const [ language, setLanguage ] = useState(
 		config.defaultLanguage || 'en'
 	);
 	const [ persona, setPersona ] = useState( config.defaultPersona || '' );
 	const [ voice, setVoice ] = useState( '' );
+	const [ thumbnailStyle, setThumbnailStyle ] = useState(
+		defaultThumbnailStyle
+	);
+	const [ thumbnailSecondaryStyle, setThumbnailSecondaryStyle ] =
+		useState( '' );
+	const [ thumbnailAuthor, setThumbnailAuthor ] = useState( null );
+	const [ thumbnailReferences, setThumbnailReferences ] = useState( [] );
+	const [ thumbnailPreview, setThumbnailPreview ] = useState( null );
 	const [ audioToPostBusy, setAudioToPostBusy ] = useState( false );
 	const [ postToAudioBusy, setPostToAudioBusy ] = useState( false );
+	const [ thumbnailBusy, setThumbnailBusy ] = useState( false );
+	const [ thumbnailSaving, setThumbnailSaving ] = useState( false );
 	const [ panelNotice, setPanelNotice ] = useState( null );
 	const recorder = useAudioRecorder( {
 		onRecorded: () => {
@@ -197,7 +257,9 @@ function ContentSuitePanel() {
 
 	if (
 		'post' !== post.type ||
-		( ! isAudioToPostEnabled && ! isPostToAudioEnabled )
+		( ! isAudioToPostEnabled &&
+			! isPostToAudioEnabled &&
+			! isThumbnailGeneratorEnabled )
 	) {
 		return null;
 	}
@@ -206,13 +268,53 @@ function ContentSuitePanel() {
 		isAudioToPostEnabled && !! ai.audioInputSupported;
 	const canGeneratePostAudio =
 		isPostToAudioEnabled && !! ai.textToSpeechSupported;
-	const isBusy = audioToPostBusy || postToAudioBusy || post.isSaving;
+	const canGenerateThumbnail =
+		isThumbnailGeneratorEnabled && !! ai.imageGenerationSupported;
+	const canUseThumbnailReferences =
+		isThumbnailGeneratorEnabled && !! ai.imageReferenceInputSupported;
+	const isBusy =
+		audioToPostBusy ||
+		postToAudioBusy ||
+		thumbnailBusy ||
+		thumbnailSaving ||
+		post.isSaving;
 	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
+	const maxThumbnailReferences = Number( config.maxThumbnailReferences || 2 );
 	const recordingTooLarge =
 		!! maxAudioBytes &&
 		!! recorder.recordedBlob &&
 		recorder.recordedBlob.size > maxAudioBytes;
 	const hasAudioSource = !! selectedAudio?.id || recorder.hasRecording;
+	const thumbnailStyleOptions = Object.entries( thumbnailStyles ).map(
+		( [ value, style ] ) => ( {
+			value,
+			label: style.label || value,
+		} )
+	);
+	const thumbnailSecondaryStyleOptions = [
+		{
+			value: '',
+			label: __( 'No secondary style', 'creatorstack-ai' ),
+		},
+		...thumbnailStyleOptions.filter(
+			( option ) => option.value !== thumbnailStyle
+		),
+	];
+	const thumbnailPreviewUrl =
+		thumbnailPreview?.image_data_uri || thumbnailPreview?.image_url || '';
+	let thumbnailGenerateButtonLabel = __(
+		'Generate Thumbnail',
+		'creatorstack-ai'
+	);
+	if ( thumbnailPreview ) {
+		thumbnailGenerateButtonLabel = __( 'Regenerate', 'creatorstack-ai' );
+	}
+	if ( thumbnailBusy ) {
+		thumbnailGenerateButtonLabel = __( 'Generating…', 'creatorstack-ai' );
+	}
+	const thumbnailGenerateButtonVariant = thumbnailPreview
+		? 'secondary'
+		: 'primary';
 
 	const showError = ( err ) => {
 		const parsed = parseError( err );
@@ -294,7 +396,9 @@ function ContentSuitePanel() {
 			await savePost();
 			createSuccessNotice(
 				__( 'Draft updated from audio.', 'creatorstack-ai' ),
-				{ type: 'snackbar' }
+				{
+					type: 'snackbar',
+				}
 			);
 			setPanelNotice( {
 				status: 'success',
@@ -364,6 +468,138 @@ function ContentSuitePanel() {
 			showError( err );
 		} finally {
 			setPostToAudioBusy( false );
+		}
+	};
+
+	const handleThumbnailReferencesSelect = ( media ) => {
+		const selected = ( Array.isArray( media ) ? media : [ media ] )
+			.filter( Boolean )
+			.slice( 0, maxThumbnailReferences );
+
+		setThumbnailReferences( selected );
+		setThumbnailPreview( null );
+	};
+
+	const clearThumbnailReference = ( attachmentId ) => {
+		setThumbnailReferences( ( current ) =>
+			current.filter( ( item ) => item.id !== attachmentId )
+		);
+		setThumbnailPreview( null );
+	};
+
+	const handleThumbnailGenerate = async () => {
+		if ( ! isThumbnailGeneratorEnabled || ! post.id ) {
+			return;
+		}
+
+		if ( ! canGenerateThumbnail ) {
+			setPanelNotice( {
+				status: 'error',
+				message:
+					ai.unavailableMessage ||
+					__(
+						'Configure an AI provider with image generation support.',
+						'creatorstack-ai'
+					),
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'creatorstack-ai'
+				),
+			} );
+			return;
+		}
+
+		if (
+			( thumbnailAuthor || thumbnailReferences.length > 0 ) &&
+			! canUseThumbnailReferences
+		) {
+			setPanelNotice( {
+				status: 'error',
+				message: __(
+					'The configured AI provider does not support image references.',
+					'creatorstack-ai'
+				),
+				configurationUrl: ai.configurationUrl || config.settingsUrl,
+				configurationLabel: __(
+					'Configure AI Provider',
+					'creatorstack-ai'
+				),
+			} );
+			return;
+		}
+
+		setThumbnailBusy( true );
+		setPanelNotice( null );
+
+		try {
+			if ( post.isDirty ) {
+				await savePost();
+			}
+
+			const result = await previewThumbnail(
+				post.id,
+				thumbnailStyle,
+				thumbnailSecondaryStyle === thumbnailStyle
+					? ''
+					: thumbnailSecondaryStyle,
+				thumbnailAuthor?.id || 0,
+				thumbnailReferences.map( ( media ) => media.id )
+			);
+
+			setThumbnailPreview( result );
+			setPanelNotice( {
+				status: 'success',
+				message: __(
+					'Thumbnail preview generated.',
+					'creatorstack-ai'
+				),
+			} );
+		} catch ( err ) {
+			showError( err );
+		} finally {
+			setThumbnailBusy( false );
+		}
+	};
+
+	const handleThumbnailSave = async () => {
+		if ( ! post.id || ! thumbnailPreview?.preview_id ) {
+			return;
+		}
+
+		setThumbnailSaving( true );
+		setPanelNotice( null );
+
+		try {
+			const result = await setGeneratedThumbnail(
+				post.id,
+				thumbnailPreview.preview_id
+			);
+
+			editPost( {
+				featured_media: result.attachment_id,
+				meta: {
+					_wttba_generated_thumbnail_attachment_id:
+						result.attachment_id,
+				},
+			} );
+
+			await savePost();
+			createSuccessNotice(
+				__( 'Featured image updated.', 'creatorstack-ai' ),
+				{
+					type: 'snackbar',
+				}
+			);
+			setThumbnailPreview( null );
+			setPanelNotice( {
+				status: 'success',
+				message: __( 'Featured image updated.', 'creatorstack-ai' ),
+			} );
+		} catch ( err ) {
+			showError( err );
+		} finally {
+			setThumbnailSaving( false );
 		}
 	};
 
@@ -552,6 +788,240 @@ function ContentSuitePanel() {
 					audioToPostBusy
 						? __( 'Generating…', 'creatorstack-ai' )
 						: __( 'Generate Draft', 'creatorstack-ai' )
+				)
+			),
+		isThumbnailGeneratorEnabled &&
+			createElement(
+				'div',
+				{
+					className:
+						'wttba-editor-panel__section wttba-editor-panel__section--thumbnail',
+				},
+				createElement(
+					'h3',
+					{ className: 'wttba-editor-panel__heading' },
+					__( 'Thumbnail', 'creatorstack-ai' )
+				),
+				! canGenerateThumbnail &&
+					createElement(
+						'p',
+						{ className: 'wttba-editor-panel__muted' },
+						__(
+							'Configure an AI provider with image generation support.',
+							'creatorstack-ai'
+						)
+					),
+				createElement( SelectControl, {
+					label: __( 'Style', 'creatorstack-ai' ),
+					value: thumbnailStyle,
+					options: thumbnailStyleOptions,
+					onChange: ( nextStyle ) => {
+						setThumbnailStyle( nextStyle );
+						if ( thumbnailSecondaryStyle === nextStyle ) {
+							setThumbnailSecondaryStyle( '' );
+						}
+						setThumbnailPreview( null );
+					},
+					disabled: isBusy || ! canGenerateThumbnail,
+				} ),
+				createElement( SelectControl, {
+					label: __( 'Blend style', 'creatorstack-ai' ),
+					value: thumbnailSecondaryStyle,
+					options: thumbnailSecondaryStyleOptions,
+					onChange: ( nextStyle ) => {
+						setThumbnailSecondaryStyle( nextStyle );
+						setThumbnailPreview( null );
+					},
+					disabled: isBusy || ! canGenerateThumbnail,
+				} ),
+				! canUseThumbnailReferences &&
+					createElement(
+						'p',
+						{ className: 'wttba-editor-panel__muted' },
+						__(
+							'This AI provider does not support author, logo, or object reference images.',
+							'creatorstack-ai'
+						)
+					),
+				createElement(
+					MediaUploadCheck,
+					null,
+					createElement( MediaUpload, {
+						allowedTypes: [ 'image' ],
+						value: thumbnailAuthor?.id || 0,
+						onSelect: ( media ) => {
+							setThumbnailAuthor( media );
+							setThumbnailPreview( null );
+						},
+						render: ( { open } ) =>
+							createElement(
+								Button,
+								{
+									variant: 'secondary',
+									onClick: open,
+									disabled:
+										isBusy ||
+										! canGenerateThumbnail ||
+										! canUseThumbnailReferences,
+								},
+								thumbnailAuthor
+									? __(
+											'Change Author Image',
+											'creatorstack-ai'
+									  )
+									: __(
+											'Select Author Image',
+											'creatorstack-ai'
+									  )
+							),
+					} )
+				),
+				thumbnailAuthor &&
+					createElement(
+						'div',
+						{ className: 'wttba-editor-panel__image-chip' },
+						getImageAttachmentUrl( thumbnailAuthor ) &&
+							createElement( 'img', {
+								src: getImageAttachmentUrl( thumbnailAuthor ),
+								alt: '',
+								className:
+									'wttba-editor-panel__image-chip-thumb',
+							} ),
+						createElement(
+							'span',
+							{
+								className:
+									'wttba-editor-panel__image-chip-label',
+							},
+							getImageAttachmentLabel( thumbnailAuthor )
+						),
+						createElement(
+							Button,
+							{
+								variant: 'tertiary',
+								onClick: () => {
+									setThumbnailAuthor( null );
+									setThumbnailPreview( null );
+								},
+								disabled: isBusy,
+							},
+							__( 'Remove', 'creatorstack-ai' )
+						)
+					),
+				createElement(
+					MediaUploadCheck,
+					null,
+					createElement( MediaUpload, {
+						allowedTypes: [ 'image' ],
+						multiple: true,
+						gallery: false,
+						value: thumbnailReferences.map( ( media ) => media.id ),
+						onSelect: handleThumbnailReferencesSelect,
+						render: ( { open } ) =>
+							createElement(
+								Button,
+								{
+									variant: 'secondary',
+									onClick: open,
+									disabled:
+										isBusy ||
+										! canGenerateThumbnail ||
+										! canUseThumbnailReferences,
+								},
+								thumbnailReferences.length
+									? __(
+											'Change Logos or Objects',
+											'creatorstack-ai'
+									  )
+									: __(
+											'Select Logos or Objects',
+											'creatorstack-ai'
+									  )
+							),
+					} )
+				),
+				thumbnailReferences.length > 0 &&
+					createElement(
+						'div',
+						{
+							className: 'wttba-editor-panel__image-chip-list',
+						},
+						thumbnailReferences.map( ( media ) =>
+							createElement(
+								'div',
+								{
+									key: media.id,
+									className: 'wttba-editor-panel__image-chip',
+								},
+								getImageAttachmentUrl( media ) &&
+									createElement( 'img', {
+										src: getImageAttachmentUrl( media ),
+										alt: '',
+										className:
+											'wttba-editor-panel__image-chip-thumb',
+									} ),
+								createElement(
+									'span',
+									{
+										className:
+											'wttba-editor-panel__image-chip-label',
+									},
+									getImageAttachmentLabel( media )
+								),
+								createElement(
+									Button,
+									{
+										variant: 'tertiary',
+										onClick: () =>
+											clearThumbnailReference( media.id ),
+										disabled: isBusy,
+									},
+									__( 'Remove', 'creatorstack-ai' )
+								)
+							)
+						)
+					),
+				thumbnailPreviewUrl &&
+					createElement(
+						'figure',
+						{
+							className: 'wttba-editor-panel__thumbnail-preview',
+						},
+						createElement( 'img', {
+							src: thumbnailPreviewUrl,
+							alt: __(
+								'Generated thumbnail preview',
+								'creatorstack-ai'
+							),
+						} )
+					),
+				createElement(
+					'div',
+					{ className: 'wttba-editor-panel__thumbnail-actions' },
+					createElement(
+						Button,
+						{
+							variant: thumbnailGenerateButtonVariant,
+							onClick: handleThumbnailGenerate,
+							disabled: isBusy || ! canGenerateThumbnail,
+						},
+						thumbnailBusy && createElement( Spinner ),
+						thumbnailGenerateButtonLabel
+					),
+					thumbnailPreview &&
+						createElement(
+							Button,
+							{
+								variant: 'primary',
+								onClick: handleThumbnailSave,
+								disabled:
+									isBusy || thumbnailBusy || thumbnailSaving,
+							},
+							thumbnailSaving && createElement( Spinner ),
+							thumbnailSaving
+								? __( 'Setting…', 'creatorstack-ai' )
+								: __( 'Set Featured Image', 'creatorstack-ai' )
+						)
 				)
 			),
 		isPostToAudioEnabled &&

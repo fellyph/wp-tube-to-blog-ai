@@ -178,6 +178,12 @@ class Admin_Videos_Page {
 				<h1><?php echo esc_html( $title ); ?></h1>
 				<p class="wttba-admin-hero__description"><?php echo esc_html( $description ); ?></p>
 			</div>
+			<img
+				class="wttba-admin-hero__logo"
+				src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
+				alt=""
+				aria-hidden="true"
+			/>
 		</header>
 		<?php
 	}
@@ -226,8 +232,9 @@ class Admin_Videos_Page {
 				'defaultLanguage' => get_option( 'wttba_default_language', 'en' ),
 				'defaultPersona'  => get_option( 'wttba_default_persona', '' ),
 				'languages'       => Settings::LANGUAGES,
-				'isConfigured'    => ( new YouTube_API() )->is_configured(),
+				'isConfigured'    => YouTube_Connector::is_configured(),
 				'settingsUrl'     => admin_url( 'options-general.php?page=wttba-settings' ),
+				'youtube'         => YouTube_Connector::get_admin_config(),
 				'mediaLibraryUrl' => admin_url( 'upload.php?mode=list' ),
 				'newPostUrl'      => admin_url( 'post-new.php?post_type=post' ),
 				'features'        => Settings::get_feature_states(),

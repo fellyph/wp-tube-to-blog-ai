@@ -47,20 +47,9 @@ class Plugin {
 		new Admin_Videos_Page();
 		new Editor_Integration();
 
+		add_filter( 'plugin_action_links_' . plugin_basename( WTTBA_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
 		add_action( 'rest_api_init', array( new REST_Controller(), 'register_routes' ) );
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'register_post_meta' ) );
-	}
-
-	/**
-	 * Load plugin text domain.
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'creatorstack-ai',
-			false,
-			dirname( plugin_basename( WTTBA_PLUGIN_FILE ) ) . '/languages'
-		);
 	}
 
 	/**
@@ -70,6 +59,33 @@ class Plugin {
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() || ! AI_Provider_Status::is_ai_client_available() ) {
 			add_action( 'admin_notices', array( $this, 'missing_ai_client_notice' ) );
 		}
+
+		if ( ! YouTube_Connector::is_connector_plugin_active() ) {
+			add_action( 'admin_notices', array( $this, 'missing_youtube_connector_notice' ) );
+		}
+	}
+
+	/**
+	 * Add CreatorStack management links to the Plugins screen.
+	 *
+	 * @param array<string> $links Existing plugin action links.
+	 * @return array<string> Modified plugin action links.
+	 */
+	public function plugin_action_links( array $links ): array {
+		$settings_link = sprintf(
+			'<a href="%1$s">%2$s</a>',
+			esc_url( YouTube_Connector::get_settings_url() ),
+			esc_html__( 'Settings', 'creatorstack-ai' )
+		);
+		$connectors_link = sprintf(
+			'<a href="%1$s">%2$s</a>',
+			esc_url( YouTube_Connector::get_connector_url() ),
+			esc_html__( 'Connectors', 'creatorstack-ai' )
+		);
+
+		array_unshift( $links, $connectors_link, $settings_link );
+
+		return $links;
 	}
 
 	/**
@@ -81,13 +97,42 @@ class Plugin {
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() ) {
 			$message = sprintf(
 				/* translators: %s: current WordPress version. */
-				__( 'CreatorStack AI requires WordPress 7.0 beta or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'creatorstack-ai' ),
+				__( 'CreatorStack AI requires WordPress 7.0 or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s.', 'creatorstack-ai' ),
 				AI_Provider_Status::get_wordpress_version()
 			);
 		}
 		?>
 		<div class="notice notice-warning">
 			<p><?php echo esc_html( $message ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Display admin notice when the YouTube connector plugin is inactive.
+	 */
+	public function missing_youtube_connector_notice(): void {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		if ( YouTube_Connector::is_connector_plugin_active() || ! YouTube_Connector::is_connector_plugin_available() ) {
+			return;
+		}
+
+		$activation_url = YouTube_Connector::get_connector_activation_url();
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<?php
+				printf(
+					/* translators: 1: opening link tag, 2: closing link tag. */
+					wp_kses_post( __( 'CreatorStack AI uses a separate YouTube connector plugin for YouTube API credentials. %1$sActivate the YouTube connector%2$s to manage the API key on Settings > Connectors.', 'creatorstack-ai' ) ),
+					'<a href="' . esc_url( $activation_url ) . '">',
+					'</a>'
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -133,6 +178,18 @@ class Plugin {
 		register_post_meta(
 			'post',
 			Post_Audio_Generator::AUDIO_ATTACHMENT_META_KEY,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
+			Thumbnail_Generator::THUMBNAIL_ATTACHMENT_META_KEY,
 			array(
 				'type'              => 'integer',
 				'single'            => true,
