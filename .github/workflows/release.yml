@@ -53,6 +53,15 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
+      - name: Verify tag is reachable from main
+        shell: bash
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "Release tags must point to commits already merged into origin/main." >&2
+            exit 1
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
