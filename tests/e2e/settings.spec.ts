@@ -11,6 +11,7 @@ const validApiKey = `AIza${ 'A'.repeat( 35 ) }`;
 const validChannelId = `UC${ 'B'.repeat( 22 ) }`;
 const validOAuthClientId = '1234567890-example.apps.googleusercontent.com';
 const validOAuthClientSecret = 'GOCSPX-test-secret-123456';
+const connectorApiKeyOption = 'connectors_content_source_youtube_api_key';
 
 const setupItem = ( page: Page, step: string ) =>
 	page.locator( `.wttba-auth-checklist__item[data-step="${ step }"]` );
@@ -64,7 +65,7 @@ const completeYoutubeAuthSetup = async () => {
 	await cli.playground.run( {
 		code: `<?php
 require '/wordpress/wp-load.php';
-update_option( 'wttba_youtube_api_key', '${ validApiKey }' );
+update_option( '${ connectorApiKeyOption }', '${ validApiKey }' );
 update_option( 'wttba_youtube_channel_id', '${ validChannelId }' );
 update_option( 'wttba_youtube_oauth_client_id', '1234567890-complete.apps.googleusercontent.com' );
 update_option( 'wttba_youtube_oauth_client_secret', '${ validOAuthClientSecret }' );
@@ -143,6 +144,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 		/console\.cloud\.google\.com\/apis\/credentials/
 	);
 	await expect(
+		page.getByRole( 'link', { name: 'Manage YouTube connector' } ).first()
+	).toHaveAttribute( 'href', /options-connectors\.php/ );
+	await expect(
 		page.getByRole( 'link', { name: /Find Channel ID help/ } )
 	).toHaveAttribute(
 		'href',
@@ -168,9 +172,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 	await expectSetupItemStatus(
 		page,
 		'api-key',
-		'YouTube API key saved',
+		'YouTube connector API key configured',
 		'missing',
-		'Required for listing channel videos and loading video details.'
+		'Required for listing channel videos and loading video details. Manage this in Settings > Connectors.'
 	);
 	await expectSetupItemStatus(
 		page,
@@ -219,6 +223,33 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 	await expect(
 		page.getByRole( 'heading', { name: 'Localhost Compatibility' } )
 	).toBeVisible();
+} );
+
+test( 'migrates the legacy YouTube API key into the connector setting', async () => {
+	const response = await cli.playground.run( {
+		code: `<?php
+require '/wordpress/wp-load.php';
+delete_option( '${ connectorApiKeyOption }' );
+update_option( 'wttba_youtube_api_key', '${ validApiKey }' );
+WTTBA\\YouTube_Connector::migrate_legacy_api_key();
+echo wp_json_encode(
+	array(
+		'connector' => get_option( '${ connectorApiKeyOption }', '' ),
+		'legacy'    => get_option( 'wttba_youtube_api_key', '' ),
+	)
+);
+delete_option( '${ connectorApiKeyOption }' );
+delete_option( 'wttba_youtube_api_key' );
+`,
+	} );
+
+	const result = JSON.parse( response.text ) as {
+		connector: string;
+		legacy: string;
+	};
+
+	expect( result.connector ).toBe( validApiKey );
+	expect( result.legacy ).toBe( '' );
 } );
 
 test( 'saves enabled functionality toggles', async ( { page } ) => {
@@ -351,7 +382,6 @@ test( 'keeps invalid YouTube credential formats pending after save', async ( {
 		`${ serverUrl }/wp-admin/options-general.php?page=wttba-settings`
 	);
 
-	await page.locator( '#wttba_youtube_api_key' ).fill( 'not-a-google-key' );
 	await page.locator( '#wttba_youtube_channel_id' ).fill( 'my-channel' );
 	await page
 		.locator( '#wttba_youtube_oauth_client_id' )
@@ -360,11 +390,6 @@ test( 'keeps invalid YouTube credential formats pending after save', async ( {
 
 	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
 
-	await expect(
-		page.getByText(
-			'Enter a valid YouTube Data API key from Google Cloud.'
-		)
-	).toBeVisible();
 	await expect(
 		page.getByText(
 			'Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters.'
@@ -383,9 +408,9 @@ test( 'keeps invalid YouTube credential formats pending after save', async ( {
 	await expectSetupItemStatus(
 		page,
 		'api-key',
-		'YouTube API key saved',
+		'YouTube connector API key configured',
 		'missing',
-		'Required for listing channel videos and loading video details.'
+		'Required for listing channel videos and loading video details. Manage this in Settings > Connectors.'
 	);
 	await expectSetupItemStatus(
 		page,
@@ -409,13 +434,19 @@ test( 'keeps invalid YouTube credential formats pending after save', async ( {
 test( 'saves YouTube credentials, content defaults, and AI preferences', async ( {
 	page,
 } ) => {
+	await cli.playground.run( {
+		code: `<?php
+require '/wordpress/wp-load.php';
+update_option( '${ connectorApiKeyOption }', '${ validApiKey }' );
+`,
+	} );
+
 	await page.goto(
 		`${ serverUrl }/wp-admin/options-general.php?page=wttba-settings`
 	);
 
 	// WP's Settings API renders <th> labels without a for= association, so
 	// target the inputs by their deterministic ids.
-	const apiKey = page.locator( '#wttba_youtube_api_key' );
 	const channelId = page.locator( '#wttba_youtube_channel_id' );
 	const oauthClientId = page.locator( '#wttba_youtube_oauth_client_id' );
 	const oauthClientSecret = page.locator(
@@ -426,7 +457,6 @@ test( 'saves YouTube credentials, content defaults, and AI preferences', async (
 	const aiModel = page.locator( '#wttba_ai_model' );
 	const persona = page.locator( '#wttba_default_persona' );
 
-	await apiKey.fill( validApiKey );
 	await channelId.fill( validChannelId );
 	await oauthClientId.fill( validOAuthClientId );
 	await oauthClientSecret.fill( validOAuthClientSecret );
@@ -438,7 +468,6 @@ test( 'saves YouTube credentials, content defaults, and AI preferences', async (
 	await page.getByRole( 'button', { name: 'Save Changes' } ).click();
 
 	await expect( page.getByText( 'Settings saved' ) ).toBeVisible();
-	await expect( apiKey ).toHaveValue( validApiKey );
 	await expect( channelId ).toHaveValue( validChannelId );
 	await expect( oauthClientId ).toHaveValue( validOAuthClientId );
 	await expect( oauthClientSecret ).toHaveValue( validOAuthClientSecret );
@@ -455,9 +484,9 @@ test( 'saves YouTube credentials, content defaults, and AI preferences', async (
 	await expectSetupItemStatus(
 		page,
 		'api-key',
-		'YouTube API key saved',
+		'YouTube connector API key configured',
 		'complete',
-		'Required for listing channel videos and loading video details.'
+		'Required for listing channel videos and loading video details. Manage this in Settings > Connectors.'
 	);
 	await expectSetupItemStatus(
 		page,
@@ -510,7 +539,7 @@ test( 'hides authentication checklist after all YouTube auth steps are complete'
 	);
 	await expect(
 		page.getByText(
-			'YouTube authentication is configured. You can update credentials below when they change.'
+			'YouTube authentication is configured. Update the API key from Settings > Connectors, and update channel or OAuth details below when they change.'
 		)
 	).toBeVisible();
 	await expect( setupItem( page, 'api-key' ) ).toHaveCount( 0 );

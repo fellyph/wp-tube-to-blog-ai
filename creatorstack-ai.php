@@ -4,14 +4,13 @@
  * Plugin URI:        https://github.com/fellyph/creatorstack-ai
  * Description:       AI toolkit for creator workflows: turn videos and audio into posts, generate audio from posts, and expand content across channels.
  * Version:           1.0.0
- * Requires at least: 7.0-beta
+ * Requires at least: 7.0
  * Requires PHP:      8.1
  * Author:            Fellyph Cintra
  * Author URI:        https://github.com/fellyph
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       creatorstack-ai
- * Domain Path:       /languages
  *
  * @package CreatorStack_AI
  */
@@ -87,6 +86,7 @@ require_once WTTBA_PLUGIN_DIR . 'includes/class-settings.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-ai-provider-status.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-generation-logger.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-content-generator.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-connector.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-api.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-youtube-oauth.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-transcript-fetcher.php';
