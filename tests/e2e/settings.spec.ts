@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { runCLI } from '@wp-playground/cli';
+import { expectPluginLogoLoaded } from './assertions';
 import { startPlayground, stopPlayground } from './fixtures';
 
 let cli: Awaited< ReturnType< typeof runCLI > >;
@@ -95,6 +96,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 			name: 'CreatorStack AI Settings',
 		} )
 	).toBeVisible();
+	await expectPluginLogoLoaded(
+		page.locator( '.wttba-settings-hero__logo' )
+	);
 	await expect(
 		page.getByRole( 'heading', { name: 'YouTube Integration' } )
 	).toBeVisible();

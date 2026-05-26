@@ -19,6 +19,7 @@ export async function startPlayground(): Promise< PlaygroundCLI > {
 	return runCLI( {
 		command: 'server',
 		php: blueprint.preferredVersions?.php || '8.3',
+		port: 0,
 		wp: blueprint.preferredVersions?.wp || 'latest',
 		mount: [
 			{
