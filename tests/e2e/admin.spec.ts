@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { runCLI } from '@wp-playground/cli';
+import { expectPluginLogoLoaded } from './assertions';
 import { startPlayground, stopPlayground } from './fixtures';
 
 let cli: Awaited< ReturnType< typeof runCLI > >;
@@ -25,6 +26,26 @@ test( 'plugin is listed and active on the Plugins screen', async ( {
 	await expect( row.locator( '.plugin-title strong' ).first() ).toHaveText(
 		/CreatorStack AI/
 	);
+
+	await expect(
+		row.locator( '.row-actions a', { hasText: 'Settings' } )
+	).toBeVisible();
+	await expect(
+		row.locator( '.row-actions a', { hasText: 'Connectors' } )
+	).toBeVisible();
+
+	const connectorRow = page
+		.locator( 'tr.active' )
+		.filter( { hasText: 'CreatorStack AI YouTube Connector' } );
+	await expect( connectorRow ).toBeVisible();
+	await expect(
+		connectorRow.locator( '.row-actions a', {
+			hasText: 'YouTube settings',
+		} )
+	).toBeVisible();
+	await expect(
+		connectorRow.locator( '.row-actions a', { hasText: 'Connectors' } )
+	).toBeVisible();
 } );
 
 test( 'top-level "CreatorStack" menu opens the videos admin page', async ( {
@@ -36,6 +57,7 @@ test( 'top-level "CreatorStack" menu opens the videos admin page', async ( {
 		page.getByRole( 'heading', { name: 'YouTube Content' } )
 	).toBeVisible();
 	await expect( page.locator( '.wttba-admin-hero' ) ).toBeVisible();
+	await expectPluginLogoLoaded( page.locator( '.wttba-admin-hero__logo' ) );
 	await expect(
 		page
 			.getByRole( 'navigation', { name: 'CreatorStack AI sections' } )

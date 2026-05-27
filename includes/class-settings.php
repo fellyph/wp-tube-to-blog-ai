@@ -87,6 +87,11 @@ class Settings {
 	public const FEATURE_POST_TO_AUDIO = 'post_to_audio';
 
 	/**
+	 * Feature key for thumbnail generation.
+	 */
+	public const FEATURE_THUMBNAIL_GENERATOR = 'thumbnail_generator';
+
+	/**
 	 * Feature option map.
 	 *
 	 * @var array<string, array{option: string, default: bool, jsKey: string}>
@@ -106,6 +111,11 @@ class Settings {
 			'option'  => 'wttba_feature_post_to_audio',
 			'default' => false,
 			'jsKey'   => 'postToAudio',
+		),
+		self::FEATURE_THUMBNAIL_GENERATOR => array(
+			'option'  => 'wttba_feature_thumbnail_generator',
+			'default' => true,
+			'jsKey'   => 'thumbnailGenerator',
 		),
 	);
 
@@ -147,21 +157,10 @@ class Settings {
 			);
 		}
 
-		// YouTube API Key.
-		register_setting(
-			'wttba_settings',
-			'wttba_youtube_api_key',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_youtube_api_key' ),
-				'default'           => '',
-			)
-		);
-
 		// YouTube Channel ID.
 		register_setting(
 			'wttba_settings',
-			'wttba_youtube_channel_id',
+			YouTube_Connector::CHANNEL_ID_OPTION,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => array( $this, 'sanitize_youtube_channel_id' ),
@@ -172,7 +171,7 @@ class Settings {
 		// YouTube OAuth Client ID.
 		register_setting(
 			'wttba_settings',
-			'wttba_youtube_oauth_client_id',
+			YouTube_Connector::OAUTH_CLIENT_ID_OPTION,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => array( $this, 'sanitize_oauth_client_id' ),
@@ -183,7 +182,7 @@ class Settings {
 		// YouTube OAuth Client Secret.
 		register_setting(
 			'wttba_settings',
-			'wttba_youtube_oauth_client_secret',
+			YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => array( $this, 'sanitize_oauth_client_secret' ),
@@ -262,15 +261,15 @@ class Settings {
 		);
 
 		add_settings_field(
-			'wttba_youtube_api_key',
+			'wttba_youtube_connector',
 			__( 'YouTube API Key', 'creatorstack-ai' ),
-			array( $this, 'render_api_key_field' ),
+			array( $this, 'render_youtube_connector_field' ),
 			'wttba-settings',
 			'wttba_youtube_section'
 		);
 
 		add_settings_field(
-			'wttba_youtube_channel_id',
+			YouTube_Connector::CHANNEL_ID_OPTION,
 			__( 'YouTube Channel ID', 'creatorstack-ai' ),
 			array( $this, 'render_channel_id_field' ),
 			'wttba-settings',
@@ -278,7 +277,7 @@ class Settings {
 		);
 
 		add_settings_field(
-			'wttba_youtube_oauth_client_id',
+			YouTube_Connector::OAUTH_CLIENT_ID_OPTION,
 			__( 'OAuth Client ID', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_id_field' ),
 			'wttba-settings',
@@ -286,7 +285,7 @@ class Settings {
 		);
 
 		add_settings_field(
-			'wttba_youtube_oauth_client_secret',
+			YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION,
 			__( 'OAuth Client Secret', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_secret_field' ),
 			'wttba-settings',
@@ -402,6 +401,13 @@ class Settings {
 				'label'       => __( 'Post to Audio', 'creatorstack-ai' ),
 				'description' => __( 'Generate narrated audio from post content and attach the result to the post.', 'creatorstack-ai' ),
 			),
+			self::FEATURE_THUMBNAIL_GENERATOR => array(
+				'option'      => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['option'],
+				'default'     => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['default'],
+				'jsKey'       => self::FEATURE_OPTION_MAP[ self::FEATURE_THUMBNAIL_GENERATOR ]['jsKey'],
+				'label'       => __( 'Thumbnail Generator', 'creatorstack-ai' ),
+				'description' => __( 'Generate AI featured images for posts with optional author, logo, and object references.', 'creatorstack-ai' ),
+			),
 		);
 	}
 
@@ -455,6 +461,13 @@ class Settings {
 	 */
 	public static function is_post_to_audio_enabled(): bool {
 		return self::is_feature_enabled( self::FEATURE_POST_TO_AUDIO );
+	}
+
+	/**
+	 * Check whether thumbnail generation is enabled.
+	 */
+	public static function is_thumbnail_generator_enabled(): bool {
+		return self::is_feature_enabled( self::FEATURE_THUMBNAIL_GENERATOR );
 	}
 
 	/**
@@ -594,28 +607,6 @@ class Settings {
 	}
 
 	/**
-	 * Sanitize and validate the YouTube API key option.
-	 *
-	 * @param string $value Submitted API key.
-	 * @return string
-	 */
-	public function sanitize_youtube_api_key( string $value ): string {
-		$value = sanitize_text_field( trim( $value ) );
-
-		if ( '' === $value || self::is_valid_youtube_api_key( $value ) ) {
-			return $value;
-		}
-
-		add_settings_error(
-			'wttba_youtube_api_key',
-			'wttba_youtube_api_key_invalid',
-			__( 'Enter a valid YouTube Data API key from Google Cloud.', 'creatorstack-ai' )
-		);
-
-		return $this->get_previous_valid_option( 'wttba_youtube_api_key', array( self::class, 'is_valid_youtube_api_key' ) );
-	}
-
-	/**
 	 * Sanitize and validate the YouTube Channel ID option.
 	 *
 	 * @param string $value Submitted Channel ID.
@@ -624,17 +615,17 @@ class Settings {
 	public function sanitize_youtube_channel_id( string $value ): string {
 		$value = sanitize_text_field( trim( $value ) );
 
-		if ( '' === $value || self::is_valid_youtube_channel_id( $value ) ) {
+		if ( '' === $value || YouTube_Connector::is_valid_channel_id( $value ) ) {
 			return $value;
 		}
 
 		add_settings_error(
-			'wttba_youtube_channel_id',
+			YouTube_Connector::CHANNEL_ID_OPTION,
 			'wttba_youtube_channel_id_invalid',
 			__( 'Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters.', 'creatorstack-ai' )
 		);
 
-		return $this->get_previous_valid_option( 'wttba_youtube_channel_id', array( self::class, 'is_valid_youtube_channel_id' ) );
+		return $this->get_previous_valid_option( YouTube_Connector::CHANNEL_ID_OPTION, array( YouTube_Connector::class, 'is_valid_channel_id' ) );
 	}
 
 	/**
@@ -646,17 +637,17 @@ class Settings {
 	public function sanitize_oauth_client_id( string $value ): string {
 		$value = sanitize_text_field( trim( $value ) );
 
-		if ( '' === $value || YouTube_OAuth::is_valid_client_id( $value ) ) {
+		if ( '' === $value || YouTube_Connector::is_valid_oauth_client_id( $value ) ) {
 			return $value;
 		}
 
 		add_settings_error(
-			'wttba_youtube_oauth_client_id',
+			YouTube_Connector::OAUTH_CLIENT_ID_OPTION,
 			'wttba_youtube_oauth_client_id_invalid',
 			__( 'Enter a valid Google OAuth Web application Client ID ending in .apps.googleusercontent.com.', 'creatorstack-ai' )
 		);
 
-		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_id', array( YouTube_OAuth::class, 'is_valid_client_id' ) );
+		return $this->get_previous_valid_option( YouTube_Connector::OAUTH_CLIENT_ID_OPTION, array( YouTube_Connector::class, 'is_valid_oauth_client_id' ) );
 	}
 
 	/**
@@ -668,17 +659,17 @@ class Settings {
 	public function sanitize_oauth_client_secret( string $value ): string {
 		$value = sanitize_text_field( trim( $value ) );
 
-		if ( '' === $value || YouTube_OAuth::is_valid_client_secret( $value ) ) {
+		if ( '' === $value || YouTube_Connector::is_valid_oauth_client_secret( $value ) ) {
 			return $value;
 		}
 
 		add_settings_error(
-			'wttba_youtube_oauth_client_secret',
+			YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION,
 			'wttba_youtube_oauth_client_secret_invalid',
 			__( 'Enter a valid Google OAuth Client Secret from the Web application client.', 'creatorstack-ai' )
 		);
 
-		return $this->get_previous_valid_option( 'wttba_youtube_oauth_client_secret', array( YouTube_OAuth::class, 'is_valid_client_secret' ) );
+		return $this->get_previous_valid_option( YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION, array( YouTube_Connector::class, 'is_valid_oauth_client_secret' ) );
 	}
 
 	/**
@@ -692,26 +683,6 @@ class Settings {
 		$previous = trim( (string) get_option( $option, '' ) );
 
 		return $validator( $previous ) ? $previous : '';
-	}
-
-	/**
-	 * Whether a value looks like a YouTube Data API key.
-	 *
-	 * @param string $api_key API key.
-	 * @return bool
-	 */
-	private static function is_valid_youtube_api_key( string $api_key ): bool {
-		return 1 === preg_match( '/^AIza[0-9A-Za-z_-]{35}$/', trim( $api_key ) );
-	}
-
-	/**
-	 * Whether a value looks like a YouTube Channel ID.
-	 *
-	 * @param string $channel_id Channel ID.
-	 * @return bool
-	 */
-	private static function is_valid_youtube_channel_id( string $channel_id ): bool {
-		return 1 === preg_match( '/^UC[0-9A-Za-z_-]{22}$/', trim( $channel_id ) );
 	}
 
 	/**
@@ -790,6 +761,7 @@ class Settings {
 				'localhost'         => self::get_localhost_status(),
 				'configurationLabel' => __( 'Configure AI Provider', 'creatorstack-ai' ),
 				'redirectUri'       => YouTube_OAuth::get_redirect_uri(),
+				'youtube'           => YouTube_Connector::get_admin_config(),
 			)
 		);
 	}
@@ -807,6 +779,12 @@ class Settings {
 						<h1><?php esc_html_e( 'CreatorStack AI Settings', 'creatorstack-ai' ); ?></h1>
 						<p class="wttba-settings-hero__description"><?php esc_html_e( 'Enable creator workflows, connect YouTube, tune generated posts, and verify your AI provider from one focused workspace.', 'creatorstack-ai' ); ?></p>
 					</div>
+					<img
+						class="wttba-settings-hero__logo"
+						src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
+						alt=""
+						aria-hidden="true"
+					/>
 				</header>
 				<?php $this->render_oauth_status_notice(); ?>
 				<?php Admin_Navigation::render( 'settings' ); ?>
@@ -873,21 +851,21 @@ class Settings {
 
 		if ( $this->is_youtube_auth_setup_complete( $status ) ) {
 			?>
-			<p><?php esc_html_e( 'YouTube authentication is configured. You can update credentials below when they change.', 'creatorstack-ai' ); ?></p>
+			<p><?php esc_html_e( 'YouTube authentication is configured. Update the API key from Settings > Connectors, and update channel or OAuth details below when they change.', 'creatorstack-ai' ); ?></p>
 			<?php
 			return;
 		}
 		?>
-		<p><?php esc_html_e( 'Enter your YouTube Data API v3 credentials to connect your channel. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit.', 'creatorstack-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure the YouTube connector API key, channel ID, and OAuth details used by CreatorStack AI. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit.', 'creatorstack-ai' ); ?></p>
 		<div class="notice notice-info inline wttba-auth-checklist-notice">
 			<p><strong><?php esc_html_e( 'YouTube authentication setup', 'creatorstack-ai' ); ?></strong></p>
 			<ul class="wttba-auth-checklist" aria-label="<?php esc_attr_e( 'YouTube authentication setup status', 'creatorstack-ai' ); ?>">
 				<?php
 				$this->render_auth_setup_item(
 					'api-key',
-					__( 'YouTube API key saved', 'creatorstack-ai' ),
+					__( 'YouTube connector API key configured', 'creatorstack-ai' ),
 					$status['apiKeyConfigured'],
-					__( 'Required for listing channel videos and loading video details.', 'creatorstack-ai' )
+					__( 'Required for listing channel videos and loading video details. Manage this in Settings > Connectors.', 'creatorstack-ai' )
 				);
 				$this->render_auth_setup_item(
 					'channel-id',
@@ -943,12 +921,15 @@ class Settings {
 					</p>
 				</li>
 				<li class="wttba-oauth-wizard__step">
-					<strong><?php esc_html_e( 'Create a YouTube Data API key', 'creatorstack-ai' ); ?></strong>
-					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials, create an API key, and paste it into the YouTube API Key field below. The API key is used for public video listing and video details.', 'creatorstack-ai' ); ?></p>
+					<strong><?php esc_html_e( 'Configure the YouTube connector API key', 'creatorstack-ai' ); ?></strong>
+					<p><?php esc_html_e( 'In Google Cloud, go to APIs & Services > Credentials and create an API key. Then add it to the YouTube connector in Settings > Connectors, or provide it with the YOUTUBE_DATA_API_KEY environment variable or PHP constant.', 'creatorstack-ai' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
 							<?php esc_html_e( 'Open Google credentials', 'creatorstack-ai' ); ?>
 							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'creatorstack-ai' ); ?></span>
+						</a>
+						<a class="button button-secondary" href="<?php echo esc_url( YouTube_Connector::get_connector_url() ); ?>">
+							<?php esc_html_e( 'Manage YouTube connector', 'creatorstack-ai' ); ?>
 						</a>
 					</p>
 				</li>
@@ -1027,9 +1008,9 @@ class Settings {
 		$oauth_connected = YouTube_OAuth::is_connected();
 
 		return array(
-			'apiKeyConfigured'           => self::is_valid_youtube_api_key( (string) get_option( 'wttba_youtube_api_key', '' ) ),
-			'channelConfigured'          => self::is_valid_youtube_channel_id( (string) get_option( 'wttba_youtube_channel_id', '' ) ),
-			'oauthCredentialsConfigured' => YouTube_OAuth::has_credentials(),
+			'apiKeyConfigured'           => YouTube_Connector::is_api_key_configured(),
+			'channelConfigured'          => YouTube_Connector::is_channel_configured(),
+			'oauthCredentialsConfigured' => YouTube_Connector::has_oauth_credentials(),
 			'redirectUriVerified'        => YouTube_OAuth::is_redirect_uri_verified(),
 			'oauthConnected'             => $oauth_connected,
 		);
@@ -1122,11 +1103,15 @@ class Settings {
 		$post_to_audio_message = self::is_post_to_audio_enabled()
 			? ( AI_Provider_Status::is_text_to_speech_supported() ? __( 'Post-to-audio generation is available.', 'creatorstack-ai' ) : __( 'Post-to-audio generation requires an AI provider with text-to-speech support.', 'creatorstack-ai' ) )
 			: __( 'Post-to-audio generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
+		$thumbnail_message = self::is_thumbnail_generator_enabled()
+			? ( AI_Provider_Status::is_image_generation_supported() ? __( 'Thumbnail generation is available.', 'creatorstack-ai' ) : __( 'Thumbnail generation requires an AI provider with image generation support.', 'creatorstack-ai' ) )
+			: __( 'Thumbnail generation is disabled in Enabled Functionality.', 'creatorstack-ai' );
 		?>
 		<p><?php echo esc_html( $message ); ?></p>
 		<ul>
 			<li><?php echo esc_html( $audio_to_post_message ); ?></li>
 			<li><?php echo esc_html( $post_to_audio_message ); ?></li>
+			<li><?php echo esc_html( $thumbnail_message ); ?></li>
 		</ul>
 		<p>
 			<a href="<?php echo esc_url( $config_url ); ?>" class="button button-secondary">
@@ -1219,35 +1204,59 @@ class Settings {
 	}
 
 	/**
-	 * Render YouTube API Key field.
+	 * Render YouTube connector status.
 	 */
-	public function render_api_key_field(): void {
-		$value = get_option( 'wttba_youtube_api_key', '' );
+	public function render_youtube_connector_field(): void {
+		$is_configured = YouTube_Connector::is_api_key_configured();
+		$source        = YouTube_Connector::get_api_key_source();
+		$status        = $is_configured
+			? sprintf(
+				/* translators: %s: API key source. */
+				__( 'Configured from %s.', 'creatorstack-ai' ),
+				$this->get_api_key_source_label( $source )
+			)
+			: __( 'Not configured.', 'creatorstack-ai' );
 		?>
-		<input
-			type="password"
-			id="wttba_youtube_api_key"
-			name="wttba_youtube_api_key"
-			value="<?php echo esc_attr( $value ); ?>"
-			class="regular-text"
-			autocomplete="off"
-		/>
+		<p>
+			<strong><?php echo esc_html( $status ); ?></strong>
+		</p>
+		<p>
+			<a class="button button-secondary" href="<?php echo esc_url( YouTube_Connector::get_connector_url() ); ?>">
+				<?php esc_html_e( 'Manage YouTube connector', 'creatorstack-ai' ); ?>
+			</a>
+		</p>
 		<p class="description">
-			<?php esc_html_e( 'Your YouTube Data API v3 key. Get one from the Google Cloud Console.', 'creatorstack-ai' ); ?>
+			<?php esc_html_e( 'The YouTube Data API v3 key is managed by WordPress Connectors. WordPress checks the YOUTUBE_DATA_API_KEY environment variable, the YOUTUBE_DATA_API_KEY PHP constant, and then the connector database setting.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
+	}
+
+	/**
+	 * Get a human-readable API key source label.
+	 *
+	 * @param string $source API key source.
+	 * @return string
+	 */
+	private function get_api_key_source_label( string $source ): string {
+		return match ( $source ) {
+			'env'      => __( 'environment variable', 'creatorstack-ai' ),
+			'constant' => __( 'PHP constant', 'creatorstack-ai' ),
+			'database' => __( 'Settings > Connectors', 'creatorstack-ai' ),
+			'legacy'   => __( 'legacy plugin setting', 'creatorstack-ai' ),
+			default    => __( 'unknown source', 'creatorstack-ai' ),
+		};
 	}
 
 	/**
 	 * Render Channel ID field.
 	 */
 	public function render_channel_id_field(): void {
-		$value = get_option( 'wttba_youtube_channel_id', '' );
+		$value = YouTube_Connector::get_channel_id();
 		?>
 		<input
 			type="text"
-			id="wttba_youtube_channel_id"
-			name="wttba_youtube_channel_id"
+			id="<?php echo esc_attr( YouTube_Connector::CHANNEL_ID_OPTION ); ?>"
+			name="<?php echo esc_attr( YouTube_Connector::CHANNEL_ID_OPTION ); ?>"
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
 		/>
@@ -1261,12 +1270,12 @@ class Settings {
 	 * Render OAuth Client ID field.
 	 */
 	public function render_oauth_client_id_field(): void {
-		$value = get_option( 'wttba_youtube_oauth_client_id', '' );
+		$value = YouTube_Connector::get_oauth_client_id();
 		?>
 		<input
 			type="text"
-			id="wttba_youtube_oauth_client_id"
-			name="wttba_youtube_oauth_client_id"
+			id="<?php echo esc_attr( YouTube_Connector::OAUTH_CLIENT_ID_OPTION ); ?>"
+			name="<?php echo esc_attr( YouTube_Connector::OAUTH_CLIENT_ID_OPTION ); ?>"
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
 			autocomplete="off"
@@ -1281,12 +1290,12 @@ class Settings {
 	 * Render OAuth Client Secret field.
 	 */
 	public function render_oauth_client_secret_field(): void {
-		$value = get_option( 'wttba_youtube_oauth_client_secret', '' );
+		$value = YouTube_Connector::get_oauth_client_secret();
 		?>
 		<input
 			type="password"
-			id="wttba_youtube_oauth_client_secret"
-			name="wttba_youtube_oauth_client_secret"
+			id="<?php echo esc_attr( YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION ); ?>"
+			name="<?php echo esc_attr( YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION ); ?>"
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
 			autocomplete="off"
@@ -1310,7 +1319,7 @@ class Settings {
 			'wttba_youtube_oauth_disconnect'
 		);
 		$is_connected   = YouTube_OAuth::is_connected();
-		$has_credentials = YouTube_OAuth::has_credentials();
+		$has_credentials = YouTube_Connector::has_oauth_credentials();
 		$status_message  = __( 'OAuth credentials have not been saved yet.', 'creatorstack-ai' );
 
 		if ( $is_connected && $has_credentials ) {
@@ -1414,11 +1423,11 @@ class Settings {
 	 * Render a notice after OAuth actions redirect back to settings.
 	 */
 	private function render_oauth_status_notice(): void {
-		if ( empty( $_GET['wttba_youtube_oauth'] ) ) {
+		$status = YouTube_OAuth::consume_status_notice();
+
+		if ( '' === $status ) {
 			return;
 		}
-
-		$status = sanitize_key( wp_unslash( $_GET['wttba_youtube_oauth'] ) );
 
 		$messages = array(
 			'connected'           => array( 'success', __( 'YouTube OAuth is connected.', 'creatorstack-ai' ) ),
@@ -1438,6 +1447,7 @@ class Settings {
 			),
 			'invalid_client'      => array( 'error', __( 'Google rejected the OAuth client. Check the saved Client ID and Client Secret, then reconnect YouTube.', 'creatorstack-ai' ) ),
 			'unauthorized_client' => array( 'error', __( 'Google rejected this OAuth client for the requested YouTube scope. Check the OAuth consent screen and client type in Google Cloud.', 'creatorstack-ai' ) ),
+			'oauth_redirect_failed' => array( 'error', __( 'CreatorStack AI could not redirect to Google OAuth. Please try again.', 'creatorstack-ai' ) ),
 		);
 
 		$notice = $messages[ $status ] ?? array( 'error', __( 'YouTube OAuth could not be completed. Please try again.', 'creatorstack-ai' ) );

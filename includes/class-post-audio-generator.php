@@ -78,14 +78,12 @@ class Post_Audio_Generator {
 		$result = $builder->convert_text_to_speech_result();
 
 		if ( is_wp_error( $result ) ) {
-			error_log( sprintf( '[CreatorStack AI] Text-to-speech failed - %s: %s', $result->get_error_code(), $result->get_error_message() ) );
 			return $result;
 		}
 
 		try {
 			$file = $result->toAudioFile();
 		} catch ( \Throwable $throwable ) {
-			error_log( sprintf( '[CreatorStack AI] Text-to-speech audio parse failed - %s', $throwable->getMessage() ) );
 			return new \WP_Error(
 				'wttba_audio_generation_failed',
 				__( 'The AI provider did not return a usable audio file.', 'creatorstack-ai' ),
@@ -267,7 +265,7 @@ class Post_Audio_Generator {
 		$attachment_id = media_handle_sideload( $file, $post->ID );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			@unlink( $tmp );
+			wp_delete_file( $tmp );
 			return $attachment_id;
 		}
 

@@ -22,12 +22,20 @@
 	},
 	"steps": [
 		{
+			"step": "runPHP",
+			"code": "<?php\n$plugins = array(\n\t'/wordpress/wp-content/plugins/creatorstack-ai/creatorstack-youtube-connector.php' => 'CreatorStack AI YouTube Connector',\n\t'/wordpress/wp-content/plugins/creatorstack-ai/creatorstack-ai.php'               => 'CreatorStack AI',\n);\n\nforeach ( $plugins as $file => $name ) {\n\tif ( ! file_exists( $file ) ) {\n\t\tthrow new Exception( $name . ' plugin file is missing at ' . $file );\n\t}\n}\n"
+		},
+		{
+			"step": "activatePlugin",
+			"pluginPath": "creatorstack-ai/creatorstack-youtube-connector.php"
+		},
+		{
 			"step": "activatePlugin",
 			"pluginPath": "creatorstack-ai/creatorstack-ai.php"
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nif ( ! defined( 'WTTBA_VERSION' ) ) {\n\tthrow new Exception( 'CreatorStack AI did not load.' );\n}\n\nif ( ! class_exists( '\\\\WTTBA\\\\Plugin' ) ) {\n\tthrow new Exception( 'CreatorStack AI plugin class is unavailable.' );\n}\n"
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n\nif ( ! defined( 'WTTBA_VERSION' ) ) {\n\tthrow new Exception( 'CreatorStack AI did not load.' );\n}\n\nif ( ! class_exists( '\\\\WTTBA\\\\Plugin' ) ) {\n\tthrow new Exception( 'CreatorStack AI plugin class is unavailable.' );\n}\n\nif ( ! function_exists( 'wp_is_connector_registered' ) || ! wp_is_connector_registered( 'youtube' ) ) {\n\tthrow new Exception( 'The YouTube connector is not registered.' );\n}\n\n$connector = function_exists( 'wp_get_connector' ) ? wp_get_connector( 'youtube' ) : null;\nif ( ! is_array( $connector ) || 'creatorstack-ai/creatorstack-youtube-connector.php' !== ( $connector['plugin']['file'] ?? '' ) ) {\n\tthrow new Exception( 'The YouTube connector is not associated with the YouTube connector plugin.' );\n}\n"
 		}
 	]
 }
