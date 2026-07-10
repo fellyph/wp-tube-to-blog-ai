@@ -1,0 +1,135 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "src\/admin-videos\/index.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "pt_BR",
+                "plural-forms": "nplurals=2; plural=(n > 1);"
+            },
+            "Update settings": [
+                "Atualizar configura\u00e7\u00f5es"
+            ],
+            "Configure AI Provider": [
+                "Configurar provedor de IA"
+            ],
+            "Go to Settings": [
+                "Ir para Configura\u00e7\u00f5es"
+            ],
+            "Requesting microphone access\u2026": [
+                "Solicitando acesso ao microfone\u2026"
+            ],
+            "Recording %s": [
+                "Gravando %s"
+            ],
+            "Recording ready: %1$s, %2$s": [
+                "Grava\u00e7\u00e3o pronta: %1$s, %2$s"
+            ],
+            "Ready to record from your microphone.": [
+                "Pronto para gravar pelo microfone."
+            ],
+            "Record Again": [
+                "Gravar novamente"
+            ],
+            "Start Recording": [
+                "Iniciar grava\u00e7\u00e3o"
+            ],
+            "Stop Recording": [
+                "Parar grava\u00e7\u00e3o"
+            ],
+            "Discard Recording": [
+                "Descartar grava\u00e7\u00e3o"
+            ],
+            "YouTube to Post is disabled in CreatorStack AI settings.": [
+                "YouTube para post est\u00e1 desativado nas configura\u00e7\u00f5es do CreatorStack AI."
+            ],
+            "Configure the YouTube connector API key.": [
+                "Configure a chave de API do conector do YouTube."
+            ],
+            "Configure your YouTube channel settings.": [
+                "Configure as op\u00e7\u00f5es do seu canal do YouTube."
+            ],
+            "Loading videos\u2026": [
+                "Carregando v\u00eddeos\u2026"
+            ],
+            "Post generated successfully!": [
+                "Post gerado."
+            ],
+            "Edit Draft": [
+                "Editar rascunho"
+            ],
+            "Configure an AI provider before generating posts.": [
+                "Configure um provedor de IA antes de gerar posts."
+            ],
+            "Generating\u2026": [
+                "Gerando\u2026"
+            ],
+            "Generate Post": [
+                "Gerar post"
+            ],
+            "AI unavailable": [
+                "IA indispon\u00edvel"
+            ],
+            "Loading\u2026": [
+                "Carregando\u2026"
+            ],
+            "Load More Videos": [
+                "Carregar mais v\u00eddeos"
+            ],
+            "Record audio and create a draft": [
+                "Gravar \u00e1udio e criar um rascunho"
+            ],
+            "Capture a voice note, interview, or spoken outline. The recording is saved to the Media Library and transformed into a draft post.": [
+                "Capture uma nota de voz, entrevista ou roteiro falado. A grava\u00e7\u00e3o \u00e9 salva na Biblioteca de m\u00eddia e transformada em um rascunho de post."
+            ],
+            "Configure an AI provider with audio input support before generating drafts from recordings.": [
+                "Configure um provedor de IA com suporte a entrada de \u00e1udio antes de gerar rascunhos a partir de grava\u00e7\u00f5es."
+            ],
+            "This recording is larger than the %s upload limit.": [
+                "Esta grava\u00e7\u00e3o \u00e9 maior que o limite de upload de %s."
+            ],
+            "Output language": [
+                "Idioma de sa\u00edda"
+            ],
+            "Writing persona": [
+                "Persona de escrita"
+            ],
+            "The recording is too large. The maximum size is %s.": [
+                "A grava\u00e7\u00e3o \u00e9 muito grande. O tamanho m\u00e1ximo \u00e9 %s."
+            ],
+            "Audio to Post recording": [
+                "Grava\u00e7\u00e3o de \u00e1udio para post"
+            ],
+            "Draft created from your recording.": [
+                "Rascunho criado a partir da sua grava\u00e7\u00e3o."
+            ],
+            "Record audio before creating a draft.": [
+                "Grave \u00e1udio antes de criar um rascunho."
+            ],
+            "Configure an AI provider with audio input support before generating a draft.": [
+                "Configure um provedor de IA com suporte a entrada de \u00e1udio antes de gerar um rascunho."
+            ],
+            "Creating draft\u2026": [
+                "Criando rascunho\u2026"
+            ],
+            "Create Draft From Recording": [
+                "Criar rascunho da grava\u00e7\u00e3o"
+            ],
+            "Media Library": [
+                "Biblioteca de m\u00eddia"
+            ],
+            "Open Blank Draft": [
+                "Abrir rascunho em branco"
+            ],
+            "Edit generated draft": [
+                "Editar rascunho gerado"
+            ],
+            "Audio to Post is disabled in CreatorStack AI settings.": [
+                "\u00c1udio para post est\u00e1 desativado nas configura\u00e7\u00f5es do CreatorStack AI."
+            ]
+        }
+    }
+}

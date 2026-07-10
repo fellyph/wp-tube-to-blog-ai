@@ -1,0 +1,1872 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: CreatorStack AI 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/fellyph/creatorstack-ai/issues\n"
+"Last-Translator: CreatorStack AI contributors <https://github.com/fellyph/creatorstack-ai>\n"
+"Language-Team: Portuguese (Brazil) <https://translate.wordpress.org/locale/pt-br/default/>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-05-26T17:52:29+00:00\n"
+"PO-Revision-Date: 2026-05-26 18:00+0100\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Codex\n"
+"X-Domain: creatorstack-ai\n"
+
+#. Plugin Name of the plugin
+#: creatorstack-youtube-connector.php
+msgid "CreatorStack AI YouTube Connector"
+msgstr "CreatorStack AI YouTube Connector"
+
+#. Plugin URI of the plugin
+#: creatorstack-youtube-connector.php
+msgid "https://github.com/fellyph/creatorstack-ai"
+msgstr "https://github.com/fellyph/creatorstack-ai"
+
+#. Description of the plugin
+#: creatorstack-youtube-connector.php
+msgid "Registers the YouTube Data API connector used by CreatorStack AI."
+msgstr "Registra o conector da API YouTube Data usado pelo CreatorStack AI."
+
+#. Author of the plugin
+#: creatorstack-youtube-connector.php
+msgid "Fellyph Cintra"
+msgstr "Fellyph Cintra"
+
+#. Author URI of the plugin
+#: creatorstack-youtube-connector.php
+msgid "https://github.com/fellyph"
+msgstr "https://github.com/fellyph"
+
+#: includes/class-admin-navigation.php:31
+msgid "CreatorStack AI sections"
+msgstr "Seções do CreatorStack AI"
+
+#: includes/class-admin-navigation.php:64
+#: includes/class-admin-videos-page.php:54
+#: includes/class-admin-videos-page.php:55
+#: includes/class-admin-videos-page.php:90
+msgid "YouTube Content"
+msgstr "Conteúdo do YouTube"
+
+#: includes/class-admin-navigation.php:71
+#: includes/class-admin-videos-page.php:38
+#: includes/class-admin-videos-page.php:65
+#: includes/class-admin-videos-page.php:66
+#: includes/class-admin-videos-page.php:117
+#: includes/class-settings.php:394
+#: build/editor.js:1
+#: src/editor/index.js:625
+msgid "Audio to Post"
+msgstr "Áudio para post"
+
+#: includes/class-admin-navigation.php:78
+#: includes/class-plugin.php:78
+msgid "Settings"
+msgstr "Configurações"
+
+#: includes/class-admin-videos-page.php:38
+msgid "YouTube Videos"
+msgstr "Vídeos do YouTube"
+
+#: includes/class-admin-videos-page.php:43
+msgid "CreatorStack"
+msgstr "CreatorStack"
+
+#: includes/class-admin-videos-page.php:91
+msgid "Browse channel videos, extract transcripts, and generate WordPress drafts from one focused workspace."
+msgstr "Navegue pelos vídeos do canal, extraia transcrições e gere rascunhos do WordPress em um espaço de trabalho focado."
+
+#: includes/class-admin-videos-page.php:118
+#: includes/class-settings.php:395
+msgid "Record or select audio, transcribe it with AI, and generate draft posts from spoken content."
+msgstr "Grave ou selecione áudio, transcreva com IA e gere rascunhos de posts a partir de conteúdo falado."
+
+#: includes/class-admin-videos-page.php:142
+msgid "This CreatorStack AI workflow is currently disabled for this WordPress site."
+msgstr "Este fluxo de trabalho do CreatorStack AI está desativado neste site WordPress."
+
+#. translators: %s: feature label.
+#: includes/class-admin-videos-page.php:151
+#: includes/class-rest-controller.php:605
+#, php-format
+msgid "%s is disabled in CreatorStack AI settings."
+msgstr "%s está desativado nas configurações do CreatorStack AI."
+
+#: includes/class-admin-videos-page.php:157
+#: includes/class-rest-controller.php:611
+#: build/admin-videos.js:3
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:319
+#: src/admin-videos/index.js:702
+msgid "Update settings"
+msgstr "Atualizar configurações"
+
+#: includes/class-admin-videos-page.php:177
+#: includes/class-settings.php:136
+#: includes/class-settings.php:137
+#: includes/class-settings.php:778
+#: build/editor.js:1
+#: src/editor/index.js:610
+msgid "CreatorStack AI"
+msgstr "CreatorStack AI"
+
+#: includes/class-admin-videos-page.php:198
+msgid "Assets not built. Run npm run build."
+msgstr "Os assets não foram compilados. Execute npm run build."
+
+#: includes/class-ai-provider-status.php:235
+msgid "AI features are disabled for this site."
+msgstr "Os recursos de IA estão desativados neste site."
+
+#: includes/class-ai-provider-status.php:243
+msgid "The WordPress AI Client is not available. Upgrade to WordPress 7.0 or newer."
+msgstr "O Cliente de IA do WordPress não está disponível. Atualize para o WordPress 7.0 ou superior."
+
+#: includes/class-ai-provider-status.php:249
+msgid "The WordPress AI Client is not available in this WordPress build. Make sure the build includes the AI Client APIs and AI features are enabled."
+msgstr "O Cliente de IA do WordPress não está disponível nesta versão do WordPress. Confira se a versão inclui as APIs do Cliente de IA e se os recursos de IA estão ativados."
+
+#: includes/class-ai-provider-status.php:256
+msgid "No AI provider connector is configured for text generation. Configure an AI provider in Settings > Connectors."
+msgstr "Nenhum conector de provedor de IA está configurado para geração de texto. Configure um provedor de IA em Configurações > Conectores."
+
+#: includes/class-ai-provider-status.php:262
+msgid "No AI provider is configured for text generation. Configure a provider in the WordPress AI Client settings."
+msgstr "Nenhum provedor de IA está configurado para geração de texto. Configure um provedor nas configurações do Cliente de IA do WordPress."
+
+#: includes/class-ai-provider-status.php:276
+#: includes/class-rest-controller.php:636
+#: includes/class-settings.php:762
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: build/editor.js:1
+#: build/editor.js:6
+#: build/settings.js:3
+#: src/admin-videos/index.js:369
+#: src/admin-videos/index.js:388
+#: src/admin-videos/index.js:585
+#: src/admin-videos/index.js:797
+#: src/dashboard-widget/index.js:112
+#: src/dashboard-widget/index.js:293
+#: src/editor/index.js:180
+#: src/editor/index.js:505
+#: src/editor/index.js:524
+#: src/settings/index.js:293
+msgid "Configure AI Provider"
+msgstr "Configurar provedor de IA"
+
+#: includes/class-content-generator.php:73
+msgid "Reply with a short confirmation that the WordPress AI content generation test succeeded."
+msgstr "Responda com uma confirmação curta de que o teste de geração de conteúdo com IA do WordPress foi concluído."
+
+#: includes/class-content-generator.php:75
+msgid "You verify AI provider connectivity for a WordPress plugin. Keep the response under 20 words."
+msgstr "Você verifica a conectividade do provedor de IA para um plugin do WordPress. Mantenha a resposta com menos de 20 palavras."
+
+#: includes/class-content-generator.php:94
+msgid "The AI provider responded, but the test response could not be read."
+msgstr "O provedor de IA respondeu, mas a resposta de teste não pôde ser lida."
+
+#: includes/class-content-generator.php:101
+msgid "The AI provider responded with an empty test result."
+msgstr "O provedor de IA respondeu com um resultado de teste vazio."
+
+#: includes/class-content-generator.php:144
+msgid "You are a professional blog writer creating accurate, SEO-friendly WordPress content."
+msgstr "Você é um redator profissional de blog que cria conteúdo WordPress preciso e otimizado para SEO."
+
+#: includes/class-content-generator.php:174
+msgid "No configured AI provider supports generating text from audio input. Configure a compatible provider in Settings > Connectors."
+msgstr "Nenhum provedor de IA configurado oferece suporte à geração de texto a partir de entrada de áudio. Configure um provedor compatível em Configurações > Conectores."
+
+#: includes/class-content-generator.php:215
+msgid "You are a professional editor turning spoken source material into accurate WordPress articles."
+msgstr "Você é um editor profissional que transforma material falado em artigos precisos para WordPress."
+
+#: includes/class-content-generator.php:247
+msgid "The selected audio attachment could not be found."
+msgstr "O anexo de áudio selecionado não foi encontrado."
+
+#: includes/class-content-generator.php:257
+msgid "The selected audio file is missing from the server."
+msgstr "O arquivo de áudio selecionado não está no servidor."
+
+#: includes/class-content-generator.php:271
+msgid "Please select a supported audio file."
+msgstr "Selecione um arquivo de áudio compatível."
+
+#. translators: %s: maximum upload size.
+#: includes/class-content-generator.php:284
+#, php-format
+msgid "The selected audio file is too large. The maximum size is %s."
+msgstr "O arquivo de áudio selecionado é muito grande. O tamanho máximo é %s."
+
+#: includes/class-content-generator.php:326
+#: includes/class-content-generator.php:335
+msgid "The AI returned an unexpected response format. Please try generating again."
+msgstr "A IA retornou um formato de resposta inesperado. Tente gerar novamente."
+
+#: includes/class-dashboard-widget.php:36
+msgid "CreatorStack: YouTube Content"
+msgstr "CreatorStack: conteúdo do YouTube"
+
+#: includes/class-dashboard-widget.php:57
+msgid "Widget assets not built. Run npm run build."
+msgstr "Os assets do widget não foram compilados. Execute npm run build."
+
+#: includes/class-editor-integration.php:130
+#: build/editor.js:6
+#: src/editor/index.js:1061
+msgid "Generate Audio"
+msgstr "Gerar áudio"
+
+#: includes/class-editor-integration.php:143
+msgid "You are not allowed to generate audio for this post."
+msgstr "Você não tem permissão para gerar áudio para este post."
+
+#: includes/class-editor-integration.php:149
+msgid "Post to Audio is disabled in CreatorStack AI settings."
+msgstr "Post para áudio está desativado nas configurações do CreatorStack AI."
+
+#: includes/class-editor-integration.php:155
+msgid "Audio generated and attached to the post."
+msgstr "Áudio gerado e anexado ao post."
+
+#: includes/class-plugin.php:83
+#: includes/class-youtube-connector.php:96
+msgid "Connectors"
+msgstr "Conectores"
+
+#. translators: %s: current WordPress version.
+#: includes/class-plugin.php:100
+#, php-format
+msgid "CreatorStack AI requires WordPress 7.0 or newer because it uses the AI Client and Connectors APIs from Core. Current WordPress version: %s."
+msgstr "O CreatorStack AI requer WordPress 7.0 ou superior porque usa as APIs de Cliente de IA e Conectores do Core. Versão atual do WordPress: %s."
+
+#. translators: 1: opening link tag, 2: closing link tag.
+#: includes/class-plugin.php:130
+#, php-format
+msgid "CreatorStack AI uses a separate YouTube connector plugin for YouTube API credentials. %1$sActivate the YouTube connector%2$s to manage the API key on Settings > Connectors."
+msgstr "O CreatorStack AI usa um plugin conector do YouTube separado para as credenciais da API do YouTube. %1$sAtive o conector do YouTube%2$s para gerenciar a chave de API em Configurações > Conectores."
+
+#: includes/class-post-audio-generator.php:48
+#: includes/class-thumbnail-generator.php:402
+msgid "The post could not be found."
+msgstr "O post não foi encontrado."
+
+#: includes/class-post-audio-generator.php:56
+msgid "No configured AI provider supports text-to-speech conversion. Configure a compatible provider in Settings > Connectors."
+msgstr "Nenhum provedor de IA configurado oferece suporte à conversão de texto em fala. Configure um provedor compatível em Configurações > Conectores."
+
+#: includes/class-post-audio-generator.php:66
+msgid "This post does not have enough readable content to generate audio."
+msgstr "Este post não tem conteúdo legível suficiente para gerar áudio."
+
+#: includes/class-post-audio-generator.php:72
+msgid "Convert the supplied WordPress article into clear, natural narration audio."
+msgstr "Converta o artigo do WordPress fornecido em um áudio de narração claro e natural."
+
+#: includes/class-post-audio-generator.php:89
+msgid "The AI provider did not return a usable audio file."
+msgstr "O provedor de IA não retornou um arquivo de áudio utilizável."
+
+#: includes/class-post-audio-generator.php:105
+msgid "The generated audio attachment could not be loaded."
+msgstr "Não foi possível carregar o anexo de áudio gerado."
+
+#: includes/class-post-audio-generator.php:185
+msgid "The generated audio could not be saved because it was returned in an unsupported format."
+msgstr "O áudio gerado não pôde ser salvo porque foi retornado em um formato incompatível."
+
+#: includes/class-post-audio-generator.php:204
+msgid "The generated audio data could not be decoded."
+msgstr "Os dados do áudio gerado não puderam ser decodificados."
+
+#. translators: %s: post title.
+#: includes/class-post-audio-generator.php:226
+#, php-format
+msgid "Audio version of %s"
+msgstr "Versão em áudio de %s"
+
+#: includes/class-post-generator.php:42
+#: includes/class-rest-controller.php:746
+msgid "A valid YouTube video ID is required."
+msgstr "É obrigatório informar um ID de vídeo do YouTube válido."
+
+#: includes/class-post-generator.php:49
+msgid "Paste a manual transcript with at least 50 characters, or leave the manual transcript field empty to fetch captions automatically."
+msgstr "Cole uma transcrição manual com pelo menos 50 caracteres ou deixe o campo de transcrição manual vazio para buscar legendas automaticamente."
+
+#: includes/class-post-generator.php:68
+msgid "A post is already being generated. Please wait for it to complete."
+msgstr "Um post já está sendo gerado. Aguarde até a conclusão."
+
+#: includes/class-post-generator.php:234
+msgid "The post was created, but the featured image could not be set from the video thumbnail."
+msgstr "O post foi criado, mas não foi possível definir a imagem destacada a partir da miniatura do vídeo."
+
+#: includes/class-rest-controller.php:672
+#: build/settings.js:3
+#: src/settings/index.js:318
+msgid "AI provider connection test succeeded."
+msgstr "O teste de conexão do provedor de IA foi concluído."
+
+#: includes/class-rest-controller.php:881
+msgid "The generated audio draft could not be saved."
+msgstr "Não foi possível salvar o rascunho de áudio gerado."
+
+#: includes/class-settings.php:240
+msgid "Enabled Functionality"
+msgstr "Funcionalidade ativada"
+
+#: includes/class-settings.php:248
+msgid "Available workflows"
+msgstr "Fluxos de trabalho disponíveis"
+
+#: includes/class-settings.php:257
+msgid "YouTube Integration"
+msgstr "Integração com o YouTube"
+
+#: includes/class-settings.php:265
+msgid "YouTube API Key"
+msgstr "Chave da API do YouTube"
+
+#: includes/class-settings.php:273
+msgid "YouTube Channel ID"
+msgstr "ID do canal do YouTube"
+
+#: includes/class-settings.php:281
+msgid "OAuth Client ID"
+msgstr "ID do cliente OAuth"
+
+#: includes/class-settings.php:289
+msgid "OAuth Client Secret"
+msgstr "Segredo do cliente OAuth"
+
+#: includes/class-settings.php:297
+msgid "OAuth Connection"
+msgstr "Conexão OAuth"
+
+#: includes/class-settings.php:306
+msgid "Content Settings"
+msgstr "Configurações de conteúdo"
+
+#: includes/class-settings.php:314
+msgid "Default Output Language"
+msgstr "Idioma de saída padrão"
+
+#: includes/class-settings.php:322
+msgid "Post Length"
+msgstr "Tamanho do post"
+
+#: includes/class-settings.php:330
+msgid "Writing Persona"
+msgstr "Persona de escrita"
+
+#: includes/class-settings.php:339
+msgid "AI Provider"
+msgstr "Provedor de IA"
+
+#: includes/class-settings.php:347
+msgid "Preferred AI Model"
+msgstr "Modelo de IA preferido"
+
+#: includes/class-settings.php:355
+msgid "AI Usage"
+msgstr "Uso de IA"
+
+#: includes/class-settings.php:387
+msgid "YouTube to Post"
+msgstr "YouTube para post"
+
+#: includes/class-settings.php:388
+msgid "Browse channel videos, generate posts from YouTube transcripts, and create draft articles."
+msgstr "Navegue pelos vídeos do canal, gere posts a partir de transcrições do YouTube e crie rascunhos de artigos."
+
+#: includes/class-settings.php:401
+#: build/editor.js:6
+#: src/editor/index.js:1034
+msgid "Post to Audio"
+msgstr "Post para áudio"
+
+#: includes/class-settings.php:402
+msgid "Generate narrated audio from post content and attach the result to the post."
+msgstr "Gere áudio narrado a partir do conteúdo do post e anexe o resultado ao post."
+
+#: includes/class-settings.php:408
+msgid "Thumbnail Generator"
+msgstr "Gerador de miniaturas"
+
+#: includes/class-settings.php:409
+msgid "Generate AI featured images for posts with optional author, logo, and object references."
+msgstr "Gere imagens destacadas com IA para posts usando referências opcionais de autor, logo e objeto."
+
+#: includes/class-settings.php:497
+msgid "This feature"
+msgstr "Este recurso"
+
+#: includes/class-settings.php:544
+msgid "Automatic (recommended)"
+msgstr "Automático (recomendado)"
+
+#: includes/class-settings.php:565
+msgid "Short"
+msgstr "Curto"
+
+#: includes/class-settings.php:566
+msgid "About 600 to 900 words."
+msgstr "Cerca de 600 a 900 palavras."
+
+#: includes/class-settings.php:569
+msgid "Medium"
+msgstr "Médio"
+
+#: includes/class-settings.php:570
+msgid "About 1,000 to 1,500 words."
+msgstr "Cerca de 1.000 a 1.500 palavras."
+
+#: includes/class-settings.php:573
+msgid "Long"
+msgstr "Longo"
+
+#: includes/class-settings.php:574
+msgid "About 1,800 to 2,500 words."
+msgstr "Cerca de 1.800 a 2.500 palavras."
+
+#: includes/class-settings.php:592
+msgid "Aim for a concise post of about 600 to 900 words. Focus on the core takeaways and avoid extended background."
+msgstr "Busque um post conciso, com cerca de 600 a 900 palavras. Concentre-se nos principais aprendizados e evite contextualizações longas."
+
+#: includes/class-settings.php:599
+msgid "Aim for a detailed post of about 1,800 to 2,500 words. Expand important sections with context, examples, and practical takeaways."
+msgstr "Busque um post detalhado, com cerca de 1.800 a 2.500 palavras. Desenvolva as seções importantes com contexto, exemplos e aprendizados práticos."
+
+#: includes/class-settings.php:605
+msgid "Aim for a balanced post of about 1,000 to 1,500 words. Cover the main ideas with enough context and examples."
+msgstr "Busque um post equilibrado, com cerca de 1.000 a 1.500 palavras. Cubra as ideias principais com contexto e exemplos suficientes."
+
+#: includes/class-settings.php:625
+msgid "Enter a valid YouTube Channel ID. Channel IDs start with UC followed by 22 characters."
+msgstr "Digite um ID de canal do YouTube válido. IDs de canal começam com UC seguido de 22 caracteres."
+
+#: includes/class-settings.php:647
+msgid "Enter a valid Google OAuth Web application Client ID ending in .apps.googleusercontent.com."
+msgstr "Digite um ID de cliente OAuth de aplicativo web do Google válido, terminado em .apps.googleusercontent.com."
+
+#: includes/class-settings.php:669
+msgid "Enter a valid Google OAuth Client Secret from the Web application client."
+msgstr "Digite um segredo de cliente OAuth do Google válido do cliente de aplicativo web."
+
+#: includes/class-settings.php:702
+msgid "This site is running locally. The plugin can run on localhost when WordPress can make outbound HTTPS requests to YouTube and the configured AI provider."
+msgstr "Este site está rodando localmente. O plugin pode rodar em localhost quando o WordPress consegue fazer solicitações HTTPS de saída para o YouTube e para o provedor de IA configurado."
+
+#: includes/class-settings.php:703
+msgid "This site is not currently using a localhost URL. Localhost is supported for development when outbound HTTPS requests and provider credentials are available."
+msgstr "Este site não está usando uma URL de localhost no momento. Localhost é compatível para desenvolvimento quando solicitações HTTPS de saída e credenciais do provedor estão disponíveis."
+
+#: includes/class-settings.php:779
+msgid "CreatorStack AI Settings"
+msgstr "Configurações do CreatorStack AI"
+
+#: includes/class-settings.php:780
+msgid "Enable creator workflows, connect YouTube, tune generated posts, and verify your AI provider from one focused workspace."
+msgstr "Ative fluxos de trabalho para criadores, conecte o YouTube, ajuste posts gerados e verifique seu provedor de IA em um espaço de trabalho focado."
+
+#: includes/class-settings.php:807
+msgid "Choose which CreatorStack AI workflows are available in the WordPress admin, editor sidebar, dashboard, and REST API."
+msgstr "Escolha quais fluxos de trabalho do CreatorStack AI ficam disponíveis no admin do WordPress, na barra lateral do editor, no painel e na API REST."
+
+#: includes/class-settings.php:815
+msgid "Available CreatorStack AI workflows"
+msgstr "Fluxos de trabalho disponíveis do CreatorStack AI"
+
+#: includes/class-settings.php:854
+msgid "YouTube authentication is configured. Update the API key from Settings > Connectors, and update channel or OAuth details below when they change."
+msgstr "A autenticação do YouTube está configurada. Atualize a chave de API em Configurações > Conectores e atualize abaixo os detalhes do canal ou do OAuth quando eles mudarem."
+
+#: includes/class-settings.php:859
+msgid "Configure the YouTube connector API key, channel ID, and OAuth details used by CreatorStack AI. OAuth is used to download captions through the official YouTube Captions API for videos the connected account can edit."
+msgstr "Configure a chave de API do conector do YouTube, o ID do canal e os detalhes de OAuth usados pelo CreatorStack AI. OAuth é usado para baixar legendas pela API oficial de Legendas do YouTube em vídeos que a conta conectada pode editar."
+
+#: includes/class-settings.php:861
+msgid "YouTube authentication setup"
+msgstr "Configuração da autenticação do YouTube"
+
+#: includes/class-settings.php:862
+msgid "YouTube authentication setup status"
+msgstr "Status da configuração da autenticação do YouTube"
+
+#: includes/class-settings.php:866
+msgid "YouTube connector API key configured"
+msgstr "Chave de API do conector do YouTube configurada"
+
+#: includes/class-settings.php:868
+msgid "Required for listing channel videos and loading video details. Manage this in Settings > Connectors."
+msgstr "Obrigatório para listar vídeos do canal e carregar detalhes dos vídeos. Gerencie isso em Configurações > Conectores."
+
+#: includes/class-settings.php:872
+msgid "YouTube Channel ID saved"
+msgstr "ID do canal do YouTube salvo"
+
+#: includes/class-settings.php:874
+msgid "Required for browsing videos from the correct channel."
+msgstr "Obrigatório para navegar por vídeos do canal correto."
+
+#: includes/class-settings.php:878
+msgid "OAuth client credentials saved"
+msgstr "Credenciais do cliente OAuth salvas"
+
+#: includes/class-settings.php:880
+msgid "Required before WordPress can start the Google OAuth flow."
+msgstr "Obrigatório antes que o WordPress possa iniciar o fluxo OAuth do Google."
+
+#: includes/class-settings.php:884
+msgid "Authorized redirect URI verified"
+msgstr "URI de redirecionamento autorizado verificado"
+
+#: includes/class-settings.php:887
+msgid "Google returned to WordPress successfully, so the redirect URI is accepted."
+msgstr "O Google retornou ao WordPress com sucesso, então a URI de redirecionamento foi aceita."
+
+#: includes/class-settings.php:888
+msgid "Verified after Google redirects back to WordPress. If Google reports redirect_uri_mismatch, copy the URI shown below into Google Cloud."
+msgstr "Verificado depois que o Google redireciona de volta ao WordPress. Se o Google informar redirect_uri_mismatch, copie a URI exibida abaixo para o Google Cloud."
+
+#: includes/class-settings.php:892
+msgid "YouTube account connected"
+msgstr "Conta do YouTube conectada"
+
+#: includes/class-settings.php:894
+msgid "Required for official caption downloads from editable videos."
+msgstr "Obrigatório para baixar oficialmente legendas de vídeos editáveis."
+
+#: includes/class-settings.php:910
+msgid "YouTube setup wizard"
+msgstr "Assistente de configuração do YouTube"
+
+#: includes/class-settings.php:911
+msgid "Use these steps to collect the YouTube and Google Cloud values WordPress needs for video listing, details, and official caption downloads."
+msgstr "Use estas etapas para coletar os valores do YouTube e do Google Cloud de que o WordPress precisa para listar vídeos, carregar detalhes e baixar legendas oficialmente."
+
+#: includes/class-settings.php:914
+msgid "Prepare Google Cloud"
+msgstr "Preparar o Google Cloud"
+
+#: includes/class-settings.php:915
+msgid "Open the Google Cloud project that owns the YouTube channel integration, then enable the YouTube Data API v3 if it is not already enabled."
+msgstr "Abra o projeto do Google Cloud que contém a integração do canal do YouTube e ative a API YouTube Data v3 se ela ainda não estiver ativada."
+
+#: includes/class-settings.php:918
+msgid "Open YouTube Data API v3"
+msgstr "Abrir a API YouTube Data v3"
+
+#: includes/class-settings.php:919
+#: includes/class-settings.php:929
+#: includes/class-settings.php:942
+#: includes/class-settings.php:952
+msgid "(opens in a new tab)"
+msgstr "(abre em uma nova aba)"
+
+#: includes/class-settings.php:924
+msgid "Configure the YouTube connector API key"
+msgstr "Configurar a chave de API do conector do YouTube"
+
+#: includes/class-settings.php:925
+msgid "In Google Cloud, go to APIs & Services > Credentials and create an API key. Then add it to the YouTube connector in Settings > Connectors, or provide it with the YOUTUBE_DATA_API_KEY environment variable or PHP constant."
+msgstr "No Google Cloud, acesse APIs e serviços > Credenciais e crie uma chave de API. Depois adicione-a ao conector do YouTube em Configurações > Conectores ou forneça-a pela variável de ambiente YOUTUBE_DATA_API_KEY ou pela constante PHP."
+
+#: includes/class-settings.php:928
+msgid "Open Google credentials"
+msgstr "Abrir credenciais do Google"
+
+#: includes/class-settings.php:932
+#: includes/class-settings.php:1225
+msgid "Manage YouTube connector"
+msgstr "Gerenciar conector do YouTube"
+
+#: includes/class-settings.php:937
+msgid "Find the YouTube Channel ID"
+msgstr "Encontrar o ID do canal do YouTube"
+
+#: includes/class-settings.php:938
+msgid "Open YouTube account advanced settings, copy the value labeled Channel ID, and paste it into the YouTube Channel ID field below. Channel IDs usually start with UC."
+msgstr "Abra as configurações avançadas da conta do YouTube, copie o valor identificado como ID do canal e cole-o no campo ID do canal do YouTube abaixo. IDs de canal geralmente começam com UC."
+
+#: includes/class-settings.php:941
+msgid "Find Channel ID help"
+msgstr "Abrir ajuda para encontrar o ID do canal"
+
+#: includes/class-settings.php:947
+msgid "Create a Web application OAuth client"
+msgstr "Criar um cliente OAuth de aplicativo web"
+
+#: includes/class-settings.php:948
+msgid "In Google Cloud, go to APIs & Services > Credentials, create an OAuth client ID, and choose Web application as the application type."
+msgstr "No Google Cloud, acesse APIs e serviços > Credenciais, crie um ID de cliente OAuth e escolha Aplicativo web como tipo de aplicativo."
+
+#: includes/class-settings.php:951
+msgid "Create OAuth client"
+msgstr "Criar cliente OAuth"
+
+#: includes/class-settings.php:957
+msgid "Add this Authorized redirect URI"
+msgstr "Adicionar esta URI de redirecionamento autorizado"
+
+#: includes/class-settings.php:958
+msgid "Paste this exact URI into the Authorized redirect URIs field for the Web application client. Google requires an exact match."
+msgstr "Cole esta URI exata no campo URIs de redirecionamento autorizados do cliente de aplicativo web. O Google exige uma correspondência exata."
+
+#: includes/class-settings.php:961
+#: includes/class-settings.php:1335
+msgid "Authorized redirect URI"
+msgstr "URI de redirecionamento autorizado"
+
+#: includes/class-settings.php:971
+msgid "Copy URI"
+msgstr "Copiar URI"
+
+#: includes/class-settings.php:977
+msgid "Download or copy the client secret JSON"
+msgstr "Baixar ou copiar o JSON do segredo do cliente"
+
+#: includes/class-settings.php:978
+msgid "After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes."
+msgstr "Depois que o Google criar o cliente, baixe o arquivo client_secret.json ou copie seu conteúdo. Cole-o aqui para preencher os campos ID do cliente e Segredo do cliente abaixo. O segredo só é armazenado depois que você clica em Salvar alterações."
+
+#: includes/class-settings.php:984
+msgid "Paste client_secret.json contents here"
+msgstr "Cole o conteúdo de client_secret.json aqui"
+
+#: includes/class-settings.php:988
+msgid "Fill OAuth fields"
+msgstr "Preencher campos OAuth"
+
+#: includes/class-settings.php:994
+msgid "Save, then connect YouTube"
+msgstr "Salvar e conectar o YouTube"
+
+#: includes/class-settings.php:995
+msgid "Click Save Changes so WordPress stores the Client ID and Client Secret. After the page reloads, use Connect YouTube to finish the Google account consent flow."
+msgstr "Clique em Salvar alterações para que o WordPress armazene o ID do cliente e o Segredo do cliente. Depois que a página recarregar, use Conectar YouTube para concluir o fluxo de consentimento da conta do Google."
+
+#: includes/class-settings.php:1039
+msgid "Done"
+msgstr "Concluído"
+
+#: includes/class-settings.php:1039
+msgid "Pending"
+msgstr "Pendente"
+
+#: includes/class-settings.php:1063
+msgid "Configure the default language and style for generated content. You can override these settings for individual video or audio generations."
+msgstr "Configure o idioma e o estilo padrão do conteúdo gerado. Você pode substituir essas configurações para gerações individuais de vídeo ou áudio."
+
+#: includes/class-settings.php:1081
+msgid "Controls the target article length and AI token budget for generated posts."
+msgstr "Controla o tamanho desejado do artigo e o orçamento de tokens de IA dos posts gerados."
+
+#: includes/class-settings.php:1098
+msgid "A text-generation AI provider is available. Provider credentials are managed by WordPress Connectors, not by this plugin."
+msgstr "Um provedor de IA para geração de texto está disponível. As credenciais do provedor são gerenciadas pelos Conectores do WordPress, não por este plugin."
+
+#: includes/class-settings.php:1101
+msgid "Audio-to-post generation is available."
+msgstr "A geração de áudio para post está disponível."
+
+#: includes/class-settings.php:1101
+msgid "Audio-to-post generation requires an AI provider with audio input support."
+msgstr "A geração de áudio para post requer um provedor de IA com suporte a entrada de áudio."
+
+#: includes/class-settings.php:1102
+msgid "Audio-to-post generation is disabled in Enabled Functionality."
+msgstr "A geração de áudio para post está desativada em Funcionalidade ativada."
+
+#: includes/class-settings.php:1104
+msgid "Post-to-audio generation is available."
+msgstr "A geração de post para áudio está disponível."
+
+#: includes/class-settings.php:1104
+msgid "Post-to-audio generation requires an AI provider with text-to-speech support."
+msgstr "A geração de post para áudio requer um provedor de IA com suporte a conversão de texto em fala."
+
+#: includes/class-settings.php:1105
+msgid "Post-to-audio generation is disabled in Enabled Functionality."
+msgstr "A geração de post para áudio está desativada em Funcionalidade ativada."
+
+#: includes/class-settings.php:1107
+msgid "Thumbnail generation is available."
+msgstr "A geração de miniaturas está disponível."
+
+#: includes/class-settings.php:1107
+msgid "Thumbnail generation requires an AI provider with image generation support."
+msgstr "A geração de miniaturas requer um provedor de IA com suporte à geração de imagens."
+
+#: includes/class-settings.php:1108
+msgid "Thumbnail generation is disabled in Enabled Functionality."
+msgstr "A geração de miniaturas está desativada em Funcionalidade ativada."
+
+#: includes/class-settings.php:1118
+msgid "Manage AI Providers"
+msgstr "Gerenciar provedores de IA"
+
+#: includes/class-settings.php:1122
+msgid "Connection Test"
+msgstr "Teste de conexão"
+
+#: includes/class-settings.php:1123
+msgid "Run a quick text generation to confirm the configured AI provider can respond from this WordPress site."
+msgstr "Execute uma geração rápida de texto para confirmar que o provedor de IA configurado consegue responder a partir deste site WordPress."
+
+#: includes/class-settings.php:1126
+#: build/settings.js:1
+#: src/settings/index.js:200
+msgid "Test AI Connection"
+msgstr "Testar conexão de IA"
+
+#: includes/class-settings.php:1133
+msgid "Localhost Compatibility"
+msgstr "Compatibilidade com localhost"
+
+#. translators: %s: current site host.
+#: includes/class-settings.php:1139
+#, php-format
+msgid "Current detected host: %s"
+msgstr "Host detectado atual: %s"
+
+#: includes/class-settings.php:1140
+#: build/settings.js:3
+#: src/settings/index.js:259
+#: src/settings/index.js:260
+msgid "unknown"
+msgstr "desconhecido"
+
+#: includes/class-settings.php:1162
+msgid "This is a preference passed to the WordPress AI Client. If the selected model is unavailable, the AI Client can use another compatible configured model."
+msgstr "Esta é uma preferência enviada ao Cliente de IA do WordPress. Se o modelo selecionado não estiver disponível, o Cliente de IA poderá usar outro modelo compatível configurado."
+
+#: includes/class-settings.php:1174
+msgid "No AI generations have been recorded yet."
+msgstr "Nenhuma geração de IA foi registrada ainda."
+
+#: includes/class-settings.php:1178
+msgid "Recent AI generations are recorded to help administrators review feature usage and token consumption."
+msgstr "As gerações recentes de IA são registradas para ajudar administradores a revisar o uso dos recursos e o consumo de tokens."
+
+#: includes/class-settings.php:1182
+msgid "Date"
+msgstr "Data"
+
+#: includes/class-settings.php:1183
+msgid "Source"
+msgstr "Origem"
+
+#: includes/class-settings.php:1184
+msgid "Status"
+msgstr "Status"
+
+#: includes/class-settings.php:1185
+msgid "Provider"
+msgstr "Provedor"
+
+#: includes/class-settings.php:1186
+msgid "Model"
+msgstr "Modelo"
+
+#: includes/class-settings.php:1187
+msgid "Tokens"
+msgstr "Tokens"
+
+#. translators: %s: API key source.
+#: includes/class-settings.php:1215
+#, php-format
+msgid "Configured from %s."
+msgstr "Configurado a partir de %s."
+
+#: includes/class-settings.php:1218
+msgid "Not configured."
+msgstr "Não configurado."
+
+#: includes/class-settings.php:1229
+msgid "The YouTube Data API v3 key is managed by WordPress Connectors. WordPress checks the YOUTUBE_DATA_API_KEY environment variable, the YOUTUBE_DATA_API_KEY PHP constant, and then the connector database setting."
+msgstr "A chave da API YouTube Data v3 é gerenciada pelos Conectores do WordPress. O WordPress verifica a variável de ambiente YOUTUBE_DATA_API_KEY, a constante PHP YOUTUBE_DATA_API_KEY e, em seguida, a configuração do banco de dados do conector."
+
+#: includes/class-settings.php:1242
+msgid "environment variable"
+msgstr "variável de ambiente"
+
+#: includes/class-settings.php:1243
+msgid "PHP constant"
+msgstr "constante PHP"
+
+#: includes/class-settings.php:1244
+msgid "Settings > Connectors"
+msgstr "Configurações > Conectores"
+
+#: includes/class-settings.php:1245
+msgid "legacy plugin setting"
+msgstr "configuração legada do plugin"
+
+#: includes/class-settings.php:1246
+msgid "unknown source"
+msgstr "origem desconhecida"
+
+#: includes/class-settings.php:1264
+msgid "Your YouTube Channel ID (e.g., UCxxxxxxxxxxxxxxxx)."
+msgstr "O ID do seu canal do YouTube (por exemplo, UCxxxxxxxxxxxxxxxx)."
+
+#: includes/class-settings.php:1284
+msgid "Create a Web application OAuth client in Google Cloud and paste its client ID here."
+msgstr "Crie um cliente OAuth de aplicativo web no Google Cloud e cole o ID do cliente aqui."
+
+#: includes/class-settings.php:1304
+msgid "Store this only on trusted WordPress environments. Google shows the client secret only when the OAuth client is created."
+msgstr "Armazene isto apenas em ambientes WordPress confiáveis. O Google mostra o segredo do cliente apenas quando o cliente OAuth é criado."
+
+#: includes/class-settings.php:1323
+msgid "OAuth credentials have not been saved yet."
+msgstr "As credenciais OAuth ainda não foram salvas."
+
+#: includes/class-settings.php:1326
+msgid "YouTube is connected."
+msgstr "O YouTube está conectado."
+
+#: includes/class-settings.php:1328
+msgid "YouTube is connected, but OAuth client credentials are missing. Save them before reconnecting."
+msgstr "O YouTube está conectado, mas as credenciais do cliente OAuth estão ausentes. Salve-as antes de reconectar."
+
+#: includes/class-settings.php:1330
+msgid "OAuth credentials are saved. You can connect YouTube."
+msgstr "As credenciais OAuth foram salvas. Você pode conectar o YouTube."
+
+#: includes/class-settings.php:1346
+msgid "Add this exact URI to the OAuth client in Google Cloud before connecting."
+msgstr "Adicione esta URI exata ao cliente OAuth no Google Cloud antes de conectar."
+
+#: includes/class-settings.php:1354
+msgid "Reconnect YouTube"
+msgstr "Reconectar YouTube"
+
+#: includes/class-settings.php:1354
+msgid "Connect YouTube"
+msgstr "Conectar YouTube"
+
+#: includes/class-settings.php:1358
+msgid "Save OAuth credentials first"
+msgstr "Salve as credenciais OAuth primeiro"
+
+#: includes/class-settings.php:1363
+msgid "Disconnect YouTube"
+msgstr "Desconectar YouTube"
+
+#: includes/class-settings.php:1368
+msgid "The connected account must be able to edit the videos whose captions you want to use."
+msgstr "A conta conectada precisa poder editar os vídeos cujas legendas você quer usar."
+
+#: includes/class-settings.php:1368
+msgid "Enter the OAuth Client ID and Client Secret, save changes, then return here to connect YouTube."
+msgstr "Digite o ID do cliente OAuth e o Segredo do cliente, salve as alterações e volte aqui para conectar o YouTube."
+
+#: includes/class-settings.php:1386
+msgid "Describe the writing style for generated posts (e.g., tone, structure, audience). This will be used as default guidance for the AI. Leave empty for a generic professional tone."
+msgstr "Descreva o estilo de escrita dos posts gerados (por exemplo, tom, estrutura, público). Isso será usado como orientação padrão para a IA. Deixe em branco para usar um tom profissional genérico."
+
+#: includes/class-settings.php:1433
+msgid "YouTube OAuth is connected."
+msgstr "O OAuth do YouTube está conectado."
+
+#: includes/class-settings.php:1434
+msgid "YouTube OAuth has been disconnected."
+msgstr "O OAuth do YouTube foi desconectado."
+
+#: includes/class-settings.php:1435
+msgid "Save the OAuth client ID and client secret before connecting YouTube."
+msgstr "Salve o ID do cliente OAuth e o segredo do cliente antes de conectar o YouTube."
+
+#: includes/class-settings.php:1436
+msgid "The OAuth callback could not be verified. Please try connecting again."
+msgstr "Não foi possível verificar o callback OAuth. Tente conectar novamente."
+
+#: includes/class-settings.php:1437
+msgid "Google did not return an authorization code. Please try connecting again."
+msgstr "O Google não retornou um código de autorização. Tente conectar novamente."
+
+#: includes/class-settings.php:1438
+msgid "The OAuth token exchange failed. Check the OAuth client configuration and try reconnecting."
+msgstr "A troca de token OAuth falhou. Verifique a configuração do cliente OAuth e tente reconectar."
+
+#: includes/class-settings.php:1439
+msgid "YouTube OAuth access was denied."
+msgstr "O acesso OAuth do YouTube foi negado."
+
+#. translators: %s: OAuth redirect URI.
+#: includes/class-settings.php:1444
+#, php-format
+msgid "Google rejected the redirect URI. Add this exact Authorized redirect URI to the OAuth client in Google Cloud: %s"
+msgstr "O Google rejeitou a URI de redirecionamento. Adicione esta URI de redirecionamento autorizado exata ao cliente OAuth no Google Cloud: %s"
+
+#: includes/class-settings.php:1448
+msgid "Google rejected the OAuth client. Check the saved Client ID and Client Secret, then reconnect YouTube."
+msgstr "O Google rejeitou o cliente OAuth. Verifique o ID do cliente e o Segredo do cliente salvos e reconecte o YouTube."
+
+#: includes/class-settings.php:1449
+msgid "Google rejected this OAuth client for the requested YouTube scope. Check the OAuth consent screen and client type in Google Cloud."
+msgstr "O Google rejeitou este cliente OAuth para o escopo do YouTube solicitado. Verifique a tela de consentimento OAuth e o tipo de cliente no Google Cloud."
+
+#: includes/class-settings.php:1450
+msgid "CreatorStack AI could not redirect to Google OAuth. Please try again."
+msgstr "O CreatorStack AI não conseguiu redirecionar para o OAuth do Google. Tente novamente."
+
+#: includes/class-settings.php:1453
+msgid "YouTube OAuth could not be completed. Please try again."
+msgstr "Não foi possível concluir o OAuth do YouTube. Tente novamente."
+
+#: includes/class-thumbnail-generator.php:93
+msgid "Bold YouTube"
+msgstr "YouTube ousado"
+
+#: includes/class-thumbnail-generator.php:94
+msgid "High-contrast, creator-first thumbnail energy."
+msgstr "Energia de miniatura com alto contraste e foco em criadores."
+
+#: includes/class-thumbnail-generator.php:95
+msgid "Create a high-contrast creator thumbnail with a clear central subject, dramatic lighting, bold composition, and generous negative space for platform overlays."
+msgstr "Crie uma miniatura de criador com alto contraste, assunto central claro, iluminação dramática, composição marcante e bastante espaço negativo para sobreposições da plataforma."
+
+#: includes/class-thumbnail-generator.php:98
+msgid "Editorial Portrait"
+msgstr "Retrato editorial"
+
+#: includes/class-thumbnail-generator.php:99
+msgid "Polished publication-style image with a human focus."
+msgstr "Imagem polida em estilo editorial com foco humano."
+
+#: includes/class-thumbnail-generator.php:100
+msgid "Create a refined editorial image with magazine-quality composition, natural skin tones, restrained contrast, and a polished professional finish."
+msgstr "Crie uma imagem editorial refinada com composição de qualidade de revista, tons de pele naturais, contraste moderado e acabamento profissional polido."
+
+#: includes/class-thumbnail-generator.php:103
+msgid "Product Spotlight"
+msgstr "Destaque de produto"
+
+#: includes/class-thumbnail-generator.php:104
+msgid "Clean hero treatment for objects, products, and tools."
+msgstr "Tratamento hero limpo para objetos, produtos e ferramentas."
+
+#: includes/class-thumbnail-generator.php:105
+msgid "Create a product-focused hero thumbnail with the object or logo treated as the main visual anchor, clear separation from the background, and brand-safe spacing."
+msgstr "Crie uma miniatura hero focada no produto, com o objeto ou logo como principal âncora visual, separação clara do fundo e espaçamento seguro para a marca."
+
+#: includes/class-thumbnail-generator.php:108
+msgid "Cinematic Tech"
+msgstr "Tecnologia cinematográfica"
+
+#: includes/class-thumbnail-generator.php:109
+msgid "Modern depth, lighting, and technology cues."
+msgstr "Profundidade, iluminação e sinais tecnológicos modernos."
+
+#: includes/class-thumbnail-generator.php:110
+msgid "Create a cinematic technology thumbnail with dimensional lighting, controlled depth, contemporary materials, and a focused visual story."
+msgstr "Crie uma miniatura tecnológica cinematográfica com iluminação dimensional, profundidade controlada, materiais contemporâneos e uma narrativa visual focada."
+
+#: includes/class-thumbnail-generator.php:113
+msgid "Minimal Branded"
+msgstr "Minimalista com marca"
+
+#: includes/class-thumbnail-generator.php:114
+msgid "Simple, premium, and easy to scan."
+msgstr "Simples, premium e fácil de escanear."
+
+#: includes/class-thumbnail-generator.php:115
+msgid "Create a minimal branded thumbnail with a clean layout, crisp hierarchy, limited visual noise, and strong recognition at small sizes."
+msgstr "Crie uma miniatura minimalista com marca, layout limpo, hierarquia clara, pouco ruído visual e forte reconhecimento em tamanhos pequenos."
+
+#: includes/class-thumbnail-generator.php:155
+msgid "Choose a supported thumbnail style."
+msgstr "Escolha um estilo de miniatura compatível."
+
+#: includes/class-thumbnail-generator.php:163
+msgid "Choose a supported secondary thumbnail style."
+msgstr "Escolha um estilo secundário de miniatura compatível."
+
+#: includes/class-thumbnail-generator.php:171
+msgid "No configured AI provider supports image generation. Configure a compatible provider in Settings > Connectors."
+msgstr "Nenhum provedor de IA configurado oferece suporte à geração de imagens. Configure um provedor compatível em Configurações > Conectores."
+
+#: includes/class-thumbnail-generator.php:187
+msgid "The configured AI provider can generate images, but it does not support image references for thumbnails."
+msgstr "O provedor de IA configurado consegue gerar imagens, mas não oferece suporte a referências de imagem para miniaturas."
+
+#: includes/class-thumbnail-generator.php:218
+msgid "A thumbnail is already being generated. Please wait for it to complete."
+msgstr "Uma miniatura já está sendo gerada. Aguarde até a conclusão."
+
+#: includes/class-thumbnail-generator.php:289
+msgid "The generated thumbnail preview expired. Generate a new thumbnail before saving."
+msgstr "A prévia da miniatura gerada expirou. Gere uma nova miniatura antes de salvar."
+
+#: includes/class-thumbnail-generator.php:314
+msgid "The generated thumbnail was saved, but its URL could not be loaded."
+msgstr "A miniatura gerada foi salva, mas não foi possível carregar sua URL."
+
+#: includes/class-thumbnail-generator.php:340
+msgid "The selected image attachment could not be found."
+msgstr "O anexo de imagem selecionado não foi encontrado."
+
+#: includes/class-thumbnail-generator.php:350
+msgid "The selected image file is missing from the server."
+msgstr "O arquivo de imagem selecionado não está no servidor."
+
+#: includes/class-thumbnail-generator.php:361
+msgid "Please select a supported image file."
+msgstr "Selecione um arquivo de imagem compatível."
+
+#. translators: %s: maximum upload size.
+#: includes/class-thumbnail-generator.php:374
+#, php-format
+msgid "The selected image file is too large. The maximum size is %s."
+msgstr "O arquivo de imagem selecionado é muito grande. O tamanho máximo é %s."
+
+#: includes/class-thumbnail-generator.php:410
+msgid "You are not allowed to edit this post."
+msgstr "Você não tem permissão para editar este post."
+
+#: includes/class-thumbnail-generator.php:473
+msgid "No excerpt provided."
+msgstr "Nenhum resumo fornecido."
+
+#: includes/class-thumbnail-generator.php:474
+msgid "Uncategorized"
+msgstr "Sem categoria"
+
+#: includes/class-thumbnail-generator.php:475
+msgid "No post content is available yet."
+msgstr "Ainda não há conteúdo disponível no post."
+
+#: includes/class-thumbnail-generator.php:499
+msgid "The WordPress AI Client is not available for thumbnail generation."
+msgstr "O Cliente de IA do WordPress não está disponível para geração de miniaturas."
+
+#: includes/class-thumbnail-generator.php:506
+msgid "You are a professional art director creating original WordPress featured images for creator content."
+msgstr "Você é um diretor de arte profissional que cria imagens destacadas originais do WordPress para conteúdo de criadores."
+
+#: includes/class-thumbnail-generator.php:544
+#: includes/class-thumbnail-generator.php:552
+msgid "The AI provider did not return a usable image file."
+msgstr "O provedor de IA não retornou um arquivo de imagem utilizável."
+
+#: includes/class-thumbnail-generator.php:594
+msgid "The generated thumbnail was returned in an unsupported format."
+msgstr "A miniatura gerada foi retornada em um formato incompatível."
+
+#: includes/class-thumbnail-generator.php:618
+msgid "The generated thumbnail preview could not be saved."
+msgstr "Não foi possível salvar a prévia da miniatura gerada."
+
+#: includes/class-thumbnail-generator.php:628
+msgid "The generated thumbnail data could not be decoded."
+msgstr "Os dados da miniatura gerada não puderam ser decodificados."
+
+#. translators: %s: post title.
+#: includes/class-thumbnail-generator.php:651
+#, php-format
+msgid "Thumbnail for %s"
+msgstr "Miniatura de %s"
+
+#. translators: %s: post title.
+#: includes/class-thumbnail-generator.php:669
+#: includes/class-thumbnail-generator.php:712
+#, php-format
+msgid "Generated thumbnail for %s"
+msgstr "Miniatura gerada para %s"
+
+#: includes/class-transcript-fetcher.php:59
+msgid "Could not load the YouTube video page to find captions. Please try again later."
+msgstr "Não foi possível carregar a página do vídeo do YouTube para encontrar legendas. Tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:68
+msgid "YouTube returned an empty video page while looking for captions. Please try again later."
+msgstr "O YouTube retornou uma página de vídeo vazia durante a busca por legendas. Tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:110
+#: includes/class-transcript-fetcher.php:132
+msgid "Failed to parse the video caption data. YouTube may have changed its format. Please try again later."
+msgstr "Falha ao analisar os dados de legenda do vídeo. O YouTube pode ter alterado seu formato. Tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:124
+msgid "No captions found for this video. The video may not have subtitles available."
+msgstr "Nenhuma legenda encontrada para este vídeo. O vídeo pode não ter legendas disponíveis."
+
+#: includes/class-transcript-fetcher.php:139
+msgid "No captions found for this video."
+msgstr "Nenhuma legenda encontrada para este vídeo."
+
+#: includes/class-transcript-fetcher.php:269
+msgid "No caption tracks available."
+msgstr "Nenhuma faixa de legenda disponível."
+
+#: includes/class-transcript-fetcher.php:314
+msgid "Could not find a usable caption track."
+msgstr "Não foi possível encontrar uma faixa de legenda utilizável."
+
+#: includes/class-transcript-fetcher.php:349
+msgid "YouTube temporarily blocked transcript requests. Please wait and try again later."
+msgstr "O YouTube bloqueou temporariamente as solicitações de transcrição. Aguarde e tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:357
+msgid "Could not load the YouTube transcript data. Please try again later."
+msgstr "Não foi possível carregar os dados de transcrição do YouTube. Tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:384
+msgid "YouTube returned an empty transcript for this caption track. Try selecting a different video or try again later."
+msgstr "O YouTube retornou uma transcrição vazia para esta faixa de legenda. Tente selecionar outro vídeo ou tente novamente mais tarde."
+
+#: includes/class-transcript-fetcher.php:392
+#: includes/class-transcript-fetcher.php:520
+msgid "Failed to parse the transcript data. Please try again or choose a different video."
+msgstr "Falha ao analisar os dados da transcrição. Tente novamente ou escolha outro vídeo."
+
+#: includes/class-transcript-fetcher.php:487
+msgid "The transcript for this video appears to be empty. Try selecting a video with captions enabled."
+msgstr "A transcrição deste vídeo parece estar vazia. Tente selecionar um vídeo com legendas ativadas."
+
+#: includes/class-transcript-fetcher.php:569
+msgid "Connect YouTube OAuth to read captions through the official YouTube Captions API. The public transcript fallback returned an empty transcript for this video."
+msgstr "Conecte o OAuth do YouTube para ler legendas pela API oficial de Legendas do YouTube. O fallback de transcrição pública retornou uma transcrição vazia para este vídeo."
+
+#: includes/class-transcript-fetcher.php:574
+msgid "Connect YouTube OAuth"
+msgstr "Conectar OAuth do YouTube"
+
+#: includes/class-youtube-api.php:64
+msgid "A valid YouTube Data API key and Channel ID are required before CreatorStack AI can load YouTube videos."
+msgstr "Uma chave válida da API YouTube Data e um ID de canal são obrigatórios antes que o CreatorStack AI possa carregar vídeos do YouTube."
+
+#: includes/class-youtube-api.php:115
+#: includes/class-youtube-api.php:170
+msgid "Unknown YouTube API error."
+msgstr "Erro desconhecido da API do YouTube."
+
+#: includes/class-youtube-api.php:177
+msgid "The video could not be found. Please check the video ID and ensure it is publicly accessible."
+msgstr "O vídeo não foi encontrado. Verifique o ID do vídeo e confirme se ele está acessível publicamente."
+
+#: includes/class-youtube-connector.php:69
+msgid "YouTube"
+msgstr "YouTube"
+
+#: includes/class-youtube-connector.php:70
+msgid "Connects CreatorStack AI to the YouTube Data API for video listings and details."
+msgstr "Conecta o CreatorStack AI à API YouTube Data para listagens e detalhes de vídeos."
+
+#: includes/class-youtube-connector.php:101
+msgid "YouTube settings"
+msgstr "Configurações do YouTube"
+
+#: includes/class-youtube-connector.php:247
+msgid "Update YouTube settings"
+msgstr "Atualizar configurações do YouTube"
+
+#: includes/class-youtube-connector.php:247
+msgid "Configure YouTube connector"
+msgstr "Configurar conector do YouTube"
+
+#: includes/class-youtube-oauth.php:107
+msgid "YouTube OAuth client credentials are not configured."
+msgstr "As credenciais do cliente OAuth do YouTube não estão configuradas."
+
+#: includes/class-youtube-oauth.php:114
+#: includes/class-youtube-oauth.php:247
+msgid "Connect YouTube with OAuth to download captions through the official API."
+msgstr "Conecte o YouTube com OAuth para baixar legendas pela API oficial."
+
+#: includes/class-youtube-oauth.php:132
+msgid "No caption tracks were available through the YouTube Captions API."
+msgstr "Nenhuma faixa de legenda estava disponível pela API de Legendas do YouTube."
+
+#: includes/class-youtube-oauth.php:149
+#: includes/class-youtube-oauth.php:185
+msgid "You are not allowed to connect YouTube."
+msgstr "Você não tem permissão para conectar o YouTube."
+
+#: includes/class-youtube-oauth.php:221
+msgid "You are not allowed to disconnect YouTube."
+msgstr "Você não tem permissão para desconectar o YouTube."
+
+#: includes/class-youtube-oauth.php:311
+msgid "YouTube OAuth token exchange failed. Check the OAuth client configuration and try reconnecting."
+msgstr "A troca de token OAuth do YouTube falhou. Verifique a configuração do cliente OAuth e tente reconectar."
+
+#: includes/class-youtube-oauth.php:318
+msgid "YouTube did not return a refresh token. Reconnect YouTube and approve offline access."
+msgstr "O YouTube não retornou um token de atualização. Reconecte o YouTube e aprove o acesso offline."
+
+#: includes/class-youtube-oauth.php:361
+msgid "The connected YouTube account is not allowed to read captions for this video."
+msgstr "A conta do YouTube conectada não tem permissão para ler legendas deste vídeo."
+
+#: includes/class-youtube-oauth.php:369
+msgid "Could not load caption tracks from the YouTube Captions API."
+msgstr "Não foi possível carregar faixas de legenda da API de Legendas do YouTube."
+
+#: includes/class-youtube-oauth.php:390
+msgid "The selected YouTube caption track is missing its ID."
+msgstr "A faixa de legenda do YouTube selecionada não tem ID."
+
+#: includes/class-youtube-oauth.php:414
+msgid "Could not download captions from the YouTube Captions API."
+msgstr "Não foi possível baixar legendas da API de Legendas do YouTube."
+
+#: includes/class-youtube-oauth.php:490
+msgid "The downloaded YouTube caption file did not contain readable text."
+msgstr "O arquivo de legenda baixado do YouTube não continha texto legível."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: build/editor.js:1
+#: build/settings.js:3
+#: src/shared/api.js:18
+msgid "An unexpected error occurred."
+msgstr "Ocorreu um erro inesperado."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:59
+msgid "Generate Blog Post"
+msgstr "Gerar post do blog"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:73
+msgid "Output Language:"
+msgstr "Idioma de saída:"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:93
+msgid "Writing Persona:"
+msgstr "Persona de escrita:"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:101
+msgid "e.g., Conversational tone, short paragraphs, humor, actionable tips…"
+msgstr "por exemplo, tom conversacional, parágrafos curtos, humor, dicas acionáveis…"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:115
+msgid "Use a custom transcript instead of fetching captions"
+msgstr "Usar uma transcrição personalizada em vez de buscar legendas"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:130
+msgid "Manual Transcript:"
+msgstr "Transcrição manual:"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:139
+msgid "Paste the transcript text for this video."
+msgstr "Cole o texto da transcrição deste vídeo."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:147
+msgid "Paste at least 50 characters. When provided, this transcript is used as the source material and YouTube captions are not fetched."
+msgstr "Cole pelo menos 50 caracteres. Quando informada, esta transcrição é usada como material de origem e as legendas do YouTube não são buscadas."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:163
+#: src/shared/preview-modal.js:68
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/language-modal.js:180
+msgid "Generate"
+msgstr "Gerar"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/preview-modal.js:46
+msgid "Draft Preview"
+msgstr "Prévia do rascunho"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/preview-modal.js:79
+msgid "Regenerating…"
+msgstr "Gerando novamente…"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: build/editor.js:1
+#: src/editor/index.js:310
+#: src/shared/preview-modal.js:80
+msgid "Regenerate"
+msgstr "Gerar novamente"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/preview-modal.js:91
+msgid "Saving…"
+msgstr "Salvando…"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/preview-modal.js:92
+msgid "Save as Draft"
+msgstr "Salvar como rascunho"
+
+#: build/admin-videos.js:1
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:70
+#: src/dashboard-widget/index.js:51
+#: src/shared/error-notice.js:33
+msgid "Go to Settings"
+msgstr "Ir para Configurações"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/error-notice.js:50
+msgid "This video needs captions or subtitles before it can be converted into a post."
+msgstr "Este vídeo precisa de legendas antes de poder ser convertido em post."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/error-notice.js:73
+msgid "Please wait a moment and try again."
+msgstr "Aguarde um momento e tente novamente."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/error-notice.js:79
+msgid "This may be a temporary issue with an external service."
+msgstr "Isso pode ser um problema temporário com um serviço externo."
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/error-notice.js:97
+msgid "Retry"
+msgstr "Tentar novamente"
+
+#: build/admin-videos.js:1
+#: build/dashboard-widget.js:1
+#: src/shared/error-notice.js:104
+#: src/shared/warning-notice.js:33
+msgid "Dismiss this notice"
+msgstr "Dispensar este aviso"
+
+#: build/admin-videos.js:1
+#: build/editor.js:1
+#: src/admin-videos/index.js:82
+#: src/editor/index.js:49
+msgid "Requesting microphone access…"
+msgstr "Solicitando acesso ao microfone…"
+
+#. translators: %s: recording duration.
+#: build/admin-videos.js:2
+#: build/editor.js:2
+#: src/admin-videos/index.js:88
+#: src/editor/index.js:55
+#, js-format
+msgid "Recording %s"
+msgstr "Gravando %s"
+
+#. translators: 1: recording duration, 2: recording file size.
+#: build/admin-videos.js:3
+#: build/editor.js:3
+#: src/admin-videos/index.js:96
+#: src/editor/index.js:63
+#, js-format
+msgid "Recording ready: %1$s, %2$s"
+msgstr "Gravação pronta: %1$s, %2$s"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:106
+msgid "Ready to record from your microphone."
+msgstr "Pronto para gravar pelo microfone."
+
+#: build/admin-videos.js:3
+#: build/editor.js:3
+#: src/admin-videos/index.js:150
+#: src/editor/index.js:699
+msgid "Record Again"
+msgstr "Gravar novamente"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:151
+msgid "Start Recording"
+msgstr "Iniciar gravação"
+
+#: build/admin-videos.js:3
+#: build/editor.js:3
+#: src/admin-videos/index.js:162
+#: src/editor/index.js:710
+msgid "Stop Recording"
+msgstr "Parar gravação"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:174
+msgid "Discard Recording"
+msgstr "Descartar gravação"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:694
+msgid "YouTube to Post is disabled in CreatorStack AI settings."
+msgstr "YouTube para post está desativado nas configurações do CreatorStack AI."
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:59
+#: src/dashboard-widget/index.js:40
+msgid "Configure the YouTube connector API key."
+msgstr "Configure a chave de API do conector do YouTube."
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:63
+#: src/dashboard-widget/index.js:44
+msgid "Configure your YouTube channel settings."
+msgstr "Configure as opções do seu canal do YouTube."
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:738
+#: src/dashboard-widget/index.js:234
+msgid "Loading videos…"
+msgstr "Carregando vídeos…"
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:769
+#: src/dashboard-widget/index.js:265
+msgid "Post generated successfully!"
+msgstr "Post gerado."
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:774
+#: src/dashboard-widget/index.js:270
+msgid "Edit Draft"
+msgstr "Editar rascunho"
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:579
+#: src/admin-videos/index.js:791
+#: src/dashboard-widget/index.js:106
+#: src/dashboard-widget/index.js:287
+msgid "Configure an AI provider before generating posts."
+msgstr "Configure um provedor de IA antes de gerar posts."
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: build/editor.js:1
+#: build/editor.js:6
+#: src/admin-videos/index.js:678
+#: src/dashboard-widget/index.js:205
+#: src/editor/index.js:313
+#: src/editor/index.js:789
+#: src/editor/index.js:1060
+msgid "Generating…"
+msgstr "Gerando…"
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:681
+#: src/dashboard-widget/index.js:208
+msgid "Generate Post"
+msgstr "Gerar post"
+
+#: build/admin-videos.js:3
+#: build/dashboard-widget.js:1
+#: src/admin-videos/index.js:674
+#: src/dashboard-widget/index.js:201
+msgid "AI unavailable"
+msgstr "IA indisponível"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:858
+msgid "Loading…"
+msgstr "Carregando…"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:859
+msgid "Load More Videos"
+msgstr "Carregar mais vídeos"
+
+#: build/admin-videos.js:3
+#: build/editor.js:1
+#: src/shared/audio-recorder.js:200
+msgid "Audio recording is not available in this browser."
+msgstr "A gravação de áudio não está disponível neste navegador."
+
+#: build/admin-videos.js:3
+#: build/editor.js:1
+#: src/shared/audio-recorder.js:245
+msgid "No audio was captured. Try recording again."
+msgstr "Nenhum áudio foi capturado. Tente gravar novamente."
+
+#: build/admin-videos.js:3
+#: build/editor.js:1
+#: src/shared/audio-recorder.js:284
+msgid "Microphone access was blocked. Allow microphone access and try again."
+msgstr "O acesso ao microfone foi bloqueado. Permita o acesso ao microfone e tente novamente."
+
+#: build/admin-videos.js:3
+#: build/editor.js:1
+#: src/shared/audio-recorder.js:288
+msgid "The microphone could not be started."
+msgstr "Não foi possível iniciar o microfone."
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:338
+msgid "Record audio and create a draft"
+msgstr "Gravar áudio e criar um rascunho"
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:343
+msgid "Capture a voice note, interview, or spoken outline. The recording is saved to the Media Library and transformed into a draft post."
+msgstr "Capture uma nota de voz, entrevista ou roteiro falado. A gravação é salva na Biblioteca de mídia e transformada em um rascunho de post."
+
+#: build/admin-videos.js:3
+#: src/admin-videos/index.js:382
+msgid "Configure an AI provider with audio input support before generating drafts from recordings."
+msgstr "Configure um provedor de IA com suporte a entrada de áudio antes de gerar rascunhos a partir de gravações."
+
+#. translators: %s: maximum upload size.
+#: build/admin-videos.js:4
+#: build/editor.js:5
+#: src/admin-videos/index.js:405
+#: src/editor/index.js:750
+#, js-format
+msgid "This recording is larger than the %s upload limit."
+msgstr "Esta gravação é maior que o limite de upload de %s."
+
+#: build/admin-videos.js:4
+#: build/editor.js:5
+#: src/admin-videos/index.js:418
+#: src/editor/index.js:758
+msgid "Output language"
+msgstr "Idioma de saída"
+
+#: build/admin-videos.js:4
+#: build/editor.js:5
+#: src/admin-videos/index.js:436
+#: src/editor/index.js:770
+msgid "Writing persona"
+msgstr "Persona de escrita"
+
+#. translators: %s: maximum upload size.
+#: build/admin-videos.js:5
+#: build/editor.js:6
+#: src/admin-videos/index.js:251
+#: src/editor/index.js:351
+#, js-format
+msgid "The recording is too large. The maximum size is %s."
+msgstr "A gravação é muito grande. O tamanho máximo é %s."
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:272
+msgid "Audio to Post recording"
+msgstr "Gravação de áudio para post"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:283
+msgid "Draft created from your recording."
+msgstr "Rascunho criado a partir da sua gravação."
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:238
+msgid "Record audio before creating a draft."
+msgstr "Grave áudio antes de criar um rascunho."
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:226
+msgid "Configure an AI provider with audio input support before generating a draft."
+msgstr "Configure um provedor de IA com suporte a entrada de áudio antes de gerar um rascunho."
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:461
+msgid "Creating draft…"
+msgstr "Criando rascunho…"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:462
+msgid "Create Draft From Recording"
+msgstr "Criar rascunho da gravação"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:470
+msgid "Media Library"
+msgstr "Biblioteca de mídia"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:478
+msgid "Open Blank Draft"
+msgstr "Abrir rascunho em branco"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:488
+msgid "Edit generated draft"
+msgstr "Editar rascunho gerado"
+
+#: build/admin-videos.js:5
+#: src/admin-videos/index.js:311
+msgid "Audio to Post is disabled in CreatorStack AI settings."
+msgstr "Áudio para post está desativado nas configurações do CreatorStack AI."
+
+#: build/dashboard-widget.js:1
+#: src/dashboard-widget/index.js:348
+msgid "See More →"
+msgstr "Ver mais →"
+
+#: build/editor.js:1
+#: src/editor/index.js:125
+msgid "Selected image"
+msgstr "Imagem selecionada"
+
+#: build/editor.js:1
+#: src/editor/index.js:189
+msgid "Dismiss notice"
+msgstr "Dispensar aviso"
+
+#: build/editor.js:1
+#: src/editor/index.js:297
+msgid "No secondary style"
+msgstr "Sem estilo secundário"
+
+#: build/editor.js:1
+#: src/editor/index.js:305
+msgid "Generate Thumbnail"
+msgstr "Gerar miniatura"
+
+#: build/editor.js:1
+#: src/editor/index.js:632
+msgid "Configure an AI provider with audio input support."
+msgstr "Configure um provedor de IA com suporte a entrada de áudio."
+
+#: build/editor.js:1
+#: src/editor/index.js:655
+msgid "Change Audio"
+msgstr "Alterar áudio"
+
+#: build/editor.js:1
+#: src/editor/index.js:656
+msgid "Select Audio"
+msgstr "Selecionar áudio"
+
+#: build/editor.js:3
+#: src/editor/index.js:73
+msgid "Record audio from your microphone."
+msgstr "Grave áudio pelo microfone."
+
+#: build/editor.js:3
+#: src/editor/index.js:700
+msgid "Record Audio"
+msgstr "Gravar áudio"
+
+#: build/editor.js:3
+#: src/editor/index.js:721
+msgid "Discard"
+msgstr "Descartar"
+
+#: build/editor.js:3
+#: src/editor/index.js:99
+msgid "Recorded audio"
+msgstr "Áudio gravado"
+
+#. translators: %s: formatted file size.
+#: build/editor.js:4
+#: src/editor/index.js:739
+#, js-format
+msgid "(%s)"
+msgstr "(%s)"
+
+#: build/editor.js:6
+#: src/editor/index.js:374
+msgid "Editor audio recording"
+msgstr "Gravação de áudio do editor"
+
+#: build/editor.js:6
+#: src/editor/index.js:398
+#: src/editor/index.js:405
+msgid "Draft updated from audio."
+msgstr "Rascunho atualizado a partir do áudio."
+
+#: build/editor.js:6
+#: src/editor/index.js:338
+msgid "Select or record audio first."
+msgstr "Selecione ou grave um áudio primeiro."
+
+#: build/editor.js:6
+#: src/editor/index.js:790
+msgid "Generate Draft"
+msgstr "Gerar rascunho"
+
+#: build/editor.js:6
+#: src/editor/index.js:803
+msgid "Thumbnail"
+msgstr "Miniatura"
+
+#: build/editor.js:6
+#: src/editor/index.js:500
+#: src/editor/index.js:809
+msgid "Configure an AI provider with image generation support."
+msgstr "Configure um provedor de IA com suporte à geração de imagens."
+
+#: build/editor.js:6
+#: src/editor/index.js:815
+msgid "Style"
+msgstr "Estilo"
+
+#: build/editor.js:6
+#: src/editor/index.js:828
+msgid "Blend style"
+msgstr "Combinar estilo"
+
+#: build/editor.js:6
+#: src/editor/index.js:841
+msgid "This AI provider does not support author, logo, or object reference images."
+msgstr "Este provedor de IA não oferece suporte a imagens de referência de autor, logo ou objeto."
+
+#: build/editor.js:6
+#: src/editor/index.js:868
+msgid "Change Author Image"
+msgstr "Alterar imagem do autor"
+
+#: build/editor.js:6
+#: src/editor/index.js:872
+msgid "Select Author Image"
+msgstr "Selecionar imagem do autor"
+
+#: build/editor.js:6
+#: src/editor/index.js:908
+#: src/editor/index.js:979
+msgid "Remove"
+msgstr "Remover"
+
+#: build/editor.js:6
+#: src/editor/index.js:932
+msgid "Change Logos or Objects"
+msgstr "Alterar logos ou objetos"
+
+#: build/editor.js:6
+#: src/editor/index.js:936
+msgid "Select Logos or Objects"
+msgstr "Selecionar logos ou objetos"
+
+#: build/editor.js:6
+#: src/editor/index.js:992
+msgid "Generated thumbnail preview"
+msgstr "Prévia da miniatura gerada"
+
+#: build/editor.js:6
+#: src/editor/index.js:553
+msgid "Thumbnail preview generated."
+msgstr "Prévia da miniatura gerada."
+
+#: build/editor.js:6
+#: src/editor/index.js:519
+msgid "The configured AI provider does not support image references."
+msgstr "O provedor de IA configurado não oferece suporte a referências de imagem."
+
+#: build/editor.js:6
+#: src/editor/index.js:589
+#: src/editor/index.js:597
+msgid "Featured image updated."
+msgstr "Imagem destacada atualizada."
+
+#: build/editor.js:6
+#: src/editor/index.js:1022
+msgid "Setting…"
+msgstr "Definindo…"
+
+#: build/editor.js:6
+#: src/editor/index.js:1023
+msgid "Set Featured Image"
+msgstr "Definir imagem destacada"
+
+#: build/editor.js:6
+#: src/editor/index.js:1040
+msgid "Configure an AI provider with text-to-speech support."
+msgstr "Configure um provedor de IA com suporte a conversão de texto em fala."
+
+#: build/editor.js:6
+#: src/editor/index.js:1046
+msgid "Voice"
+msgstr "Voz"
+
+#: build/editor.js:6
+#: src/editor/index.js:457
+#: src/editor/index.js:462
+msgid "Audio generated for this post."
+msgstr "Áudio gerado para este post."
+
+#: build/settings.js:1
+#: src/settings/index.js:96
+msgid "Redirect URI copied."
+msgstr "URI de redirecionamento copiada."
+
+#: build/settings.js:1
+#: src/settings/index.js:102
+msgid "Copy failed. Select and copy the redirect URI manually."
+msgstr "Falha ao copiar. Selecione e copie a URI de redirecionamento manualmente."
+
+#: build/settings.js:1
+#: src/settings/index.js:78
+msgid "No redirect URI was available to copy."
+msgstr "Nenhuma URI de redirecionamento estava disponível para copiar."
+
+#: build/settings.js:1
+#: src/settings/index.js:144
+msgid "This does not look like a valid Web application client_secret.json file."
+msgstr "Isso não parece ser um arquivo client_secret.json válido de aplicativo web."
+
+#: build/settings.js:1
+#: src/settings/index.js:162
+msgid "OAuth fields filled. Save changes, then connect YouTube."
+msgstr "Campos OAuth preenchidos. Salve as alterações e conecte o YouTube."
+
+#: build/settings.js:1
+#: src/settings/index.js:166
+msgid "OAuth fields filled. Make sure the Authorized redirect URI above is also saved in Google Cloud before connecting."
+msgstr "Campos OAuth preenchidos. Confira se a URI de redirecionamento autorizado acima também está salva no Google Cloud antes de conectar."
+
+#: build/settings.js:1
+#: src/settings/index.js:179
+msgid "The pasted text is not valid JSON. Download client_secret.json from Google Cloud and paste the full file contents."
+msgstr "O texto colado não é um JSON válido. Baixe client_secret.json do Google Cloud e cole o conteúdo completo do arquivo."
+
+#: build/settings.js:1
+#: src/settings/index.js:117
+msgid "Paste the client_secret.json contents first."
+msgstr "Cole o conteúdo de client_secret.json primeiro."
+
+#: build/settings.js:1
+#: src/settings/index.js:199
+msgid "Testing…"
+msgstr "Testando…"
+
+#. translators: %s: short AI generated test response.
+#: build/settings.js:2
+#: src/settings/index.js:243
+#, js-format
+msgid "Test generation: %s"
+msgstr "Geração de teste: %s"
+
+#. translators: 1: provider name, 2: model name.
+#: build/settings.js:3
+#: src/settings/index.js:258
+#, js-format
+msgid "Provider: %1$s. Model: %2$s."
+msgstr "Provedor: %1$s. Modelo: %2$s."

@@ -11,6 +11,7 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       creatorstack-ai
+ * Domain Path:       /languages
  *
  * @package CreatorStack_AI
  */
@@ -97,6 +98,18 @@ require_once WTTBA_PLUGIN_DIR . 'includes/class-rest-controller.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-dashboard-widget.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-admin-videos-page.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-editor-integration.php';
+
+/**
+ * Load bundled plugin translations.
+ */
+function wttba_load_textdomain(): void {
+	load_plugin_textdomain(
+		'creatorstack-ai',
+		false,
+		dirname( plugin_basename( __FILE__ ) ) . '/languages'
+	);
+}
+add_action( 'plugins_loaded', 'wttba_load_textdomain', 0 );
 
 /**
  * Initialize the plugin.

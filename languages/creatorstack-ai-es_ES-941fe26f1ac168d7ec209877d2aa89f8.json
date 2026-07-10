@@ -1,0 +1,27 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "src\/shared\/audio-recorder.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "es_ES",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Audio recording is not available in this browser.": [
+                "La grabaci\u00f3n de audio no est\u00e1 disponible en este navegador."
+            ],
+            "No audio was captured. Try recording again.": [
+                "No se captur\u00f3 ning\u00fan audio. Intenta grabar de nuevo."
+            ],
+            "Microphone access was blocked. Allow microphone access and try again.": [
+                "Se bloque\u00f3 el acceso al micr\u00f3fono. Permite el acceso al micr\u00f3fono e int\u00e9ntalo de nuevo."
+            ],
+            "The microphone could not be started.": [
+                "No se pudo iniciar el micr\u00f3fono."
+            ]
+        }
+    }
+}
