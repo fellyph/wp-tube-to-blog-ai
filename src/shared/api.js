@@ -44,29 +44,6 @@ export function fetchVideos( pageToken = '', maxResults = 5 ) {
 }
 
 /**
- * Fetch a single video.
- *
- * @param {string} videoId The YouTube video ID.
- * @return {Promise<Object>} Video details.
- */
-export function fetchVideo( videoId ) {
-	return apiFetch( {
-		path: `/wttba/v1/videos/${ videoId }`,
-	} );
-}
-
-/**
- * Fetch AI capability and upload limit information.
- *
- * @return {Promise<Object>} Capability data.
- */
-export function fetchCapabilities() {
-	return apiFetch( {
-		path: '/wttba/v1/capabilities',
-	} );
-}
-
-/**
  * Generate a blog post preview from a video (no draft created).
  *
  * @param {string} videoId          The YouTube video ID.

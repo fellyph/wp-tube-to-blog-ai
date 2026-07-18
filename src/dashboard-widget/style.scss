@@ -1,3 +1,5 @@
+@use "../shared/modal";
+
 .wttba-widget {
 
 	&--loading {
@@ -71,104 +73,5 @@
 	&__footer {
 		margin-top: 12px;
 		text-align: right;
-	}
-}
-
-/* Modal styles */
-.wttba-modal-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: rgba(0, 0, 0, 0.5);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 100000;
-}
-
-.wttba-modal {
-	background: #fff;
-	border-radius: 8px;
-	padding: 24px;
-	max-width: 440px;
-	width: 100%;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-
-	&__title {
-		margin: 0 0 8px;
-		font-size: 18px;
-	}
-
-	&__video-title {
-		color: #757575;
-		font-style: italic;
-		margin: 0 0 16px;
-	}
-
-	&__label {
-		display: block;
-		font-weight: 600;
-		margin-bottom: 6px;
-	}
-
-	&__select {
-		width: 100%;
-		margin-bottom: 20px;
-	}
-
-	&__textarea {
-		width: 100%;
-		margin-bottom: 20px;
-	}
-
-	&__checkbox-label {
-		display: flex;
-		align-items: flex-start;
-		gap: 8px;
-		margin: 0 0 16px;
-		font-weight: 600;
-	}
-
-	&__manual-transcript {
-		margin-bottom: 20px;
-	}
-
-	&__manual-transcript &__textarea {
-		margin-bottom: 8px;
-	}
-
-	&__description {
-		margin: 0;
-		color: #646970;
-		font-size: 12px;
-		line-height: 1.4;
-	}
-
-	&__actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-	}
-
-	&--preview {
-		max-width: 720px;
-	}
-
-	&__preview-title {
-		margin: 0 0 12px;
-		font-size: 16px;
-		line-height: 1.4;
-	}
-
-	&__preview-content {
-		max-height: 400px;
-		overflow-y: auto;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		padding: 16px;
-		margin-bottom: 20px;
-		background: #fafafa;
 	}
 }

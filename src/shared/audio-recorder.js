@@ -2,7 +2,7 @@
  * Browser audio recording helpers.
  */
 import { useEffect, useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 const PREFERRED_MIME_TYPES = [
 	'audio/webm;codecs=opus',
@@ -104,6 +104,71 @@ export function formatDuration( seconds ) {
 	const remainingSeconds = String( safeSeconds % 60 ).padStart( 2, '0' );
 
 	return `${ minutes }:${ remainingSeconds }`;
+}
+
+/**
+ * Check a recording against the configured upload limit.
+ *
+ * @param {Blob|null} recordedBlob Recorded audio blob.
+ * @param {number}    maxBytes     Maximum allowed bytes, or zero for no limit.
+ * @return {boolean} Whether the recording exceeds the limit.
+ */
+export function isRecordingTooLarge( recordedBlob, maxBytes ) {
+	return !! maxBytes && !! recordedBlob && recordedBlob.size > maxBytes;
+}
+
+/**
+ * Build the visible recorder status text.
+ *
+ * @param {Object} recorder    Recorder state.
+ * @param {string} idleMessage Message shown before recording starts.
+ * @return {string} Status text.
+ */
+export function getRecorderStatusText( recorder, idleMessage ) {
+	if ( 'requesting' === recorder.status ) {
+		return __( 'Requesting microphone access…', 'creatorstack-ai' );
+	}
+
+	if ( 'recording' === recorder.status ) {
+		return sprintf(
+			/* translators: %s: recording duration. */
+			__( 'Recording %s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration )
+		);
+	}
+
+	if ( recorder.hasRecording ) {
+		return sprintf(
+			/* translators: 1: recording duration, 2: recording file size. */
+			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration ),
+			formatBytes( recorder.recordedBlob.size )
+		);
+	}
+
+	return recorder.error || idleMessage;
+}
+
+/**
+ * Build a stable live-region message that changes only with recorder state.
+ *
+ * @param {Object} recorder Recorder state.
+ * @return {string} Announcement text.
+ */
+export function getRecorderAnnouncement( recorder ) {
+	if ( 'requesting' === recorder.status ) {
+		return __( 'Requesting microphone access.', 'creatorstack-ai' );
+	}
+
+	if ( 'recording' === recorder.status ) {
+		return __( 'Recording started.', 'creatorstack-ai' );
+	}
+
+	if ( recorder.hasRecording ) {
+		return __( 'Recording ready.', 'creatorstack-ai' );
+	}
+
+	return recorder.error || '';
 }
 
 /**

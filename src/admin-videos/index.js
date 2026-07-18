@@ -13,98 +13,26 @@ import {
 	createAudioDraft,
 	fetchVideos,
 	parseError,
-	previewPost,
-	saveDraft,
 	uploadAudioAttachment,
 } from '../shared/api';
 import {
 	createAudioFileFromBlob,
 	formatBytes,
-	formatDuration,
+	getRecorderAnnouncement,
+	getRecorderStatusText,
+	isRecordingTooLarge,
 	useAudioRecorder,
 } from '../shared/audio-recorder';
 import LanguageModal from '../shared/language-modal';
 import PreviewModal from '../shared/preview-modal';
 import ErrorNotice from '../shared/error-notice';
-import WarningNotice from '../shared/warning-notice';
+import useVideoPostGeneration from '../shared/use-video-post-generation';
+import VideoGenerationFeedback from '../shared/video-generation-feedback';
+import {
+	formatDate,
+	getYoutubeConfigurationNotice,
+} from '../shared/video-post-utils';
 import './style.scss';
-
-/**
- * Format a date string.
- *
- * @param {string} dateStr ISO date string.
- * @return {string} Formatted date.
- */
-function formatDate( dateStr ) {
-	const date = new Date( dateStr );
-	return date.toLocaleDateString( undefined, {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-	} );
-}
-
-/**
- * Get YouTube configuration notice details.
- *
- * @param {Object} config Localized app config.
- * @return {{ message: string, url: string, label: string }} Notice details.
- */
-function getYoutubeConfigurationNotice( config ) {
-	const youtube = config.youtube || {};
-	const missingApiKey = youtube.apiKeyConfigured === false;
-
-	return {
-		message: missingApiKey
-			? __(
-					'Configure the YouTube connector API key.',
-					'creatorstack-ai'
-			  )
-			: __(
-					'Configure your YouTube channel settings.',
-					'creatorstack-ai'
-			  ),
-		url: youtube.configurationUrl || config.settingsUrl,
-		label:
-			youtube.configurationLabel ||
-			__( 'Go to Settings', 'creatorstack-ai' ),
-	};
-}
-
-/**
- * Render a recording status message.
- *
- * @param {Object} recorder Audio recorder state.
- * @return {string} Status label.
- */
-function getRecorderStatusText( recorder ) {
-	if ( 'requesting' === recorder.status ) {
-		return __( 'Requesting microphone access…', 'creatorstack-ai' );
-	}
-
-	if ( 'recording' === recorder.status ) {
-		return sprintf(
-			/* translators: %s: recording duration. */
-			__( 'Recording %s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration )
-		);
-	}
-
-	if ( recorder.hasRecording ) {
-		return sprintf(
-			/* translators: 1: recording duration, 2: recording file size. */
-			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration ),
-			formatBytes( recorder.recordedBlob.size )
-		);
-	}
-
-	if ( recorder.error ) {
-		return recorder.error;
-	}
-
-	return __( 'Ready to record from your microphone.', 'creatorstack-ai' );
-}
 
 /**
  * Recorder controls used on the standalone audio page.
@@ -127,12 +55,32 @@ function AudioRecorderCard( { recorder, disabled } ) {
 		},
 		createElement(
 			'div',
-			{ className: statusClass, 'aria-live': 'polite' },
+			{ className: statusClass },
 			createElement( 'span', {
 				className: 'wttba-audio-recorder__dot',
 				'aria-hidden': true,
 			} ),
-			createElement( 'span', null, getRecorderStatusText( recorder ) )
+			createElement(
+				'span',
+				null,
+				getRecorderStatusText(
+					recorder,
+					__(
+						'Ready to record from your microphone.',
+						'creatorstack-ai'
+					)
+				)
+			),
+			createElement(
+				'span',
+				{
+					className: 'screen-reader-text',
+					role: 'status',
+					'aria-live': 'polite',
+					'aria-atomic': true,
+				},
+				getRecorderAnnouncement( recorder )
+			)
 		),
 		createElement(
 			'div',
@@ -179,6 +127,7 @@ function AudioRecorderCard( { recorder, disabled } ) {
 				className: 'wttba-audio-recorder__preview',
 				controls: true,
 				src: recorder.recordedUrl,
+				'aria-label': __( 'Recorded audio preview', 'creatorstack-ai' ),
 			} )
 	);
 }
@@ -211,10 +160,10 @@ function AudioToPost() {
 		},
 	} );
 	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
-	const recordingTooLarge =
-		!! maxAudioBytes &&
-		!! recorder.recordedBlob &&
-		recorder.recordedBlob.size > maxAudioBytes;
+	const recordingTooLarge = isRecordingTooLarge(
+		recorder.recordedBlob,
+		maxAudioBytes
+	);
 	const isDisabled = busy || recorder.isRecording || ! canGenerateFromAudio;
 
 	const handleCreateDraft = async () => {
@@ -351,6 +300,8 @@ function AudioToPost() {
 					'div',
 					{
 						className: `notice notice-${ notice.type } inline`,
+						role: 'error' === notice.type ? 'alert' : 'status',
+						'aria-atomic': true,
 					},
 					createElement(
 						'p',
@@ -502,24 +453,35 @@ function AdminVideos() {
 	const ai = config.ai || {};
 	const features = config.features || {};
 	const isYoutubeToPostEnabled = features.youtubeToPost !== false;
-	const isTextGenerationSupported =
-		ai.textGenerationSupported !== undefined
-			? ai.textGenerationSupported
-			: true;
 	const [ videos, setVideos ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
-	const [ error, setError ] = useState( null );
 	const [ nextPageToken, setNextPageToken ] = useState( '' );
 	const [ loadingMore, setLoadingMore ] = useState( false );
-	const [ modalVideo, setModalVideo ] = useState( null );
-	const [ generating, setGenerating ] = useState( null );
-	const [ success, setSuccess ] = useState( null );
-	const [ failedVideo, setFailedVideo ] = useState( null );
-	const [ preview, setPreview ] = useState( null );
-	const [ saving, setSaving ] = useState( false );
-	const [ regenerating, setRegenerating ] = useState( false );
-	const [ lastGenParams, setLastGenParams ] = useState( null );
-	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
+	const generation = useVideoPostGeneration( {
+		ai,
+		settingsUrl: config.settingsUrl,
+	} );
+	const {
+		dismissedAiNotice,
+		error,
+		generating,
+		getGenerateButtonLabel,
+		handleGenerate,
+		handleRegenerate,
+		handleSaveDraft,
+		isTextGenerationSupported,
+		modalVideo,
+		preview,
+		regenerating,
+		retryFailedVideo,
+		saving,
+		setDismissedAiNotice,
+		setError,
+		setModalVideo,
+		setPreview,
+		setSuccess,
+		success,
+	} = generation;
 
 	const loadVideos = useCallback(
 		( pageToken = '' ) => {
@@ -554,7 +516,7 @@ function AdminVideos() {
 					setLoadingMore( false );
 				} );
 		},
-		[ isYoutubeToPostEnabled ]
+		[ isYoutubeToPostEnabled, setError ]
 	);
 
 	useEffect( () => {
@@ -566,120 +528,6 @@ function AdminVideos() {
 			setLoading( false );
 		}
 	}, [ config.isConfigured, isYoutubeToPostEnabled, loadVideos ] );
-
-	const handleGenerate = ( language, persona, manualTranscript = '' ) => {
-		if ( ! modalVideo ) {
-			return;
-		}
-
-		if ( ! isTextGenerationSupported ) {
-			setError( {
-				message:
-					ai.unavailableMessage ||
-					__(
-						'Configure an AI provider before generating posts.',
-						'creatorstack-ai'
-					),
-				category: 'configuration',
-				configurationUrl: ai.configurationUrl || config.settingsUrl,
-				configurationLabel: __(
-					'Configure AI Provider',
-					'creatorstack-ai'
-				),
-			} );
-			setModalVideo( null );
-			return;
-		}
-
-		const videoToGenerate = modalVideo;
-		setGenerating( videoToGenerate.id );
-		setModalVideo( null );
-		setSuccess( null );
-		setError( null );
-		setFailedVideo( null );
-		setLastGenParams( {
-			videoId: videoToGenerate.id,
-			language,
-			persona,
-			manualTranscript,
-		} );
-
-		previewPost( videoToGenerate.id, language, persona, manualTranscript )
-			.then( ( result ) => {
-				setGenerating( null );
-				setPreview( result );
-			} )
-			.catch( ( err ) => {
-				setGenerating( null );
-				setFailedVideo( videoToGenerate );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleSaveDraft = () => {
-		if ( ! preview ) {
-			return;
-		}
-
-		setSaving( true );
-
-		saveDraft(
-			preview.video_id,
-			preview.title,
-			preview.content,
-			preview.ai_metadata || {}
-		)
-			.then( ( result ) => {
-				setSaving( false );
-				setPreview( null );
-				setSuccess( result );
-			} )
-			.catch( ( err ) => {
-				setSaving( false );
-				setPreview( null );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleRegenerate = () => {
-		if ( ! lastGenParams ) {
-			return;
-		}
-
-		setRegenerating( true );
-
-		previewPost(
-			lastGenParams.videoId,
-			lastGenParams.language,
-			lastGenParams.persona,
-			lastGenParams.manualTranscript || ''
-		)
-			.then( ( result ) => {
-				setRegenerating( false );
-				setPreview( result );
-			} )
-			.catch( ( err ) => {
-				setRegenerating( false );
-				setPreview( null );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleCancelPreview = () => {
-		setPreview( null );
-	};
-
-	const getGenerateButtonLabel = ( video ) => {
-		if ( ! isTextGenerationSupported ) {
-			return __( 'AI unavailable', 'creatorstack-ai' );
-		}
-
-		if ( generating === video.id ) {
-			return __( 'Generating…', 'creatorstack-ai' );
-		}
-
-		return __( 'Generate Post', 'creatorstack-ai' );
-	};
 
 	if ( ! isYoutubeToPostEnabled ) {
 		return createElement(
@@ -733,8 +581,15 @@ function AdminVideos() {
 	if ( loading ) {
 		return createElement(
 			'div',
-			{ className: 'wttba-videos wttba-videos--loading' },
-			createElement( 'span', { className: 'spinner is-active' } ),
+			{
+				className: 'wttba-videos wttba-videos--loading',
+				role: 'status',
+				'aria-live': 'polite',
+			},
+			createElement( 'span', {
+				className: 'spinner is-active',
+				'aria-hidden': true,
+			} ),
 			__( 'Loading videos…', 'creatorstack-ai' )
 		);
 	}
@@ -742,65 +597,18 @@ function AdminVideos() {
 	return createElement(
 		'div',
 		{ className: 'wttba-videos' },
-		error &&
-			createElement( ErrorNotice, {
-				code: error.code,
-				message: error.message,
-				category: error.category,
-				configurationUrl: error.configurationUrl,
-				configurationLabel: error.configurationLabel,
-				onDismiss: () => setError( null ),
-				onRetry: failedVideo
-					? () => {
-							setError( null );
-							setModalVideo( failedVideo );
-							setFailedVideo( null );
-					  }
-					: null,
-				settingsUrl: config.settingsUrl,
-			} ),
-		success &&
-			createElement(
-				'div',
-				{ className: 'notice notice-success inline' },
-				createElement(
-					'p',
-					null,
-					__( 'Post generated successfully!', 'creatorstack-ai' ),
-					' ',
-					createElement(
-						'a',
-						{ href: success.edit_url },
-						__( 'Edit Draft', 'creatorstack-ai' )
-					)
-				)
-			),
-		success &&
-			success.warnings &&
-			success.warnings.length > 0 &&
-			createElement( WarningNotice, {
-				messages: success.warnings,
-				onDismiss: () => setSuccess( { ...success, warnings: [] } ),
-			} ),
-		! isTextGenerationSupported &&
-			! dismissedAiNotice &&
-			createElement( ErrorNotice, {
-				code: 'wttba_ai_not_supported',
-				message:
-					ai.unavailableMessage ||
-					__(
-						'Configure an AI provider before generating posts.',
-						'creatorstack-ai'
-					),
-				category: 'configuration',
-				configurationUrl: ai.configurationUrl || config.settingsUrl,
-				configurationLabel: __(
-					'Configure AI Provider',
-					'creatorstack-ai'
-				),
-				onDismiss: () => setDismissedAiNotice( true ),
-				settingsUrl: config.settingsUrl,
-			} ),
+		createElement( VideoGenerationFeedback, {
+			ai,
+			error,
+			success,
+			isTextGenerationSupported,
+			dismissedAiNotice,
+			settingsUrl: config.settingsUrl,
+			onDismissError: () => setError( null ),
+			onRetry: retryFailedVideo,
+			onDismissWarnings: () => setSuccess( { ...success, warnings: [] } ),
+			onDismissAiNotice: () => setDismissedAiNotice( true ),
+		} ),
 		createElement(
 			'div',
 			{ className: 'wttba-videos__grid' },
@@ -810,7 +618,7 @@ function AdminVideos() {
 					{ key: video.id, className: 'wttba-videos__card' },
 					createElement( 'img', {
 						src: video.thumbnail,
-						alt: video.title,
+						alt: '',
 						className: 'wttba-videos__thumb',
 					} ),
 					createElement(
@@ -830,10 +638,20 @@ function AdminVideos() {
 							'button',
 							{
 								className: 'button button-primary',
-								onClick: () => setModalVideo( video ),
-								disabled:
-									generating === video.id ||
-									! isTextGenerationSupported,
+								onClick: () => {
+									if ( generating !== video.id ) {
+										setModalVideo( video );
+									}
+								},
+								disabled: ! isTextGenerationSupported,
+								'aria-disabled':
+									generating === video.id || undefined,
+								'aria-label': sprintf(
+									/* translators: 1: action label, 2: video title. */
+									__( '%1$s: %2$s', 'creatorstack-ai' ),
+									getGenerateButtonLabel( video ),
+									video.title
+								),
 								type: 'button',
 							},
 							getGenerateButtonLabel( video )
@@ -876,7 +694,7 @@ function AdminVideos() {
 			isSaving: saving,
 			onSaveAsDraft: handleSaveDraft,
 			onRegenerate: handleRegenerate,
-			onCancel: handleCancelPreview,
+			onCancel: () => setPreview( null ),
 		} )
 	);
 }

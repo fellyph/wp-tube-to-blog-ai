@@ -976,6 +976,9 @@ class Settings {
 				<li class="wttba-oauth-wizard__step">
 					<strong><?php esc_html_e( 'Download or copy the client secret JSON', 'creatorstack-ai' ); ?></strong>
 					<p id="wttba-oauth-client-json-help"><?php esc_html_e( 'After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes.', 'creatorstack-ai' ); ?></p>
+					<label for="wttba-oauth-client-json">
+						<?php esc_html_e( 'Client secret JSON', 'creatorstack-ai' ); ?>
+					</label>
 					<textarea
 						id="wttba-oauth-client-json"
 						class="large-text code"

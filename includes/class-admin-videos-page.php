@@ -213,7 +213,7 @@ class Admin_Videos_Page {
 		wp_enqueue_style(
 			'wttba-admin-videos',
 			WTTBA_PLUGIN_URL . 'build/style-admin-videos.css',
-			array(),
+			array( 'wp-components' ),
 			$asset['version']
 		);
 

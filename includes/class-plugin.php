@@ -153,6 +153,18 @@ class Plugin {
 
 		register_post_meta(
 			'post',
+			'_wttba_source_video_id',
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => $auth_callback,
+			)
+		);
+
+		register_post_meta(
+			'post',
 			'_wttba_source_type',
 			array(
 				'type'              => 'string',

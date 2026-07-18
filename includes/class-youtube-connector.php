@@ -385,10 +385,14 @@ class YouTube_Connector {
 		$plugin = self::get_connector_plugin_basename();
 
 		if ( function_exists( 'is_plugin_active' ) ) {
-			return is_plugin_active( $plugin );
+			return is_plugin_active( $plugin )
+				|| ( function_exists( 'is_plugin_active_for_network' ) && is_plugin_active_for_network( $plugin ) );
 		}
 
-		return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true );
+		$network_plugins = is_multisite() ? (array) get_site_option( 'active_sitewide_plugins', array() ) : array();
+
+		return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true )
+			|| isset( $network_plugins[ $plugin ] );
 	}
 
 	/**
@@ -492,14 +496,5 @@ class YouTube_Connector {
 			'env_var_name'  => self::API_KEY_ENV_VAR,
 			'constant_name' => self::API_KEY_CONSTANT,
 		);
-	}
-
-	/**
-	 * Get the plugin file associated with the connector card.
-	 *
-	 * @return string Plugin file path.
-	 */
-	private static function get_plugin_file(): string {
-		return self::get_connector_plugin_file();
 	}
 }

@@ -31,47 +31,14 @@ import {
 import {
 	createAudioFileFromBlob,
 	formatBytes,
-	formatDuration,
+	getRecorderAnnouncement,
+	getRecorderStatusText,
+	isRecordingTooLarge,
 	useAudioRecorder,
 } from '../shared/audio-recorder';
 import './style.scss';
 
 const GENERATED_AUDIO_CLASS = 'wttba-generated-audio';
-
-/**
- * Render a recording status message.
- *
- * @param {Object} recorder Audio recorder state.
- * @return {string} Status label.
- */
-function getRecorderStatusText( recorder ) {
-	if ( 'requesting' === recorder.status ) {
-		return __( 'Requesting microphone access…', 'creatorstack-ai' );
-	}
-
-	if ( 'recording' === recorder.status ) {
-		return sprintf(
-			/* translators: %s: recording duration. */
-			__( 'Recording %s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration )
-		);
-	}
-
-	if ( recorder.hasRecording ) {
-		return sprintf(
-			/* translators: 1: recording duration, 2: recording file size. */
-			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration ),
-			formatBytes( recorder.recordedBlob.size )
-		);
-	}
-
-	if ( recorder.error ) {
-		return recorder.error;
-	}
-
-	return __( 'Record audio from your microphone.', 'creatorstack-ai' );
-}
 
 /**
  * Get a readable attachment label from media responses.
@@ -280,10 +247,10 @@ function ContentSuitePanel() {
 		post.isSaving;
 	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
 	const maxThumbnailReferences = Number( config.maxThumbnailReferences || 2 );
-	const recordingTooLarge =
-		!! maxAudioBytes &&
-		!! recorder.recordedBlob &&
-		recorder.recordedBlob.size > maxAudioBytes;
+	const recordingTooLarge = isRecordingTooLarge(
+		recorder.recordedBlob,
+		maxAudioBytes
+	);
 	const hasAudioSource = !! selectedAudio?.id || recorder.hasRecording;
 	const thumbnailStyleOptions = Object.entries( thumbnailStyles ).map(
 		( [ value, style ] ) => ( {
@@ -669,7 +636,6 @@ function ContentSuitePanel() {
 						'p',
 						{
 							className: 'wttba-editor-panel__recorder-status',
-							'aria-live': 'polite',
 						},
 						createElement( 'span', {
 							className: 'wttba-editor-panel__recorder-dot',
@@ -678,7 +644,23 @@ function ContentSuitePanel() {
 						createElement(
 							'span',
 							null,
-							getRecorderStatusText( recorder )
+							getRecorderStatusText(
+								recorder,
+								__(
+									'Record audio from your microphone.',
+									'creatorstack-ai'
+								)
+							)
+						),
+						createElement(
+							'span',
+							{
+								className: 'screen-reader-text',
+								role: 'status',
+								'aria-live': 'polite',
+								'aria-atomic': true,
+							},
+							getRecorderAnnouncement( recorder )
 						)
 					),
 					createElement(
@@ -726,6 +708,10 @@ function ContentSuitePanel() {
 							className: 'wttba-editor-panel__recorder-preview',
 							controls: true,
 							src: recorder.recordedUrl,
+							'aria-label': __(
+								'Recorded audio preview',
+								'creatorstack-ai'
+							),
 						} )
 				),
 				selectedAudio &&

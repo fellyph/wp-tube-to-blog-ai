@@ -105,7 +105,7 @@ class Editor_Integration {
 	 * @return array<string, string>
 	 */
 	public function add_post_row_action( array $actions, \WP_Post $post ): array {
-		if ( 'post' !== $post->post_type || ! current_user_can( 'edit_post', $post->ID ) ) {
+		if ( 'post' !== $post->post_type || ! current_user_can( 'edit_post', $post->ID ) || ! current_user_can( 'upload_files' ) ) {
 			return $actions;
 		}
 
@@ -139,7 +139,7 @@ class Editor_Integration {
 	public function handle_post_audio_action(): void {
 		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
 
-		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) || ! current_user_can( 'upload_files' ) ) {
 			wp_die( esc_html__( 'You are not allowed to generate audio for this post.', 'creatorstack-ai' ) );
 		}
 

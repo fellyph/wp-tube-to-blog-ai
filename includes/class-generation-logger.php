@@ -102,6 +102,81 @@ class Generation_Logger {
 	}
 
 	/**
+	 * Rebuild trusted generation context around client-returned preview details.
+	 *
+	 * @param mixed  $value       Client-returned preview metadata.
+	 * @param string $source_type Source type identifier.
+	 * @return array<string, mixed>
+	 */
+	public static function metadata_from_client( mixed $value, string $source_type ): array {
+		$details = self::sanitize_client_metadata( $value );
+
+		if ( empty( $details ) ) {
+			return array();
+		}
+
+		return array_merge(
+			self::base_metadata( $source_type, 'success' ),
+			$details
+		);
+	}
+
+	/**
+	 * Allow only bounded provider, model, result, and token-usage details from clients.
+	 *
+	 * @param mixed $value Submitted metadata.
+	 * @return array<string, mixed>
+	 */
+	public static function sanitize_client_metadata( mixed $value ): array {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$metadata = array();
+
+		if ( isset( $value['result_id'] ) && is_scalar( $value['result_id'] ) ) {
+			$metadata['result_id'] = substr( sanitize_text_field( (string) $value['result_id'] ), 0, 255 );
+		}
+
+		foreach ( array( 'provider', 'model' ) as $group ) {
+			if ( ! is_array( $value[ $group ] ?? null ) ) {
+				continue;
+			}
+
+			$id   = $value[ $group ]['id'] ?? '';
+			$name = $value[ $group ]['name'] ?? '';
+			$details = array_filter(
+				array(
+					'id'   => is_scalar( $id ) ? substr( sanitize_text_field( (string) $id ), 0, 255 ) : '',
+					'name' => is_scalar( $name ) ? substr( sanitize_text_field( (string) $name ), 0, 255 ) : '',
+				)
+			);
+
+			if ( ! empty( $details ) ) {
+				$metadata[ $group ] = $details;
+			}
+		}
+
+		if ( is_array( $value['token_usage'] ?? null ) ) {
+			$token_usage = array();
+
+			foreach ( array_slice( $value['token_usage'], 0, 20, true ) as $key => $count ) {
+				if ( ! is_numeric( $count ) ) {
+					continue;
+				}
+
+				$token_usage[ sanitize_key( (string) $key ) ] = max( 0, (int) $count );
+			}
+
+			if ( ! empty( $token_usage ) ) {
+				$metadata['token_usage'] = $token_usage;
+			}
+		}
+
+		return $metadata;
+	}
+
+	/**
 	 * Record generation metadata on a post and in the recent usage log.
 	 *
 	 * @param int|null             $post_id  Optional post ID.

@@ -1,0 +1,71 @@
+.wttba-modal {
+
+	&__video-title {
+		margin: 0 0 16px;
+		color: #757575;
+		font-style: italic;
+	}
+
+	&__label {
+		display: block;
+		margin-bottom: 6px;
+		font-weight: 600;
+	}
+
+	&__select,
+	&__textarea {
+		width: 100%;
+		margin-bottom: 20px;
+	}
+
+	&__checkbox-label {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		margin: 0 0 16px;
+		font-weight: 600;
+	}
+
+	&__manual-transcript {
+		margin-bottom: 20px;
+	}
+
+	&__manual-transcript &__textarea {
+		margin-bottom: 8px;
+	}
+
+	&__description {
+		margin: 0;
+		color: #646970;
+		font-size: 12px;
+		line-height: 1.4;
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 8px;
+	}
+
+	&__status {
+		min-height: 20px;
+		margin: 0 0 8px;
+	}
+
+	&__preview-title {
+		margin: 0 0 12px;
+		font-size: 16px;
+		line-height: 1.4;
+	}
+
+	&__preview-content {
+		max-height: 400px;
+		margin-bottom: 20px;
+		padding: 16px;
+		overflow-y: auto;
+		background: #fafafa;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+	}
+}

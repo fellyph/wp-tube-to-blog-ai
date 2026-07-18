@@ -71,7 +71,7 @@ class Dashboard_Widget {
 		wp_enqueue_style(
 			'wttba-dashboard-widget',
 			WTTBA_PLUGIN_URL . 'build/style-dashboard-widget.css',
-			array(),
+			array( 'wp-components' ),
 			$asset['version']
 		);
 

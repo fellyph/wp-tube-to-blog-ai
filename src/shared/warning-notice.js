@@ -22,6 +22,9 @@ export default function WarningNotice( { messages, onDismiss } ) {
 		{
 			className:
 				'notice notice-warning is-dismissible wttba-warning-notice',
+			role: 'status',
+			'aria-live': 'polite',
+			'aria-atomic': true,
 		},
 		messages.map( ( msg, index ) =>
 			createElement( 'p', { key: index }, msg )

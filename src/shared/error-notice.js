@@ -41,7 +41,11 @@ export default function ErrorNotice( {
 
 	return createElement(
 		'div',
-		{ className: 'notice notice-error is-dismissible wttba-error-notice' },
+		{
+			className: 'notice notice-error is-dismissible wttba-error-notice',
+			role: 'alert',
+			'aria-atomic': true,
+		},
 		createElement( 'p', null, message ),
 		isTranscriptError &&
 			createElement(

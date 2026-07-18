@@ -1,8 +1,9 @@
 /**
  * Draft preview modal component.
  */
-import { createElement } from '@wordpress/element';
+import { createElement, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import AccessibleModal from './accessible-modal';
 
 /**
  * Preview modal for AI-generated blog post content.
@@ -28,6 +29,32 @@ export default function PreviewModal( {
 	onRegenerate,
 	onCancel,
 } ) {
+	const statusRef = useRef( null );
+	const wasRegenerating = useRef( false );
+	const [ statusMessage, setStatusMessage ] = useState( '' );
+
+	useEffect( () => {
+		if ( isRegenerating ) {
+			wasRegenerating.current = true;
+			setStatusMessage(
+				__( 'Regenerating draft preview…', 'creatorstack-ai' )
+			);
+			statusRef.current?.focus();
+		} else if ( wasRegenerating.current ) {
+			wasRegenerating.current = false;
+			setStatusMessage(
+				__( 'Draft preview regenerated.', 'creatorstack-ai' )
+			);
+		}
+	}, [ isRegenerating ] );
+
+	useEffect( () => {
+		if ( isSaving ) {
+			setStatusMessage( __( 'Saving draft…', 'creatorstack-ai' ) );
+			statusRef.current?.focus();
+		}
+	}, [ isSaving ] );
+
 	if ( ! isOpen ) {
 		return null;
 	}
@@ -35,62 +62,73 @@ export default function PreviewModal( {
 	const isDisabled = isRegenerating || isSaving;
 
 	return createElement(
-		'div',
-		{ className: 'wttba-modal-overlay' },
+		AccessibleModal,
+		{
+			isOpen,
+			onRequestClose: onCancel,
+			canClose: ! isDisabled,
+			title: __( 'Draft Preview', 'creatorstack-ai' ),
+			className: 'wttba-modal--preview',
+			isBusy: isDisabled,
+			size: 'large',
+		},
+		createElement(
+			'p',
+			{
+				ref: statusRef,
+				className: 'wttba-modal__status',
+				role: 'status',
+				'aria-live': 'polite',
+				'aria-atomic': true,
+				tabIndex: -1,
+			},
+			statusMessage
+		),
+		createElement(
+			'h4',
+			{ className: 'wttba-modal__preview-title' },
+			title
+		),
+		createElement( 'div', {
+			className: 'wttba-modal__preview-content',
+			dangerouslySetInnerHTML: { __html: content },
+		} ),
 		createElement(
 			'div',
-			{ className: 'wttba-modal wttba-modal--preview' },
+			{ className: 'wttba-modal__actions' },
 			createElement(
-				'h3',
-				{ className: 'wttba-modal__title' },
-				__( 'Draft Preview', 'creatorstack-ai' )
+				'button',
+				{
+					className: 'button button-secondary',
+					onClick: onCancel,
+					disabled: isDisabled,
+					type: 'button',
+				},
+				__( 'Cancel', 'creatorstack-ai' )
 			),
 			createElement(
-				'h4',
-				{ className: 'wttba-modal__preview-title' },
-				title
+				'button',
+				{
+					className: 'button button-secondary',
+					onClick: onRegenerate,
+					disabled: isDisabled,
+					type: 'button',
+				},
+				isRegenerating
+					? __( 'Regenerating…', 'creatorstack-ai' )
+					: __( 'Regenerate', 'creatorstack-ai' )
 			),
-			createElement( 'div', {
-				className: 'wttba-modal__preview-content',
-				dangerouslySetInnerHTML: { __html: content },
-			} ),
 			createElement(
-				'div',
-				{ className: 'wttba-modal__actions' },
-				createElement(
-					'button',
-					{
-						className: 'button button-secondary',
-						onClick: onCancel,
-						disabled: isDisabled,
-						type: 'button',
-					},
-					__( 'Cancel', 'creatorstack-ai' )
-				),
-				createElement(
-					'button',
-					{
-						className: 'button button-secondary',
-						onClick: onRegenerate,
-						disabled: isDisabled,
-						type: 'button',
-					},
-					isRegenerating
-						? __( 'Regenerating…', 'creatorstack-ai' )
-						: __( 'Regenerate', 'creatorstack-ai' )
-				),
-				createElement(
-					'button',
-					{
-						className: 'button button-primary',
-						onClick: onSaveAsDraft,
-						disabled: isDisabled,
-						type: 'button',
-					},
-					isSaving
-						? __( 'Saving…', 'creatorstack-ai' )
-						: __( 'Save as Draft', 'creatorstack-ai' )
-				)
+				'button',
+				{
+					className: 'button button-primary',
+					onClick: onSaveAsDraft,
+					disabled: isDisabled,
+					type: 'button',
+				},
+				isSaving
+					? __( 'Saving…', 'creatorstack-ai' )
+					: __( 'Save as Draft', 'creatorstack-ai' )
 			)
 		)
 	);

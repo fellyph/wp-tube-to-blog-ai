@@ -198,13 +198,15 @@ https://www.youtube.com/watch?v=%1$s
 
 		$warnings = array();
 
-		// Set featured image from YouTube thumbnail.
-		if ( ! empty( $video['thumbnail'] ) ) {
+		// Set the featured image only for users who may create media items.
+		if ( ! empty( $video['thumbnail'] ) && current_user_can( 'upload_files' ) ) {
 			$image_error = $this->set_featured_image( $post_id, $video['thumbnail'], $ai_result['title'] );
 
 			if ( null !== $image_error ) {
 				$warnings[] = $image_error->get_error_message();
 			}
+		} elseif ( ! empty( $video['thumbnail'] ) ) {
+			$warnings[] = __( 'The post was created without a featured image because your account cannot upload files.', 'creatorstack-ai' );
 		}
 
 		return array(

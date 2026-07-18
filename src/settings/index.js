@@ -105,6 +105,8 @@ if ( wizard ) {
 				),
 				'error'
 			);
+		} finally {
+			copyButton.focus();
 		}
 	} );
 
