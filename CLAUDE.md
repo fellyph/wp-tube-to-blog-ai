@@ -32,6 +32,7 @@ Build output goes to `build/` with entry points for the dashboard widget, admin 
 - `Dashboard_Widget` — adds the YouTube content widget to wp-admin dashboard when that feature is enabled
 - `Admin_Videos_Page` — full admin page for browsing channel videos and recording/selecting audio for draft generation
 - `Editor_Integration` — adds CreatorStack AI controls to the post editor
+- `Reader_3D` — standalone plugin (`creatorstack-3d-reader.php`): frontend 3D page-tear transition between posts using the experimental HTML-in-Canvas API + WebGL. Plain (unbundled) assets in `assets/js/reader-3d.js` and `assets/css/reader-3d.css`; docs in `docs/3d-reader.md`
 
 **JavaScript (Frontend) — `src/`**
 

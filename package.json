@@ -12,6 +12,7 @@
 		"readme.txt",
 		"creatorstack-ai.php",
 		"creatorstack-youtube-connector.php",
+		"creatorstack-3d-reader.php",
 		"wp-tube-to-blog-ai.php",
 		"uninstall.php",
 		"assets",
@@ -43,6 +44,7 @@
 	"devDependencies": {
 		"@playwright/test": "^1.59.0",
 		"@wordpress/scripts": "^30.0.0",
+		"typescript": "~5.4.5",
 		"@wp-playground/cli": "^3.1.0"
 	}
 }
