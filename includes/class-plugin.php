@@ -46,6 +46,7 @@ class Plugin {
 		new Dashboard_Widget();
 		new Admin_Videos_Page();
 		new Editor_Integration();
+		new Abilities();
 
 		add_filter( 'plugin_action_links_' . plugin_basename( WTTBA_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
 		add_action( 'rest_api_init', array( new REST_Controller(), 'register_routes' ) );

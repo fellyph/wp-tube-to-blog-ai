@@ -14,7 +14,9 @@ import AccessibleModal from './accessible-modal';
  * @param {string}   props.content        The generated HTML content.
  * @param {boolean}  props.isRegenerating Whether a regeneration is in progress.
  * @param {boolean}  props.isSaving       Whether the draft is being saved.
+ * @param {string}   props.savingMode     Which save action is running: 'draft' or 'edit'.
  * @param {Function} props.onSaveAsDraft  Callback to save the content as a draft.
+ * @param {Function} props.onSaveAndEdit  Callback to save the draft and open the editor.
  * @param {Function} props.onRegenerate   Callback to regenerate the content.
  * @param {Function} props.onCancel       Callback to close the modal.
  * @return {Element|null} The modal element or null.
@@ -25,7 +27,9 @@ export default function PreviewModal( {
 	content,
 	isRegenerating,
 	isSaving,
+	savingMode,
 	onSaveAsDraft,
+	onSaveAndEdit,
 	onRegenerate,
 	onCancel,
 } ) {
@@ -50,10 +54,17 @@ export default function PreviewModal( {
 
 	useEffect( () => {
 		if ( isSaving ) {
-			setStatusMessage( __( 'Saving draft…', 'creatorstack-ai' ) );
+			setStatusMessage(
+				'edit' === savingMode
+					? __(
+							'Saving draft and opening the editor…',
+							'creatorstack-ai'
+					  )
+					: __( 'Saving draft…', 'creatorstack-ai' )
+			);
 			statusRef.current?.focus();
 		}
-	}, [ isSaving ] );
+	}, [ isSaving, savingMode ] );
 
 	if ( ! isOpen ) {
 		return null;
@@ -121,14 +132,26 @@ export default function PreviewModal( {
 			createElement(
 				'button',
 				{
-					className: 'button button-primary',
+					className: 'button button-secondary',
 					onClick: onSaveAsDraft,
 					disabled: isDisabled,
 					type: 'button',
 				},
-				isSaving
+				isSaving && 'draft' === savingMode
 					? __( 'Saving…', 'creatorstack-ai' )
 					: __( 'Save as Draft', 'creatorstack-ai' )
+			),
+			createElement(
+				'button',
+				{
+					className: 'button button-primary',
+					onClick: onSaveAndEdit,
+					disabled: isDisabled,
+					type: 'button',
+				},
+				isSaving && 'edit' === savingMode
+					? __( 'Opening editor…', 'creatorstack-ai' )
+					: __( 'Save & Edit', 'creatorstack-ai' )
 			)
 		)
 	);

@@ -25,6 +25,7 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 	const [ failedVideo, setFailedVideo ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ saving, setSaving ] = useState( false );
+	const [ savingMode, setSavingMode ] = useState( null );
 	const [ regenerating, setRegenerating ] = useState( false );
 	const [ lastGeneration, setLastGeneration ] = useState( null );
 	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
@@ -78,12 +79,20 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 			} );
 	};
 
-	const handleSaveDraft = () => {
+	/**
+	 * Persist the previewed content as a draft.
+	 *
+	 * @param {'draft'|'edit'} mode When 'edit', navigate to the block editor once
+	 *                              the draft exists instead of showing the
+	 *                              success notice.
+	 */
+	const persistDraft = ( mode ) => {
 		if ( ! preview ) {
 			return;
 		}
 
 		setSaving( true );
+		setSavingMode( mode );
 		saveDraft(
 			preview.video_id,
 			preview.title,
@@ -91,16 +100,29 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 			preview.ai_metadata || {}
 		)
 			.then( ( result ) => {
+				// Keep the modal in its busy state while the browser unloads,
+				// so the draft cannot be submitted twice.
+				if ( 'edit' === mode && result?.edit_url ) {
+					window.location.assign( result.edit_url );
+					return;
+				}
+
 				setSaving( false );
+				setSavingMode( null );
 				setPreview( null );
 				setSuccess( result );
 			} )
 			.catch( ( requestError ) => {
 				setSaving( false );
+				setSavingMode( null );
 				setPreview( null );
 				setError( parseError( requestError ) );
 			} );
 	};
+
+	const handleSaveDraft = () => persistDraft( 'draft' );
+
+	const handleSaveAndEdit = () => persistDraft( 'edit' );
 
 	const handleRegenerate = () => {
 		if ( ! lastGeneration ) {
@@ -153,10 +175,12 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 		regenerating,
 		retryFailedVideo,
 		saving,
+		savingMode,
 		success,
 		getGenerateButtonLabel,
 		handleGenerate,
 		handleRegenerate,
+		handleSaveAndEdit,
 		handleSaveDraft,
 		setDismissedAiNotice,
 		setError,

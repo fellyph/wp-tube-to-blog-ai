@@ -153,6 +153,13 @@ Implementation article:
 
 *   [Implementing CreatorStack AI With WordPress AI Client And Connectors](docs/implementing-creatorstack-ai-with-ai-connectors.md)
 
+## Abilities API
+
+CreatorStack AI exposes 11 workflows through the WordPress Abilities API, including
+YouTube and audio drafts, narration, thumbnails and capability discovery. See the
+[ability catalog and PHP/REST examples](docs/abilities-api.md) for inputs, permissions
+and side effects.
+
 ## 🔒 Security
 
 *   **Backend Prompting:** All AI prompts and system instructions are handled securely on the backend (PHP).

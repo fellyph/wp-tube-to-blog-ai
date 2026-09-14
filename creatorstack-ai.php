@@ -95,6 +95,7 @@ require_once WTTBA_PLUGIN_DIR . 'includes/class-post-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-post-audio-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-thumbnail-generator.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-rest-controller.php';
+require_once WTTBA_PLUGIN_DIR . 'includes/class-abilities.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-dashboard-widget.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-admin-videos-page.php';
 require_once WTTBA_PLUGIN_DIR . 'includes/class-editor-integration.php';
