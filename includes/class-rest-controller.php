@@ -56,13 +56,16 @@ class REST_Controller {
 					'page_token'  => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value );
+						},
 						'default'           => '',
 					),
 					'max_results' => array(
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 						'validate_callback' => function ( $value ) {
-							return $value >= 1 && $value <= 50;
+							return is_numeric( $value ) && (int) $value >= 1 && (int) $value <= 50;
 						},
 						'default'           => 5,
 					),
@@ -83,7 +86,7 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 				),
@@ -103,14 +106,14 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 					'language' => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -141,7 +144,7 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 					'title'    => array(
@@ -185,7 +188,7 @@ class REST_Controller {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -215,7 +218,7 @@ class REST_Controller {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -322,103 +325,54 @@ class REST_Controller {
 	}
 
 	/**
-	 * HTTP status code mapping for known error codes.
+	 * HTTP status and category definitions for known error codes.
 	 */
-	private const ERROR_STATUS_MAP = array(
-		'wttba_not_configured'      => 422,
-		'wttba_ai_client_missing'   => 422,
-		'wttba_ai_not_supported'    => 422,
-		'wttba_rate_limited'        => 429,
-		'wttba_invalid_video_id'    => 400,
-		'wttba_manual_transcript_too_short' => 400,
-		'wttba_video_not_found'     => 404,
-		'wttba_no_captions'         => 404,
-		'wttba_no_tracks'           => 404,
-		'wttba_no_track_url'        => 404,
-		'wttba_empty_transcript'    => 404,
-		'wttba_transcript_page_error' => 502,
-		'wttba_transcript_rate_limited' => 429,
-		'wttba_captions_parse_error' => 502,
-		'wttba_xml_parse_error'     => 502,
-		'wttba_youtube_oauth_missing_credentials' => 422,
-		'wttba_youtube_oauth_not_connected' => 422,
-		'wttba_youtube_oauth_required_for_captions' => 422,
-		'wttba_youtube_oauth_failed' => 422,
-		'wttba_youtube_oauth_forbidden' => 403,
-		'wttba_youtube_caption_not_found' => 404,
-		'wttba_youtube_caption_download_failed' => 502,
-		'wttba_ai_parse_error'      => 502,
-		'wttba_youtube_api_error'   => 502,
-		'wttba_ai_disabled'         => 422,
-		'wttba_audio_input_not_supported' => 422,
-		'wttba_tts_not_supported'   => 422,
-		'wttba_invalid_audio_attachment' => 400,
-		'wttba_audio_file_missing'  => 404,
-		'wttba_audio_too_large'     => 400,
-		'wttba_post_not_found'      => 404,
-		'wttba_empty_post_content'  => 400,
-		'wttba_audio_generation_failed' => 502,
-		'wttba_audio_save_failed'   => 500,
-		'wttba_audio_draft_save_failed' => 500,
-		'wttba_feature_disabled'    => 403,
-		'wttba_image_generation_not_supported' => 422,
-		'wttba_image_reference_not_supported' => 422,
-		'wttba_invalid_image_attachment' => 400,
-		'wttba_image_too_large'     => 400,
-		'wttba_invalid_thumbnail_style' => 400,
-		'wttba_thumbnail_generation_failed' => 502,
-		'wttba_thumbnail_save_failed' => 500,
-		'wttba_thumbnail_preview_expired' => 404,
-	);
-
-	/**
-	 * Error category mapping for known error codes.
-	 */
-	private const ERROR_CATEGORY_MAP = array(
-		'wttba_not_configured'      => 'configuration',
-		'wttba_ai_client_missing'   => 'configuration',
-		'wttba_ai_not_supported'    => 'configuration',
-		'wttba_rate_limited'        => 'rate_limit',
-		'wttba_invalid_video_id'    => 'validation',
-		'wttba_manual_transcript_too_short' => 'validation',
-		'wttba_video_not_found'     => 'not_found',
-		'wttba_no_captions'         => 'not_found',
-		'wttba_no_tracks'           => 'not_found',
-		'wttba_no_track_url'        => 'not_found',
-		'wttba_empty_transcript'    => 'not_found',
-		'wttba_transcript_page_error' => 'upstream',
-		'wttba_transcript_rate_limited' => 'rate_limit',
-		'wttba_captions_parse_error' => 'upstream',
-		'wttba_xml_parse_error'     => 'upstream',
-		'wttba_youtube_oauth_missing_credentials' => 'configuration',
-		'wttba_youtube_oauth_not_connected' => 'configuration',
-		'wttba_youtube_oauth_required_for_captions' => 'configuration',
-		'wttba_youtube_oauth_failed' => 'configuration',
-		'wttba_youtube_oauth_forbidden' => 'configuration',
-		'wttba_youtube_caption_not_found' => 'not_found',
-		'wttba_youtube_caption_download_failed' => 'upstream',
-		'wttba_ai_parse_error'      => 'upstream',
-		'wttba_youtube_api_error'   => 'upstream',
-		'wttba_ai_disabled'         => 'configuration',
-		'wttba_audio_input_not_supported' => 'configuration',
-		'wttba_tts_not_supported'   => 'configuration',
-		'wttba_invalid_audio_attachment' => 'validation',
-		'wttba_audio_file_missing'  => 'not_found',
-		'wttba_audio_too_large'     => 'validation',
-		'wttba_post_not_found'      => 'not_found',
-		'wttba_empty_post_content'  => 'validation',
-		'wttba_audio_generation_failed' => 'upstream',
-		'wttba_audio_save_failed'   => 'internal',
-		'wttba_audio_draft_save_failed' => 'internal',
-		'wttba_feature_disabled'    => 'configuration',
-		'wttba_image_generation_not_supported' => 'configuration',
-		'wttba_image_reference_not_supported' => 'configuration',
-		'wttba_invalid_image_attachment' => 'validation',
-		'wttba_image_too_large'     => 'validation',
-		'wttba_invalid_thumbnail_style' => 'validation',
-		'wttba_thumbnail_generation_failed' => 'upstream',
-		'wttba_thumbnail_save_failed' => 'internal',
-		'wttba_thumbnail_preview_expired' => 'not_found',
+	private const ERROR_DEFINITIONS = array(
+		'wttba_not_configured'      => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_ai_client_missing'   => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_ai_not_supported'    => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_rate_limited'        => array( 'status' => 429, 'category' => 'rate_limit' ),
+		'wttba_invalid_video_id'    => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_invalid_content'     => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_manual_transcript_too_short' => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_video_not_found'     => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_no_captions'         => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_no_tracks'           => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_no_track_url'        => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_empty_transcript'    => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_transcript_page_error' => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_transcript_rate_limited' => array( 'status' => 429, 'category' => 'rate_limit' ),
+		'wttba_captions_parse_error' => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_xml_parse_error'     => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_youtube_oauth_missing_credentials' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_youtube_oauth_not_connected' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_youtube_oauth_required_for_captions' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_youtube_oauth_failed' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_youtube_oauth_forbidden' => array( 'status' => 403, 'category' => 'configuration' ),
+		'wttba_youtube_caption_not_found' => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_youtube_caption_download_failed' => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_ai_parse_error'      => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_youtube_api_error'   => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_ai_disabled'         => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_audio_input_not_supported' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_tts_not_supported'   => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_invalid_audio_attachment' => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_audio_file_missing'  => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_audio_too_large'     => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_post_not_found'      => array( 'status' => 404, 'category' => 'not_found' ),
+		'wttba_empty_post_content'  => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_audio_generation_failed' => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_audio_save_failed'   => array( 'status' => 500, 'category' => 'internal' ),
+		'wttba_audio_draft_save_failed' => array( 'status' => 500, 'category' => 'internal' ),
+		'wttba_feature_disabled'    => array( 'status' => 403, 'category' => 'configuration' ),
+		'wttba_image_generation_not_supported' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_image_reference_not_supported' => array( 'status' => 422, 'category' => 'configuration' ),
+		'wttba_invalid_image_attachment' => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_image_too_large'     => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_invalid_thumbnail_style' => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_thumbnail_generation_failed' => array( 'status' => 502, 'category' => 'upstream' ),
+		'wttba_thumbnail_save_failed' => array( 'status' => 500, 'category' => 'internal' ),
+		'wttba_thumbnail_preview_expired' => array( 'status' => 404, 'category' => 'not_found' ),
 	);
 
 	/**
@@ -478,7 +432,9 @@ class REST_Controller {
 	public function can_generate_post_audio( \WP_REST_Request $request ): bool {
 		$post_id = absint( $request->get_param( 'id' ) );
 
-		return $post_id > 0 && current_user_can( 'edit_post', $post_id );
+		return $post_id > 0
+			&& current_user_can( 'edit_post', $post_id )
+			&& current_user_can( 'upload_files' );
 	}
 
 	/**
@@ -490,9 +446,22 @@ class REST_Controller {
 	public function can_generate_post_thumbnail( \WP_REST_Request $request ): bool {
 		$post_id = absint( $request->get_param( 'id' ) );
 
-		return $post_id > 0
-			&& current_user_can( 'edit_post', $post_id )
-			&& current_user_can( 'upload_files' );
+		if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) || ! current_user_can( 'upload_files' ) ) {
+			return false;
+		}
+
+		$author_attachment_id = absint( $request->get_param( 'author_attachment_id' ) );
+		if ( $author_attachment_id > 0 && ! current_user_can( 'edit_post', $author_attachment_id ) ) {
+			return false;
+		}
+
+		foreach ( $this->sanitize_attachment_ids_arg( $request->get_param( 'reference_attachment_ids' ) ) as $ref_id ) {
+			if ( ! current_user_can( 'edit_post', $ref_id ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -550,11 +519,7 @@ class REST_Controller {
 	 * @return array<string, mixed>
 	 */
 	public function sanitize_metadata_arg( mixed $value, mixed ...$unused ): array {
-		if ( ! is_array( $value ) ) {
-			return array();
-		}
-
-		return Generation_Logger::sanitize_metadata( $value );
+		return Generation_Logger::sanitize_client_metadata( $value );
 	}
 
 	/**
@@ -566,6 +531,10 @@ class REST_Controller {
 	private function prepare_error_response( \WP_Error $error ): \WP_Error {
 		$code = $error->get_error_code();
 		$data = $error->get_error_data( $code );
+		$definition = self::ERROR_DEFINITIONS[ $code ] ?? array(
+			'status'   => 500,
+			'category' => 'internal',
+		);
 
 		if ( ! is_array( $data ) ) {
 			$data = array();
@@ -575,12 +544,12 @@ class REST_Controller {
 
 		// Preserve existing status if already set (e.g., YouTube API errors).
 		if ( empty( $data['status'] ) ) {
-			$data['status']     = self::ERROR_STATUS_MAP[ $code ] ?? 500;
+			$data['status']     = $definition['status'];
 			$needs_data_update = true;
 		}
 
 		if ( empty( $data['error_category'] ) ) {
-			$data['error_category'] = self::ERROR_CATEGORY_MAP[ $code ] ?? 'internal';
+			$data['error_category'] = $definition['category'];
 			$needs_data_update      = true;
 		}
 
@@ -777,10 +746,13 @@ class REST_Controller {
 		$video_id = (string) ( $request->get_param( 'video_id' ) ?? '' );
 		$title    = (string) ( $request->get_param( 'title' ) ?? '' );
 		$content  = (string) ( $request->get_param( 'content' ) ?? '' );
-		$metadata = $request->get_param( 'ai_metadata' );
+		$metadata = Generation_Logger::metadata_from_client(
+			$request->get_param( 'ai_metadata' ),
+			'youtube_video'
+		);
 
 		$generator = new Post_Generator();
-		$result    = $generator->save_draft( $video_id, $title, $content, is_array( $metadata ) ? $metadata : array() );
+		$result    = $generator->save_draft( $video_id, $title, $content, $metadata );
 
 		if ( is_wp_error( $result ) ) {
 			return $this->prepare_error_response( $result );
@@ -804,6 +776,18 @@ class REST_Controller {
 		$attachment_id = absint( $request->get_param( 'attachment_id' ) );
 		$language      = (string) ( $request->get_param( 'language' ) ?? '' );
 		$persona       = (string) ( $request->get_param( 'persona' ) ?? '' );
+
+		$post = get_post( $post_id );
+
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return $this->prepare_error_response(
+				new \WP_Error(
+					'wttba_post_not_found',
+					__( 'The post could not be found.', 'creatorstack-ai' ),
+					array( 'status' => 404 )
+				)
+			);
+		}
 
 		if ( empty( $language ) ) {
 			$language = get_option( 'wttba_default_language', 'en' );
@@ -868,7 +852,6 @@ class REST_Controller {
 				'meta_input'   => array(
 					'_wttba_source_type'          => 'audio_upload',
 					'_wttba_source_attachment_id' => $attachment_id,
-					Generation_Logger::META_KEY  => $metadata,
 				),
 			),
 			true

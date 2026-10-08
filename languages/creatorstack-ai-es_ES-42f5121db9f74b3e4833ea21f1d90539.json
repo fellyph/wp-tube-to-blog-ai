@@ -1,0 +1,210 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "build\/admin-videos.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "es_ES",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Update settings": [
+                "Actualizar ajustes"
+            ],
+            "Configure AI Provider": [
+                "Configurar proveedor de IA"
+            ],
+            "An unexpected error occurred.": [
+                "Se ha producido un error inesperado."
+            ],
+            "Generate Blog Post": [
+                "Generar entrada del blog"
+            ],
+            "Output Language:": [
+                "Idioma de salida:"
+            ],
+            "Writing Persona:": [
+                "Persona de escritura:"
+            ],
+            "e.g., Conversational tone, short paragraphs, humor, actionable tips\u2026": [
+                "p. ej., tono conversacional, p\u00e1rrafos cortos, humor, consejos pr\u00e1cticos\u2026"
+            ],
+            "Use a custom transcript instead of fetching captions": [
+                "Usar una transcripci\u00f3n personalizada en lugar de obtener subt\u00edtulos"
+            ],
+            "Manual Transcript:": [
+                "Transcripci\u00f3n manual:"
+            ],
+            "Paste the transcript text for this video.": [
+                "Pega el texto de la transcripci\u00f3n de este v\u00eddeo."
+            ],
+            "Paste at least 50 characters. When provided, this transcript is used as the source material and YouTube captions are not fetched.": [
+                "Pega al menos 50 caracteres. Cuando se proporciona, esta transcripci\u00f3n se usa como material de origen y no se obtienen subt\u00edtulos de YouTube."
+            ],
+            "Cancel": [
+                "Cancelar"
+            ],
+            "Generate": [
+                "Generar"
+            ],
+            "Draft Preview": [
+                "Vista previa del borrador"
+            ],
+            "Regenerating\u2026": [
+                "Regenerando\u2026"
+            ],
+            "Regenerate": [
+                "Regenerar"
+            ],
+            "Saving\u2026": [
+                "Guardando\u2026"
+            ],
+            "Save as Draft": [
+                "Guardar como borrador"
+            ],
+            "Go to Settings": [
+                "Ir a Ajustes"
+            ],
+            "This video needs captions or subtitles before it can be converted into a post.": [
+                "Este v\u00eddeo necesita subt\u00edtulos antes de poder convertirse en una entrada."
+            ],
+            "Please wait a moment and try again.": [
+                "Espera un momento e int\u00e9ntalo de nuevo."
+            ],
+            "This may be a temporary issue with an external service.": [
+                "Puede que sea un problema temporal con un servicio externo."
+            ],
+            "Retry": [
+                "Reintentar"
+            ],
+            "Dismiss this notice": [
+                "Descartar este aviso"
+            ],
+            "Requesting microphone access\u2026": [
+                "Solicitando acceso al micr\u00f3fono\u2026"
+            ],
+            "Recording %s": [
+                "Grabando %s"
+            ],
+            "Recording ready: %1$s, %2$s": [
+                "Grabaci\u00f3n lista: %1$s, %2$s"
+            ],
+            "Ready to record from your microphone.": [
+                "Listo para grabar desde tu micr\u00f3fono."
+            ],
+            "Record Again": [
+                "Grabar de nuevo"
+            ],
+            "Start Recording": [
+                "Iniciar grabaci\u00f3n"
+            ],
+            "Stop Recording": [
+                "Detener grabaci\u00f3n"
+            ],
+            "Discard Recording": [
+                "Descartar grabaci\u00f3n"
+            ],
+            "YouTube to Post is disabled in CreatorStack AI settings.": [
+                "YouTube a entrada est\u00e1 desactivado en los ajustes de CreatorStack AI."
+            ],
+            "Configure the YouTube connector API key.": [
+                "Configura la clave de API del conector de YouTube."
+            ],
+            "Configure your YouTube channel settings.": [
+                "Configura los ajustes de tu canal de YouTube."
+            ],
+            "Loading videos\u2026": [
+                "Cargando v\u00eddeos\u2026"
+            ],
+            "Post generated successfully!": [
+                "Entrada generada correctamente."
+            ],
+            "Edit Draft": [
+                "Editar borrador"
+            ],
+            "Configure an AI provider before generating posts.": [
+                "Configura un proveedor de IA antes de generar entradas."
+            ],
+            "Generating\u2026": [
+                "Generando\u2026"
+            ],
+            "Generate Post": [
+                "Generar entrada"
+            ],
+            "AI unavailable": [
+                "IA no disponible"
+            ],
+            "Loading\u2026": [
+                "Cargando\u2026"
+            ],
+            "Load More Videos": [
+                "Cargar m\u00e1s v\u00eddeos"
+            ],
+            "Audio recording is not available in this browser.": [
+                "La grabaci\u00f3n de audio no est\u00e1 disponible en este navegador."
+            ],
+            "No audio was captured. Try recording again.": [
+                "No se captur\u00f3 ning\u00fan audio. Intenta grabar de nuevo."
+            ],
+            "Microphone access was blocked. Allow microphone access and try again.": [
+                "Se bloque\u00f3 el acceso al micr\u00f3fono. Permite el acceso al micr\u00f3fono e int\u00e9ntalo de nuevo."
+            ],
+            "The microphone could not be started.": [
+                "No se pudo iniciar el micr\u00f3fono."
+            ],
+            "Record audio and create a draft": [
+                "Grabar audio y crear un borrador"
+            ],
+            "Capture a voice note, interview, or spoken outline. The recording is saved to the Media Library and transformed into a draft post.": [
+                "Captura una nota de voz, entrevista o esquema hablado. La grabaci\u00f3n se guarda en la Biblioteca de medios y se transforma en un borrador de entrada."
+            ],
+            "Configure an AI provider with audio input support before generating drafts from recordings.": [
+                "Configura un proveedor de IA con soporte de entrada de audio antes de generar borradores a partir de grabaciones."
+            ],
+            "This recording is larger than the %s upload limit.": [
+                "Esta grabaci\u00f3n supera el l\u00edmite de subida de %s."
+            ],
+            "Output language": [
+                "Idioma de salida"
+            ],
+            "Writing persona": [
+                "Persona de escritura"
+            ],
+            "The recording is too large. The maximum size is %s.": [
+                "La grabaci\u00f3n es demasiado grande. El tama\u00f1o m\u00e1ximo es %s."
+            ],
+            "Audio to Post recording": [
+                "Grabaci\u00f3n de audio a entrada"
+            ],
+            "Draft created from your recording.": [
+                "Borrador creado a partir de tu grabaci\u00f3n."
+            ],
+            "Record audio before creating a draft.": [
+                "Graba audio antes de crear un borrador."
+            ],
+            "Configure an AI provider with audio input support before generating a draft.": [
+                "Configura un proveedor de IA con soporte de entrada de audio antes de generar un borrador."
+            ],
+            "Creating draft\u2026": [
+                "Creando borrador\u2026"
+            ],
+            "Create Draft From Recording": [
+                "Crear borrador desde la grabaci\u00f3n"
+            ],
+            "Media Library": [
+                "Biblioteca de medios"
+            ],
+            "Open Blank Draft": [
+                "Abrir borrador en blanco"
+            ],
+            "Edit generated draft": [
+                "Editar borrador generado"
+            ],
+            "Audio to Post is disabled in CreatorStack AI settings.": [
+                "Audio a entrada est\u00e1 desactivado en los ajustes de CreatorStack AI."
+            ]
+        }
+    }
+}

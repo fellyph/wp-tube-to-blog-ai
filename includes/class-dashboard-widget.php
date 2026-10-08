@@ -21,6 +21,24 @@ class Dashboard_Widget {
 	 */
 	public function __construct() {
 		add_action( 'wp_dashboard_setup', array( $this, 'register_widget' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_assets' ) );
+	}
+
+	/**
+	 * Enqueue dashboard widget assets on the dashboard screen.
+	 *
+	 * @param string $hook_suffix Current admin screen hook suffix.
+	 */
+	public function enqueue_dashboard_assets( string $hook_suffix ): void {
+		if ( 'index.php' !== $hook_suffix ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) || ! Settings::is_youtube_to_post_enabled() ) {
+			return;
+		}
+
+		$this->enqueue_assets();
 	}
 
 	/**
@@ -42,19 +60,27 @@ class Dashboard_Widget {
 	 * Render the widget container and enqueue scripts.
 	 */
 	public function render_widget(): void {
-		$this->enqueue_assets();
+		$this->enqueue_assets( true );
 
 		echo '<div id="wttba-dashboard-widget"></div>';
 	}
 
 	/**
 	 * Enqueue dashboard widget scripts and styles.
+	 *
+	 * @param bool $show_missing_notice Whether to output a notice when build assets are missing.
 	 */
-	private function enqueue_assets(): void {
+	private function enqueue_assets( bool $show_missing_notice = false ): void {
+		if ( wp_script_is( 'wttba-dashboard-widget', 'enqueued' ) && wp_style_is( 'wttba-dashboard-widget', 'enqueued' ) ) {
+			return;
+		}
+
 		$asset_file = WTTBA_PLUGIN_DIR . 'build/dashboard-widget.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
-			echo '<p>' . esc_html__( 'Widget assets not built. Run npm run build.', 'creatorstack-ai' ) . '</p>';
+			if ( $show_missing_notice ) {
+				echo '<p>' . esc_html__( 'Widget assets not built. Run npm run build.', 'creatorstack-ai' ) . '</p>';
+			}
 			return;
 		}
 
@@ -71,7 +97,7 @@ class Dashboard_Widget {
 		wp_enqueue_style(
 			'wttba-dashboard-widget',
 			WTTBA_PLUGIN_URL . 'build/style-dashboard-widget.css',
-			array(),
+			array( 'wp-components' ),
 			$asset['version']
 		);
 

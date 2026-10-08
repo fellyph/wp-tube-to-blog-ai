@@ -136,6 +136,10 @@ class YouTube_Connector {
 			return $db_value;
 		}
 
+		if ( ! array_key_exists( self::LEGACY_API_OPTION, wp_load_alloptions() ) ) {
+			return '';
+		}
+
 		return (string) get_option( self::LEGACY_API_OPTION, '' );
 	}
 
@@ -168,7 +172,7 @@ class YouTube_Connector {
 			return 'database';
 		}
 
-		if ( '' !== (string) get_option( self::LEGACY_API_OPTION, '' ) ) {
+		if ( array_key_exists( self::LEGACY_API_OPTION, wp_load_alloptions() ) && '' !== (string) get_option( self::LEGACY_API_OPTION, '' ) ) {
 			return 'legacy';
 		}
 
@@ -385,10 +389,14 @@ class YouTube_Connector {
 		$plugin = self::get_connector_plugin_basename();
 
 		if ( function_exists( 'is_plugin_active' ) ) {
-			return is_plugin_active( $plugin );
+			return is_plugin_active( $plugin )
+				|| ( function_exists( 'is_plugin_active_for_network' ) && is_plugin_active_for_network( $plugin ) );
 		}
 
-		return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true );
+		$network_plugins = is_multisite() ? (array) get_site_option( 'active_sitewide_plugins', array() ) : array();
+
+		return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true )
+			|| isset( $network_plugins[ $plugin ] );
 	}
 
 	/**
@@ -409,6 +417,11 @@ class YouTube_Connector {
 	 * Migrate the legacy plugin API key option into the connector setting.
 	 */
 	public static function migrate_legacy_api_key(): void {
+		$alloptions = wp_load_alloptions();
+		if ( ! array_key_exists( self::LEGACY_API_OPTION, $alloptions ) ) {
+			return;
+		}
+
 		$legacy_key = trim( (string) get_option( self::LEGACY_API_OPTION, '' ) );
 
 		if ( '' === $legacy_key || ! self::is_valid_api_key( $legacy_key ) ) {
@@ -437,7 +450,7 @@ class YouTube_Connector {
 			return $response;
 		}
 
-		if ( 'POST' !== $request->get_method() && 'PUT' !== $request->get_method() ) {
+		if ( ! in_array( $request->get_method(), array( 'POST', 'PUT', 'PATCH' ), true ) ) {
 			return $response;
 		}
 
@@ -492,14 +505,5 @@ class YouTube_Connector {
 			'env_var_name'  => self::API_KEY_ENV_VAR,
 			'constant_name' => self::API_KEY_CONSTANT,
 		);
-	}
-
-	/**
-	 * Get the plugin file associated with the connector card.
-	 *
-	 * @return string Plugin file path.
-	 */
-	private static function get_plugin_file(): string {
-		return self::get_connector_plugin_file();
 	}
 }

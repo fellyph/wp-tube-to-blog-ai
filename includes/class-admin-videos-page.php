@@ -21,6 +21,7 @@ class Admin_Videos_Page {
 	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
 	/**
@@ -72,6 +73,33 @@ class Admin_Videos_Page {
 	}
 
 	/**
+	 * Enqueue scripts and styles on the CreatorStack admin screens.
+	 *
+	 * @param string $hook_suffix Current admin screen hook suffix.
+	 */
+	public function enqueue_admin_assets( string $hook_suffix ): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading current admin page slug for asset enqueueing.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+		$is_videos_page = 'wttba-videos' === $page || str_ends_with( $hook_suffix, '_page_wttba-videos' );
+		$is_audio_page  = 'wttba-audio-to-post' === $page || str_ends_with( $hook_suffix, '_page_wttba-audio-to-post' );
+
+		if ( $is_videos_page && Settings::is_youtube_to_post_enabled() ) {
+			$this->enqueue_assets();
+			return;
+		}
+
+		if ( $is_audio_page && Settings::is_audio_to_post_enabled() ) {
+			wp_enqueue_media();
+			$this->enqueue_assets();
+		}
+	}
+
+	/**
 	 * Render the admin page.
 	 */
 	public function render_page(): void {
@@ -80,7 +108,7 @@ class Admin_Videos_Page {
 			return;
 		}
 
-		$this->enqueue_assets();
+		$this->enqueue_assets( true );
 
 		?>
 		<div class="wrap wttba-admin-page wttba-admin-page--youtube">
@@ -92,6 +120,7 @@ class Admin_Videos_Page {
 				);
 				Admin_Navigation::render( 'youtube' );
 				?>
+				<hr class="wp-header-end">
 				<div id="wttba-admin-videos"></div>
 			</div>
 		</div>
@@ -107,7 +136,11 @@ class Admin_Videos_Page {
 			return;
 		}
 
-		$this->enqueue_assets();
+		if ( ! did_action( 'wp_enqueue_media' ) ) {
+			wp_enqueue_media();
+		}
+
+		$this->enqueue_assets( true );
 
 		?>
 		<div class="wrap wttba-admin-page wttba-admin-page--audio">
@@ -119,6 +152,7 @@ class Admin_Videos_Page {
 				);
 				Admin_Navigation::render( 'audio' );
 				?>
+				<hr class="wp-header-end">
 				<div id="wttba-audio-to-post"></div>
 			</div>
 		</div>
@@ -143,6 +177,7 @@ class Admin_Videos_Page {
 				);
 				Admin_Navigation::render( $active );
 				?>
+				<hr class="wp-header-end">
 				<div class="notice notice-warning inline">
 					<p>
 						<?php
@@ -182,6 +217,9 @@ class Admin_Videos_Page {
 				class="wttba-admin-hero__logo"
 				src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
 				alt=""
+				width="188"
+				height="188"
+				decoding="async"
 				aria-hidden="true"
 			/>
 		</header>
@@ -190,12 +228,20 @@ class Admin_Videos_Page {
 
 	/**
 	 * Enqueue admin videos page scripts and styles.
+	 *
+	 * @param bool $show_missing_notice Whether to output a notice when build assets are missing.
 	 */
-	private function enqueue_assets(): void {
+	private function enqueue_assets( bool $show_missing_notice = false ): void {
+		if ( wp_script_is( 'wttba-admin-videos', 'enqueued' ) && wp_style_is( 'wttba-admin-videos', 'enqueued' ) ) {
+			return;
+		}
+
 		$asset_file = WTTBA_PLUGIN_DIR . 'build/admin-videos.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
-			echo '<p>' . esc_html__( 'Assets not built. Run npm run build.', 'creatorstack-ai' ) . '</p>';
+			if ( $show_missing_notice ) {
+				echo '<p>' . esc_html__( 'Assets not built. Run npm run build.', 'creatorstack-ai' ) . '</p>';
+			}
 			return;
 		}
 
@@ -213,7 +259,7 @@ class Admin_Videos_Page {
 		wp_enqueue_style(
 			'wttba-admin-videos',
 			WTTBA_PLUGIN_URL . 'build/style-admin-videos.css',
-			array(),
+			array( 'wp-components' ),
 			$asset['version']
 		);
 

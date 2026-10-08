@@ -46,6 +46,7 @@ class Plugin {
 		new Dashboard_Widget();
 		new Admin_Videos_Page();
 		new Editor_Integration();
+		new Abilities();
 
 		add_filter( 'plugin_action_links_' . plugin_basename( WTTBA_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
 		add_action( 'rest_api_init', array( new REST_Controller(), 'register_routes' ) );
@@ -56,6 +57,10 @@ class Plugin {
 	 * Check for required dependencies and show admin notice if missing.
 	 */
 	private function check_dependencies(): void {
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() || ! AI_Provider_Status::is_ai_client_available() ) {
 			add_action( 'admin_notices', array( $this, 'missing_ai_client_notice' ) );
 		}
@@ -150,6 +155,18 @@ class Plugin {
 
 			return current_user_can( 'edit_posts' );
 		};
+
+		register_post_meta(
+			'post',
+			'_wttba_source_video_id',
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => $auth_callback,
+			)
+		);
 
 		register_post_meta(
 			'post',

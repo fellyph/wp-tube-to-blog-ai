@@ -49,6 +49,23 @@ define( 'WTTBA_VERSION', '1.0.0' );
 `
 	);
 
+	writeFileSync(
+		join( projectDir, 'creatorstack-youtube-connector.php' ),
+		`<?php
+/**
+ * Plugin Name:       CreatorStack AI YouTube Connector
+ * Version:           1.0.0
+ */
+`
+	);
+
+	writeFileSync(
+		join( projectDir, 'readme.txt' ),
+		`=== CreatorStack AI ===
+Stable tag: 1.0.0
+`
+	);
+
 	return projectDir;
 }
 
@@ -72,6 +89,11 @@ function assertSyncedVersion( projectDir, version ) {
 		readProjectFile( projectDir, 'package.json' )
 	);
 	const pluginFile = readProjectFile( projectDir, 'creatorstack-ai.php' );
+	const connectorFile = readProjectFile(
+		projectDir,
+		'creatorstack-youtube-connector.php'
+	);
+	const readmeFile = readProjectFile( projectDir, 'readme.txt' );
 	const escapedVersion = escapeRegExp( version );
 
 	assert.equal( packageJson.version, version );
@@ -82,6 +104,14 @@ function assertSyncedVersion( projectDir, version ) {
 	assert.match(
 		pluginFile,
 		new RegExp( `define\\( 'WTTBA_VERSION', '${ escapedVersion }' \\);` )
+	);
+	assert.match(
+		connectorFile,
+		new RegExp( `\\* Version:\\s+${ escapedVersion }` )
+	);
+	assert.match(
+		readmeFile,
+		new RegExp( `^Stable tag:\\s+${ escapedVersion }$`, 'm' )
 	);
 }
 

@@ -2,7 +2,7 @@
  * Browser audio recording helpers.
  */
 import { useEffect, useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 const PREFERRED_MIME_TYPES = [
 	'audio/webm;codecs=opus',
@@ -107,6 +107,71 @@ export function formatDuration( seconds ) {
 }
 
 /**
+ * Check a recording against the configured upload limit.
+ *
+ * @param {Blob|null} recordedBlob Recorded audio blob.
+ * @param {number}    maxBytes     Maximum allowed bytes, or zero for no limit.
+ * @return {boolean} Whether the recording exceeds the limit.
+ */
+export function isRecordingTooLarge( recordedBlob, maxBytes ) {
+	return !! maxBytes && !! recordedBlob && recordedBlob.size > maxBytes;
+}
+
+/**
+ * Build the visible recorder status text.
+ *
+ * @param {Object} recorder    Recorder state.
+ * @param {string} idleMessage Message shown before recording starts.
+ * @return {string} Status text.
+ */
+export function getRecorderStatusText( recorder, idleMessage ) {
+	if ( 'requesting' === recorder.status ) {
+		return __( 'Requesting microphone access…', 'creatorstack-ai' );
+	}
+
+	if ( 'recording' === recorder.status ) {
+		return sprintf(
+			/* translators: %s: recording duration. */
+			__( 'Recording %s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration )
+		);
+	}
+
+	if ( recorder.hasRecording ) {
+		return sprintf(
+			/* translators: 1: recording duration, 2: recording file size. */
+			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
+			formatDuration( recorder.duration ),
+			formatBytes( recorder.recordedBlob.size )
+		);
+	}
+
+	return recorder.error || idleMessage;
+}
+
+/**
+ * Build a stable live-region message that changes only with recorder state.
+ *
+ * @param {Object} recorder Recorder state.
+ * @return {string} Announcement text.
+ */
+export function getRecorderAnnouncement( recorder ) {
+	if ( 'requesting' === recorder.status ) {
+		return __( 'Requesting microphone access.', 'creatorstack-ai' );
+	}
+
+	if ( 'recording' === recorder.status ) {
+		return __( 'Recording started.', 'creatorstack-ai' );
+	}
+
+	if ( recorder.hasRecording ) {
+		return __( 'Recording ready.', 'creatorstack-ai' );
+	}
+
+	return recorder.error || '';
+}
+
+/**
  * Create a File object from a recorded Blob.
  *
  * @param {Blob}   blob   Audio blob.
@@ -159,6 +224,8 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	const timerRef = useRef( null );
 	const startedAtRef = useRef( 0 );
 	const urlRef = useRef( '' );
+	const isMountedRef = useRef( true );
+	const cancelPendingRef = useRef( false );
 	const onRecordedRef = useRef( onRecorded );
 
 	useEffect( () => {
@@ -180,6 +247,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	const reset = () => {
+		cancelPendingRef.current = true;
 		clearTimer();
 		stopStream( streamRef.current );
 		streamRef.current = null;
@@ -206,12 +274,25 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 		}
 
 		reset();
+		cancelPendingRef.current = false;
 		setStatus( 'requesting' );
 
 		try {
 			const stream = await window.navigator.mediaDevices.getUserMedia( {
 				audio: true,
 			} );
+
+			if ( ! isMountedRef.current ) {
+				stopStream( stream );
+				return;
+			}
+
+			if ( cancelPendingRef.current ) {
+				stopStream( stream );
+				setStatus( 'idle' );
+				return;
+			}
+
 			const mimeType = getPreferredAudioMimeType();
 			const recorder = new window.MediaRecorder(
 				stream,
@@ -232,6 +313,11 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 				clearTimer();
 				stopStream( streamRef.current );
 				streamRef.current = null;
+
+				if ( ! isMountedRef.current ) {
+					stopStream( stream );
+					return;
+				}
 
 				const blob = new window.Blob( chunksRef.current, {
 					type: recorder.mimeType || mimeType || 'audio/webm',
@@ -274,10 +360,13 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 				setDuration(
 					Math.floor( ( Date.now() - startedAtRef.current ) / 1000 )
 				);
-			}, 500 );
+			}, 1000 );
 		} catch ( err ) {
 			stopStream( streamRef.current );
 			streamRef.current = null;
+			if ( ! isMountedRef.current ) {
+				return;
+			}
 			setStatus( 'error' );
 			setError(
 				err?.name === 'NotAllowedError'
@@ -294,6 +383,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	const stop = () => {
+		cancelPendingRef.current = true;
 		const recorder = mediaRecorderRef.current;
 
 		if ( recorder && 'inactive' !== recorder.state ) {
@@ -302,7 +392,9 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	useEffect( () => {
+		isMountedRef.current = true;
 		return () => {
+			isMountedRef.current = false;
 			clearTimer();
 			stopStream( streamRef.current );
 			revokeRecordedUrl();
@@ -316,6 +408,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 		recordedUrl,
 		duration,
 		isSupported: isAudioRecordingSupported(),
+		isRequesting: 'requesting' === status,
 		isRecording: 'recording' === status || 'requesting' === status,
 		hasRecording: !! recordedBlob,
 		start,

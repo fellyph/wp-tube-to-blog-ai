@@ -252,10 +252,14 @@ class Thumbnail_Generator {
 
 			set_transient( $this->get_preview_transient_key( $post_id, $preview_id ), $payload, self::PREVIEW_TTL );
 
+			$image_data_uri = ! empty( $file_payload['base64_data'] )
+				? sprintf( 'data:%s;base64,%s', $file_payload['mime_type'], $file_payload['base64_data'] )
+				: '';
+
 			return array_filter(
 				array(
 					'preview_id'     => $preview_id,
-					'image_data_uri' => $file_payload['image_data_uri'] ?? '',
+					'image_data_uri' => $image_data_uri,
 					'image_url'      => $file_payload['image_url'] ?? '',
 					'mime_type'      => $file_payload['mime_type'],
 					'ai_metadata'    => $metadata,
@@ -428,7 +432,7 @@ class Thumbnail_Generator {
 	private function build_prompt( \WP_Post $post, array $style, ?array $secondary_style, bool $has_author, array $references ): string {
 		$title      = get_the_title( $post );
 		$excerpt    = trim( wp_strip_all_tags( (string) $post->post_excerpt ) );
-		$content    = do_blocks( $post->post_content );
+		$content    = excerpt_remove_blocks( $post->post_content );
 		$content    = strip_shortcodes( $content );
 		$content    = wp_strip_all_tags( $content, true );
 		$content    = trim( preg_replace( '/\s+/', ' ', $content ) ?? '' );
@@ -560,10 +564,9 @@ Content summary: %4$s
 			$base64 = (string) $file->getBase64Data();
 
 			return array(
-				'storage'        => 'inline',
-				'mime_type'      => $mime_type,
-				'base64_data'    => $base64,
-				'image_data_uri' => sprintf( 'data:%s;base64,%s', $mime_type, $base64 ),
+				'storage'     => 'inline',
+				'mime_type'   => $mime_type,
+				'base64_data' => $base64,
 			);
 		}
 
@@ -573,10 +576,9 @@ Content summary: %4$s
 
 			if ( is_string( $base64 ) && '' !== $base64 ) {
 				return array(
-					'storage'        => 'inline',
-					'mime_type'      => $mime_type,
-					'base64_data'    => $base64,
-					'image_data_uri' => $data_uri,
+					'storage'     => 'inline',
+					'mime_type'   => $mime_type,
+					'base64_data' => $base64,
 				);
 			}
 		}
@@ -608,8 +610,10 @@ Content summary: %4$s
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
+		$mime_type = sanitize_mime_type( (string) ( $payload['mime_type'] ?? 'image/png' ) );
+
 		if ( 'remote' === ( $payload['storage'] ?? '' ) && ! empty( $payload['image_url'] ) ) {
-			return $this->save_remote_image_file( (string) $payload['image_url'], $post );
+			return $this->save_remote_image_file( (string) $payload['image_url'], $mime_type, $post );
 		}
 
 		if ( empty( $payload['base64_data'] ) || empty( $payload['mime_type'] ) ) {
@@ -630,7 +634,6 @@ Content summary: %4$s
 			);
 		}
 
-		$mime_type = sanitize_mime_type( (string) $payload['mime_type'] );
 		$extension = $this->get_extension_for_mime_type( $mime_type );
 		$filename  = sanitize_file_name( sprintf( '%s-thumbnail.%s', $post->post_name ?: 'post-' . $post->ID, $extension ) );
 		$upload    = wp_upload_bits( $filename, null, $image_bytes );
@@ -676,11 +679,12 @@ Content summary: %4$s
 	/**
 	 * Save a remote image URL to the Media Library.
 	 *
-	 * @param string   $url  Remote URL.
-	 * @param \WP_Post $post Parent post.
+	 * @param string   $url       Remote URL.
+	 * @param string   $mime_type MIME type.
+	 * @param \WP_Post $post      Parent post.
 	 * @return int|\WP_Error Attachment ID or error.
 	 */
-	private function save_remote_image_file( string $url, \WP_Post $post ): int|\WP_Error {
+	private function save_remote_image_file( string $url, string $mime_type, \WP_Post $post ): int|\WP_Error {
 		$tmp = download_url( $url );
 
 		if ( is_wp_error( $tmp ) ) {
@@ -691,15 +695,16 @@ Content summary: %4$s
 			);
 		}
 
-		$file = array(
-			'name'     => sanitize_file_name( sprintf( '%s-thumbnail.png', $post->post_name ?: 'post-' . $post->ID ) ),
+		$extension = $this->get_extension_for_mime_type( $mime_type );
+		$file      = array(
+			'name'     => sanitize_file_name( sprintf( '%s-thumbnail.%s', $post->post_name ?: 'post-' . $post->ID, $extension ) ),
 			'tmp_name' => $tmp,
 		);
 
 		$attachment_id = media_handle_sideload( $file, $post->ID );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			@unlink( $tmp );
+			wp_delete_file( $tmp );
 			return new \WP_Error(
 				'wttba_thumbnail_save_failed',
 				$attachment_id->get_error_message(),
@@ -758,9 +763,10 @@ Content summary: %4$s
 	/**
 	 * Filter AI Client timeout.
 	 *
+	 * @param mixed $timeout Current timeout in seconds.
 	 * @return int Timeout in seconds.
 	 */
-	public function filter_ai_request_timeout(): int {
-		return self::AI_REQUEST_TIMEOUT;
+	public function filter_ai_request_timeout( $timeout = 0 ): int {
+		return max( (int) $timeout, self::AI_REQUEST_TIMEOUT );
 	}
 }

@@ -171,6 +171,9 @@ test( 'settings page renders under Settings menu', async ( { page } ) => {
 		page.getByRole( 'button', { name: 'Fill OAuth fields' } )
 	).toBeVisible();
 	await expect(
+		page.getByRole( 'textbox', { name: 'Client secret JSON' } )
+	).toBeVisible();
+	await expect(
 		page.getByText( 'YouTube authentication setup' )
 	).toBeVisible();
 	await expectSetupItemStatus(

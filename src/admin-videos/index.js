@@ -1,123 +1,98 @@
 /**
  * Admin videos page entry point.
  */
+import { speak } from '@wordpress/a11y';
 import {
 	createElement,
+	createRoot,
 	render,
 	useState,
 	useEffect,
 	useCallback,
+	useRef,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	createAudioDraft,
 	fetchVideos,
 	parseError,
-	previewPost,
-	saveDraft,
 	uploadAudioAttachment,
 } from '../shared/api';
 import {
 	createAudioFileFromBlob,
 	formatBytes,
-	formatDuration,
+	getRecorderAnnouncement,
+	getRecorderStatusText,
+	isRecordingTooLarge,
 	useAudioRecorder,
 } from '../shared/audio-recorder';
 import LanguageModal from '../shared/language-modal';
 import PreviewModal from '../shared/preview-modal';
 import ErrorNotice from '../shared/error-notice';
-import WarningNotice from '../shared/warning-notice';
+import useVideoPostGeneration from '../shared/use-video-post-generation';
+import VideoGenerationFeedback from '../shared/video-generation-feedback';
+import {
+	formatDate,
+	getYoutubeConfigurationNotice,
+} from '../shared/video-post-utils';
 import './style.scss';
 
 /**
- * Format a date string.
+ * Mount a React element using React 18 createRoot with legacy render fallback.
  *
- * @param {string} dateStr ISO date string.
- * @return {string} Formatted date.
+ * @param {Element}     element       React element.
+ * @param {HTMLElement} containerNode DOM container node.
  */
-function formatDate( dateStr ) {
-	const date = new Date( dateStr );
-	return date.toLocaleDateString( undefined, {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-	} );
+function mountApp( element, containerNode ) {
+	if ( ! containerNode ) {
+		return;
+	}
+
+	if ( 'function' === typeof createRoot ) {
+		createRoot( containerNode ).render( element );
+		return;
+	}
+
+	render( element, containerNode );
 }
 
 /**
- * Get YouTube configuration notice details.
+ * Recorder and audio selection controls used on the standalone audio page.
  *
- * @param {Object} config Localized app config.
- * @return {{ message: string, url: string, label: string }} Notice details.
- */
-function getYoutubeConfigurationNotice( config ) {
-	const youtube = config.youtube || {};
-	const missingApiKey = youtube.apiKeyConfigured === false;
-
-	return {
-		message: missingApiKey
-			? __(
-					'Configure the YouTube connector API key.',
-					'creatorstack-ai'
-			  )
-			: __(
-					'Configure your YouTube channel settings.',
-					'creatorstack-ai'
-			  ),
-		url: youtube.configurationUrl || config.settingsUrl,
-		label:
-			youtube.configurationLabel ||
-			__( 'Go to Settings', 'creatorstack-ai' ),
-	};
-}
-
-/**
- * Render a recording status message.
- *
- * @param {Object} recorder Audio recorder state.
- * @return {string} Status label.
- */
-function getRecorderStatusText( recorder ) {
-	if ( 'requesting' === recorder.status ) {
-		return __( 'Requesting microphone access…', 'creatorstack-ai' );
-	}
-
-	if ( 'recording' === recorder.status ) {
-		return sprintf(
-			/* translators: %s: recording duration. */
-			__( 'Recording %s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration )
-		);
-	}
-
-	if ( recorder.hasRecording ) {
-		return sprintf(
-			/* translators: 1: recording duration, 2: recording file size. */
-			__( 'Recording ready: %1$s, %2$s', 'creatorstack-ai' ),
-			formatDuration( recorder.duration ),
-			formatBytes( recorder.recordedBlob.size )
-		);
-	}
-
-	if ( recorder.error ) {
-		return recorder.error;
-	}
-
-	return __( 'Ready to record from your microphone.', 'creatorstack-ai' );
-}
-
-/**
- * Recorder controls used on the standalone audio page.
- *
- * @param {Object}  props          Component props.
- * @param {Object}  props.recorder Recorder state/actions.
- * @param {boolean} props.disabled Whether controls are disabled.
+ * @param {Object}      props                      Component props.
+ * @param {Object}      props.recorder             Recorder state/actions.
+ * @param {boolean}     props.disabled             Whether controls are disabled.
+ * @param {Function}    props.onDiscard            Callback when recording is discarded.
+ * @param {Function}    props.onSelectFile         Callback when a local audio file is chosen.
+ * @param {Function}    props.onOpenMediaLibrary   Callback to open the WP Media Library modal.
+ * @param {Object|null} props.selectedAudio        Selected audio file or attachment metadata.
+ * @param {Function}    props.onClearSelectedAudio Callback to clear the selected audio file.
  * @return {Element} Recorder UI.
  */
-function AudioRecorderCard( { recorder, disabled } ) {
+function AudioRecorderCard( {
+	recorder,
+	disabled,
+	onDiscard,
+	onSelectFile,
+	onOpenMediaLibrary,
+	selectedAudio,
+	onClearSelectedAudio,
+} ) {
+	const startButtonRef = useRef( null );
+	const fileInputRef = useRef( null );
 	const statusClass = recorder.isRecording
 		? 'wttba-audio-recorder__status wttba-audio-recorder__status--recording'
 		: 'wttba-audio-recorder__status';
+
+	const idleStatusMessage = selectedAudio?.name
+		? sprintf(
+				/* translators: %s: selected audio file name. */
+				__( 'Selected audio: %s', 'creatorstack-ai' ),
+				selectedAudio.name
+		  )
+		: __( 'Ready to record from your microphone.', 'creatorstack-ai' );
+
+	const previewUrl = recorder.recordedUrl || selectedAudio?.url || '';
 
 	return createElement(
 		'div',
@@ -127,12 +102,26 @@ function AudioRecorderCard( { recorder, disabled } ) {
 		},
 		createElement(
 			'div',
-			{ className: statusClass, 'aria-live': 'polite' },
+			{ className: statusClass },
 			createElement( 'span', {
 				className: 'wttba-audio-recorder__dot',
 				'aria-hidden': true,
 			} ),
-			createElement( 'span', null, getRecorderStatusText( recorder ) )
+			createElement(
+				'span',
+				null,
+				getRecorderStatusText( recorder, idleStatusMessage )
+			),
+			createElement(
+				'span',
+				{
+					className: 'screen-reader-text',
+					role: 'status',
+					'aria-live': 'polite',
+					'aria-atomic': true,
+				},
+				getRecorderAnnouncement( recorder )
+			)
 		),
 		createElement(
 			'div',
@@ -141,6 +130,7 @@ function AudioRecorderCard( { recorder, disabled } ) {
 				createElement(
 					'button',
 					{
+						ref: startButtonRef,
 						type: 'button',
 						className: 'button button-primary',
 						onClick: recorder.start,
@@ -168,17 +158,82 @@ function AudioRecorderCard( { recorder, disabled } ) {
 					{
 						type: 'button',
 						className: 'button button-secondary',
-						onClick: recorder.reset,
+						onClick: () => {
+							onDiscard?.();
+							recorder.reset();
+							speak(
+								__( 'Recording discarded.', 'creatorstack-ai' ),
+								'polite'
+							);
+							startButtonRef.current?.focus();
+						},
 						disabled,
 					},
 					__( 'Discard Recording', 'creatorstack-ai' )
-				)
+				),
+			! recorder.isRecording &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: () => fileInputRef.current?.click(),
+						disabled,
+					},
+					__( 'Upload Audio File', 'creatorstack-ai' )
+				),
+			! recorder.isRecording &&
+				'function' === typeof window.wp?.media &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: onOpenMediaLibrary,
+						disabled,
+					},
+					__( 'Select from Media Library', 'creatorstack-ai' )
+				),
+			selectedAudio &&
+				! recorder.hasRecording &&
+				! recorder.isRecording &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: () => {
+							onClearSelectedAudio?.();
+							startButtonRef.current?.focus();
+						},
+						disabled,
+					},
+					__( 'Clear Selection', 'creatorstack-ai' )
+				),
+			createElement( 'input', {
+				ref: fileInputRef,
+				type: 'file',
+				accept: 'audio/*',
+				className: 'screen-reader-text',
+				tabIndex: -1,
+				'aria-hidden': true,
+				onChange: ( event ) => {
+					const file = event.target.files?.[ 0 ];
+					if ( file ) {
+						onSelectFile?.( file );
+					}
+					event.target.value = '';
+				},
+			} )
 		),
-		recorder.recordedUrl &&
+		previewUrl &&
 			createElement( 'audio', {
 				className: 'wttba-audio-recorder__preview',
 				controls: true,
-				src: recorder.recordedUrl,
+				src: previewUrl,
+				'aria-label': recorder.recordedUrl
+					? __( 'Recorded audio preview', 'creatorstack-ai' )
+					: __( 'Selected audio preview', 'creatorstack-ai' ),
 			} )
 	);
 }
@@ -204,17 +259,113 @@ function AudioToPost() {
 	const [ notice, setNotice ] = useState( null );
 	const [ success, setSuccess ] = useState( null );
 	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
+	const [ uploadedAttachment, setUploadedAttachment ] = useState( null );
+	const [ selectedAudio, setSelectedAudio ] = useState( null );
+	const selectedObjectUrlRef = useRef( '' );
+
+	const revokeSelectedObjectUrl = useCallback( () => {
+		if ( selectedObjectUrlRef.current ) {
+			window.URL.revokeObjectURL( selectedObjectUrlRef.current );
+			selectedObjectUrlRef.current = '';
+		}
+	}, [] );
+
+	useEffect( () => {
+		return () => {
+			revokeSelectedObjectUrl();
+		};
+	}, [ revokeSelectedObjectUrl ] );
+
 	const recorder = useAudioRecorder( {
 		onRecorded: () => {
+			revokeSelectedObjectUrl();
+			setSelectedAudio( null );
+			setUploadedAttachment( null );
 			setNotice( null );
 			setSuccess( null );
 		},
 	} );
+
+	const handleSelectFile = ( file ) => {
+		recorder.reset();
+		revokeSelectedObjectUrl();
+		const objectUrl = window.URL.createObjectURL( file );
+		selectedObjectUrlRef.current = objectUrl;
+		setSelectedAudio( {
+			type: 'file',
+			file,
+			name: file.name,
+			url: objectUrl,
+			size: file.size,
+		} );
+		setUploadedAttachment( null );
+		setNotice( null );
+		setSuccess( null );
+	};
+
+	const handleOpenMediaLibrary = () => {
+		if ( 'function' !== typeof window.wp?.media ) {
+			return;
+		}
+
+		const frame = window.wp.media( {
+			title: __( 'Select or Upload Audio', 'creatorstack-ai' ),
+			button: {
+				text: __( 'Use this audio', 'creatorstack-ai' ),
+			},
+			library: {
+				type: 'audio',
+			},
+			multiple: false,
+		} );
+
+		frame.on( 'select', () => {
+			const attachment = frame
+				.state()
+				.get( 'selection' )
+				?.first()
+				?.toJSON();
+
+			if ( ! attachment?.id ) {
+				return;
+			}
+
+			recorder.reset();
+			revokeSelectedObjectUrl();
+			setSelectedAudio( {
+				type: 'media',
+				id: attachment.id,
+				name: attachment.filename || attachment.title || '',
+				url: attachment.url || '',
+				size: attachment.filesizeInBytes || 0,
+			} );
+			setUploadedAttachment( {
+				id: attachment.id,
+				url: attachment.url || '',
+			} );
+			setNotice( null );
+			setSuccess( null );
+		} );
+
+		frame.open();
+	};
+
+	const handleClearSelectedAudio = () => {
+		revokeSelectedObjectUrl();
+		setSelectedAudio( null );
+		setUploadedAttachment( null );
+		setNotice( null );
+	};
+
 	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
-	const recordingTooLarge =
-		!! maxAudioBytes &&
-		!! recorder.recordedBlob &&
-		recorder.recordedBlob.size > maxAudioBytes;
+	const activeAudioBlob =
+		recorder.recordedBlob ||
+		( 'file' === selectedAudio?.type ? selectedAudio.file : null );
+	const recordingTooLarge = isRecordingTooLarge(
+		activeAudioBlob,
+		maxAudioBytes
+	);
+	const hasAudioSource = recorder.hasRecording || !! selectedAudio;
 	const isDisabled = busy || recorder.isRecording || ! canGenerateFromAudio;
 
 	const handleCreateDraft = async () => {
@@ -232,7 +383,7 @@ function AudioToPost() {
 			return;
 		}
 
-		if ( ! recorder.recordedBlob ) {
+		if ( ! hasAudioSource ) {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -263,14 +414,24 @@ function AudioToPost() {
 		setSuccess( null );
 
 		try {
-			const audioFile = createAudioFileFromBlob(
-				recorder.recordedBlob,
-				'wttba-audio-to-post'
-			);
-			const attachment = await uploadAudioAttachment(
-				audioFile,
-				__( 'Audio to Post recording', 'creatorstack-ai' )
-			);
+			let attachment = uploadedAttachment;
+
+			if ( ! attachment?.id ) {
+				const audioFile =
+					'file' === selectedAudio?.type
+						? selectedAudio.file
+						: createAudioFileFromBlob(
+								recorder.recordedBlob,
+								'wttba-audio-to-post'
+						  );
+				attachment = await uploadAudioAttachment(
+					audioFile,
+					selectedAudio?.name ||
+						__( 'Audio to Post recording', 'creatorstack-ai' )
+				);
+				setUploadedAttachment( attachment );
+			}
+
 			const draft = await createAudioDraft(
 				attachment.id,
 				language,
@@ -351,6 +512,8 @@ function AudioToPost() {
 					'div',
 					{
 						className: `notice notice-${ notice.type } inline`,
+						role: 'error' === notice.type ? 'alert' : 'status',
+						'aria-atomic': true,
 					},
 					createElement(
 						'p',
@@ -395,11 +558,22 @@ function AudioToPost() {
 			createElement( AudioRecorderCard, {
 				recorder,
 				disabled: busy || ! canGenerateFromAudio,
+				onDiscard: () => {
+					setUploadedAttachment( null );
+					setNotice( null );
+				},
+				onSelectFile: handleSelectFile,
+				onOpenMediaLibrary: handleOpenMediaLibrary,
+				selectedAudio,
+				onClearSelectedAudio: handleClearSelectedAudio,
 			} ),
 			recordingTooLarge &&
 				createElement(
 					'p',
-					{ className: 'description wttba-audio-to-post__limit' },
+					{
+						className: 'description wttba-audio-to-post__limit',
+						role: 'alert',
+					},
 					sprintf(
 						/* translators: %s: maximum upload size. */
 						__(
@@ -453,9 +627,7 @@ function AudioToPost() {
 						className: 'button button-primary',
 						onClick: handleCreateDraft,
 						disabled:
-							isDisabled ||
-							! recorder.hasRecording ||
-							recordingTooLarge,
+							isDisabled || ! hasAudioSource || recordingTooLarge,
 					},
 					busy
 						? __( 'Creating draft…', 'creatorstack-ai' )
@@ -502,24 +674,40 @@ function AdminVideos() {
 	const ai = config.ai || {};
 	const features = config.features || {};
 	const isYoutubeToPostEnabled = features.youtubeToPost !== false;
-	const isTextGenerationSupported =
-		ai.textGenerationSupported !== undefined
-			? ai.textGenerationSupported
-			: true;
 	const [ videos, setVideos ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
-	const [ error, setError ] = useState( null );
 	const [ nextPageToken, setNextPageToken ] = useState( '' );
 	const [ loadingMore, setLoadingMore ] = useState( false );
-	const [ modalVideo, setModalVideo ] = useState( null );
-	const [ generating, setGenerating ] = useState( null );
-	const [ success, setSuccess ] = useState( null );
-	const [ failedVideo, setFailedVideo ] = useState( null );
-	const [ preview, setPreview ] = useState( null );
-	const [ saving, setSaving ] = useState( false );
-	const [ regenerating, setRegenerating ] = useState( false );
-	const [ lastGenParams, setLastGenParams ] = useState( null );
-	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
+	const generation = useVideoPostGeneration( {
+		ai,
+		settingsUrl: config.settingsUrl,
+	} );
+	const {
+		dismissedAiNotice,
+		error,
+		generating,
+		getGenerateButtonLabel,
+		handleGenerate,
+		handleRegenerate,
+		handleSaveAndEdit,
+		handleSaveDraft,
+		isTextGenerationSupported,
+		modalVideo,
+		openLanguageModal,
+		preview,
+		regenerating,
+		retryFailedVideo,
+		saving,
+		savingMode,
+		setDismissedAiNotice,
+		setError,
+		setModalVideo,
+		setPreview,
+		setSuccess,
+		success,
+	} = generation;
+
+	const isGenerating = null !== generating;
 
 	const loadVideos = useCallback(
 		( pageToken = '' ) => {
@@ -541,6 +729,10 @@ function AdminVideos() {
 							...prev,
 							...( data.items || [] ),
 						] );
+						speak(
+							__( 'More videos loaded.', 'creatorstack-ai' ),
+							'polite'
+						);
 					} else {
 						setVideos( data.items || [] );
 					}
@@ -554,7 +746,7 @@ function AdminVideos() {
 					setLoadingMore( false );
 				} );
 		},
-		[ isYoutubeToPostEnabled ]
+		[ isYoutubeToPostEnabled, setError ]
 	);
 
 	useEffect( () => {
@@ -566,120 +758,6 @@ function AdminVideos() {
 			setLoading( false );
 		}
 	}, [ config.isConfigured, isYoutubeToPostEnabled, loadVideos ] );
-
-	const handleGenerate = ( language, persona, manualTranscript = '' ) => {
-		if ( ! modalVideo ) {
-			return;
-		}
-
-		if ( ! isTextGenerationSupported ) {
-			setError( {
-				message:
-					ai.unavailableMessage ||
-					__(
-						'Configure an AI provider before generating posts.',
-						'creatorstack-ai'
-					),
-				category: 'configuration',
-				configurationUrl: ai.configurationUrl || config.settingsUrl,
-				configurationLabel: __(
-					'Configure AI Provider',
-					'creatorstack-ai'
-				),
-			} );
-			setModalVideo( null );
-			return;
-		}
-
-		const videoToGenerate = modalVideo;
-		setGenerating( videoToGenerate.id );
-		setModalVideo( null );
-		setSuccess( null );
-		setError( null );
-		setFailedVideo( null );
-		setLastGenParams( {
-			videoId: videoToGenerate.id,
-			language,
-			persona,
-			manualTranscript,
-		} );
-
-		previewPost( videoToGenerate.id, language, persona, manualTranscript )
-			.then( ( result ) => {
-				setGenerating( null );
-				setPreview( result );
-			} )
-			.catch( ( err ) => {
-				setGenerating( null );
-				setFailedVideo( videoToGenerate );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleSaveDraft = () => {
-		if ( ! preview ) {
-			return;
-		}
-
-		setSaving( true );
-
-		saveDraft(
-			preview.video_id,
-			preview.title,
-			preview.content,
-			preview.ai_metadata || {}
-		)
-			.then( ( result ) => {
-				setSaving( false );
-				setPreview( null );
-				setSuccess( result );
-			} )
-			.catch( ( err ) => {
-				setSaving( false );
-				setPreview( null );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleRegenerate = () => {
-		if ( ! lastGenParams ) {
-			return;
-		}
-
-		setRegenerating( true );
-
-		previewPost(
-			lastGenParams.videoId,
-			lastGenParams.language,
-			lastGenParams.persona,
-			lastGenParams.manualTranscript || ''
-		)
-			.then( ( result ) => {
-				setRegenerating( false );
-				setPreview( result );
-			} )
-			.catch( ( err ) => {
-				setRegenerating( false );
-				setPreview( null );
-				setError( parseError( err ) );
-			} );
-	};
-
-	const handleCancelPreview = () => {
-		setPreview( null );
-	};
-
-	const getGenerateButtonLabel = ( video ) => {
-		if ( ! isTextGenerationSupported ) {
-			return __( 'AI unavailable', 'creatorstack-ai' );
-		}
-
-		if ( generating === video.id ) {
-			return __( 'Generating…', 'creatorstack-ai' );
-		}
-
-		return __( 'Generate Post', 'creatorstack-ai' );
-	};
 
 	if ( ! isYoutubeToPostEnabled ) {
 		return createElement(
@@ -733,8 +811,15 @@ function AdminVideos() {
 	if ( loading ) {
 		return createElement(
 			'div',
-			{ className: 'wttba-videos wttba-videos--loading' },
-			createElement( 'span', { className: 'spinner is-active' } ),
+			{
+				className: 'wttba-videos wttba-videos--loading',
+				role: 'status',
+				'aria-live': 'polite',
+			},
+			createElement( 'span', {
+				className: 'spinner is-active',
+				'aria-hidden': true,
+			} ),
 			__( 'Loading videos…', 'creatorstack-ai' )
 		);
 	}
@@ -742,106 +827,89 @@ function AdminVideos() {
 	return createElement(
 		'div',
 		{ className: 'wttba-videos' },
-		error &&
-			createElement( ErrorNotice, {
-				code: error.code,
-				message: error.message,
-				category: error.category,
-				configurationUrl: error.configurationUrl,
-				configurationLabel: error.configurationLabel,
-				onDismiss: () => setError( null ),
-				onRetry: failedVideo
-					? () => {
-							setError( null );
-							setModalVideo( failedVideo );
-							setFailedVideo( null );
-					  }
-					: null,
-				settingsUrl: config.settingsUrl,
-			} ),
-		success &&
+		createElement( VideoGenerationFeedback, {
+			ai,
+			error: preview ? null : error,
+			success,
+			isTextGenerationSupported,
+			dismissedAiNotice,
+			settingsUrl: config.settingsUrl,
+			onDismissError: () => setError( null ),
+			onRetry: retryFailedVideo,
+			onDismissWarnings: () => setSuccess( { ...success, warnings: [] } ),
+			onDismissAiNotice: () => setDismissedAiNotice( true ),
+		} ),
+		0 === videos.length &&
+			! error &&
 			createElement(
-				'div',
-				{ className: 'notice notice-success inline' },
-				createElement(
-					'p',
-					null,
-					__( 'Post generated successfully!', 'creatorstack-ai' ),
-					' ',
-					createElement(
-						'a',
-						{ href: success.edit_url },
-						__( 'Edit Draft', 'creatorstack-ai' )
-					)
+				'p',
+				{ className: 'wttba-videos__empty' },
+				__(
+					'No videos found for this YouTube channel.',
+					'creatorstack-ai'
 				)
 			),
-		success &&
-			success.warnings &&
-			success.warnings.length > 0 &&
-			createElement( WarningNotice, {
-				messages: success.warnings,
-				onDismiss: () => setSuccess( { ...success, warnings: [] } ),
-			} ),
-		! isTextGenerationSupported &&
-			! dismissedAiNotice &&
-			createElement( ErrorNotice, {
-				code: 'wttba_ai_not_supported',
-				message:
-					ai.unavailableMessage ||
-					__(
-						'Configure an AI provider before generating posts.',
-						'creatorstack-ai'
-					),
-				category: 'configuration',
-				configurationUrl: ai.configurationUrl || config.settingsUrl,
-				configurationLabel: __(
-					'Configure AI Provider',
-					'creatorstack-ai'
-				),
-				onDismiss: () => setDismissedAiNotice( true ),
-				settingsUrl: config.settingsUrl,
-			} ),
-		createElement(
-			'div',
-			{ className: 'wttba-videos__grid' },
-			videos.map( ( video ) =>
-				createElement(
-					'div',
-					{ key: video.id, className: 'wttba-videos__card' },
-					createElement( 'img', {
-						src: video.thumbnail,
-						alt: video.title,
-						className: 'wttba-videos__thumb',
-					} ),
+		videos.length > 0 &&
+			createElement(
+				'div',
+				{ className: 'wttba-videos__grid' },
+				videos.map( ( video ) =>
 					createElement(
 						'div',
-						{ className: 'wttba-videos__card-body' },
+						{ key: video.id, className: 'wttba-videos__card' },
+						createElement( 'img', {
+							src: video.thumbnail,
+							alt: '',
+							className: 'wttba-videos__thumb',
+							loading: 'lazy',
+							decoding: 'async',
+							width: 480,
+							height: 270,
+						} ),
 						createElement(
-							'h3',
-							{ className: 'wttba-videos__card-title' },
-							video.title
-						),
-						createElement(
-							'span',
-							{ className: 'wttba-videos__card-date' },
-							formatDate( video.publishedAt )
-						),
-						createElement(
-							'button',
-							{
-								className: 'button button-primary',
-								onClick: () => setModalVideo( video ),
-								disabled:
-									generating === video.id ||
-									! isTextGenerationSupported,
-								type: 'button',
-							},
-							getGenerateButtonLabel( video )
+							'div',
+							{ className: 'wttba-videos__card-body' },
+							createElement(
+								'h2',
+								{
+									className: 'wttba-videos__card-title',
+									title: video.title,
+								},
+								video.title
+							),
+							createElement(
+								'span',
+								{ className: 'wttba-videos__card-date' },
+								formatDate( video.publishedAt )
+							),
+							createElement(
+								'button',
+								{
+									className: 'button button-primary',
+									onClick: () => {
+										if ( ! isGenerating ) {
+											openLanguageModal( video );
+										}
+									},
+									disabled:
+										! isTextGenerationSupported ||
+										( isGenerating &&
+											generating !== video.id ),
+									'aria-disabled': isGenerating || undefined,
+									'aria-label': sprintf(
+										/* translators: 1: action label, 2: video title. */
+										__( '%1$s: %2$s', 'creatorstack-ai' ),
+										getGenerateButtonLabel( video ),
+										video.title
+									),
+									type: 'button',
+								},
+								getGenerateButtonLabel( video )
+							)
 						)
 					)
 				)
-			)
-		),
+			),
 		nextPageToken &&
 			createElement(
 				'div',
@@ -874,9 +942,17 @@ function AdminVideos() {
 			content: preview?.content || '',
 			isRegenerating: regenerating,
 			isSaving: saving,
+			savingMode,
+			error,
+			onDismissError: () => setError( null ),
+			settingsUrl: config.settingsUrl,
 			onSaveAsDraft: handleSaveDraft,
+			onSaveAndEdit: handleSaveAndEdit,
 			onRegenerate: handleRegenerate,
-			onCancel: handleCancelPreview,
+			onCancel: () => {
+				setPreview( null );
+				setError( null );
+			},
 		} )
 	);
 }
@@ -884,10 +960,10 @@ function AdminVideos() {
 // Mount the app.
 const container = document.getElementById( 'wttba-admin-videos' );
 if ( container ) {
-	render( createElement( AdminVideos ), container );
+	mountApp( createElement( AdminVideos ), container );
 }
 
 const audioContainer = document.getElementById( 'wttba-audio-to-post' );
 if ( audioContainer ) {
-	render( createElement( AudioToPost ), audioContainer );
+	mountApp( createElement( AudioToPost ), audioContainer );
 }

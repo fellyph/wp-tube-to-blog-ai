@@ -273,7 +273,8 @@ class Settings {
 			__( 'YouTube Channel ID', 'creatorstack-ai' ),
 			array( $this, 'render_channel_id_field' ),
 			'wttba-settings',
-			'wttba_youtube_section'
+			'wttba_youtube_section',
+			array( 'label_for' => YouTube_Connector::CHANNEL_ID_OPTION )
 		);
 
 		add_settings_field(
@@ -281,7 +282,8 @@ class Settings {
 			__( 'OAuth Client ID', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_id_field' ),
 			'wttba-settings',
-			'wttba_youtube_section'
+			'wttba_youtube_section',
+			array( 'label_for' => YouTube_Connector::OAUTH_CLIENT_ID_OPTION )
 		);
 
 		add_settings_field(
@@ -289,7 +291,8 @@ class Settings {
 			__( 'OAuth Client Secret', 'creatorstack-ai' ),
 			array( $this, 'render_oauth_client_secret_field' ),
 			'wttba-settings',
-			'wttba_youtube_section'
+			'wttba_youtube_section',
+			array( 'label_for' => YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION )
 		);
 
 		add_settings_field(
@@ -314,7 +317,8 @@ class Settings {
 			__( 'Default Output Language', 'creatorstack-ai' ),
 			array( $this, 'render_language_field' ),
 			'wttba-settings',
-			'wttba_content_section'
+			'wttba_content_section',
+			array( 'label_for' => 'wttba_default_language' )
 		);
 
 		add_settings_field(
@@ -322,7 +326,8 @@ class Settings {
 			__( 'Post Length', 'creatorstack-ai' ),
 			array( $this, 'render_post_length_field' ),
 			'wttba-settings',
-			'wttba_content_section'
+			'wttba_content_section',
+			array( 'label_for' => 'wttba_post_length' )
 		);
 
 		add_settings_field(
@@ -330,7 +335,8 @@ class Settings {
 			__( 'Writing Persona', 'creatorstack-ai' ),
 			array( $this, 'render_persona_field' ),
 			'wttba-settings',
-			'wttba_content_section'
+			'wttba_content_section',
+			array( 'label_for' => 'wttba_default_persona' )
 		);
 
 		// AI Provider section.
@@ -347,7 +353,8 @@ class Settings {
 			__( 'Preferred AI Model', 'creatorstack-ai' ),
 			array( $this, 'render_ai_model_field' ),
 			'wttba-settings',
-			'wttba_ai_section'
+			'wttba_ai_section',
+			array( 'label_for' => 'wttba_ai_model' )
 		);
 
 		add_settings_section(
@@ -428,7 +435,7 @@ class Settings {
 	 * @return bool
 	 */
 	public static function is_feature_enabled( string $feature ): bool {
-		$definition = self::get_feature_definitions()[ $feature ] ?? null;
+		$definition = self::FEATURE_OPTION_MAP[ $feature ] ?? null;
 
 		if ( null === $definition ) {
 			return false;
@@ -478,7 +485,7 @@ class Settings {
 	public static function get_feature_states(): array {
 		$states = array();
 
-		foreach ( self::get_feature_definitions() as $key => $definition ) {
+		foreach ( self::FEATURE_OPTION_MAP as $key => $definition ) {
 			$states[ $definition['jsKey'] ] = self::is_feature_enabled( $key );
 		}
 
@@ -638,6 +645,11 @@ class Settings {
 		$value = sanitize_text_field( trim( $value ) );
 
 		if ( '' === $value || YouTube_Connector::is_valid_oauth_client_id( $value ) ) {
+			$previous = trim( (string) get_option( YouTube_Connector::OAUTH_CLIENT_ID_OPTION, '' ) );
+			if ( $value !== $previous ) {
+				YouTube_OAuth::delete_token_options();
+			}
+
 			return $value;
 		}
 
@@ -660,6 +672,11 @@ class Settings {
 		$value = sanitize_text_field( trim( $value ) );
 
 		if ( '' === $value || YouTube_Connector::is_valid_oauth_client_secret( $value ) ) {
+			$previous = trim( (string) get_option( YouTube_Connector::OAUTH_CLIENT_SECRET_OPTION, '' ) );
+			if ( $value !== $previous ) {
+				YouTube_OAuth::delete_token_options();
+			}
+
 			return $value;
 		}
 
@@ -783,11 +800,15 @@ class Settings {
 						class="wttba-settings-hero__logo"
 						src="<?php echo esc_url( WTTBA_PLUGIN_URL . 'assets/creatorstack-ai-logo.png' ); ?>"
 						alt=""
+						width="188"
+						height="188"
+						decoding="async"
 						aria-hidden="true"
 					/>
 				</header>
-				<?php $this->render_oauth_status_notice(); ?>
 				<?php Admin_Navigation::render( 'settings' ); ?>
+				<hr class="wp-header-end">
+				<?php $this->render_oauth_status_notice(); ?>
 				<form method="post" action="options.php" class="wttba-settings-form">
 					<?php
 					settings_fields( 'wttba_settings' );
@@ -976,6 +997,9 @@ class Settings {
 				<li class="wttba-oauth-wizard__step">
 					<strong><?php esc_html_e( 'Download or copy the client secret JSON', 'creatorstack-ai' ); ?></strong>
 					<p id="wttba-oauth-client-json-help"><?php esc_html_e( 'After Google creates the client, download the client_secret.json file or copy its contents. Paste it here to fill the Client ID and Client Secret fields below. The secret is only stored after you click Save Changes.', 'creatorstack-ai' ); ?></p>
+					<label for="wttba-oauth-client-json">
+						<?php esc_html_e( 'Client secret JSON', 'creatorstack-ai' ); ?>
+					</label>
 					<textarea
 						id="wttba-oauth-client-json"
 						class="large-text code"
@@ -1070,17 +1094,17 @@ class Settings {
 		$value   = $this->sanitize_post_length( (string) get_option( 'wttba_post_length', self::DEFAULT_POST_LENGTH ) );
 		$options = self::get_post_length_options();
 		?>
-		<select id="wttba_post_length" name="wttba_post_length">
+		<select id="wttba_post_length" name="wttba_post_length" aria-describedby="wttba_post_length_description wttba_post_length_options_help">
 			<?php foreach ( $options as $length => $option ) : ?>
 				<option value="<?php echo esc_attr( $length ); ?>" <?php selected( $value, $length ); ?>>
 					<?php echo esc_html( $option['label'] ); ?>
 				</option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description">
+		<p id="wttba_post_length_description" class="description">
 			<?php esc_html_e( 'Controls the target article length and AI token budget for generated posts.', 'creatorstack-ai' ); ?>
 		</p>
-		<ul class="description wttba-settings-option-help">
+		<ul id="wttba_post_length_options_help" class="description wttba-settings-option-help">
 			<?php foreach ( $options as $option ) : ?>
 				<li><?php echo esc_html( $option['label'] . ': ' . $option['description'] ); ?></li>
 			<?php endforeach; ?>
@@ -1128,7 +1152,7 @@ class Settings {
 				<span class="spinner" id="wttba-ai-test-spinner"></span>
 			</p>
 			<div id="wttba-ai-test-result" aria-live="polite"></div>
-			<div id="wttba-ai-test-sample" class="notice notice-info inline" hidden></div>
+			<div id="wttba-ai-test-sample" class="notice notice-info inline" aria-live="polite" hidden></div>
 		</div>
 		<h3><?php esc_html_e( 'Localhost Compatibility', 'creatorstack-ai' ); ?></h3>
 		<p><?php echo esc_html( $localhost['message'] ); ?></p>
@@ -1151,14 +1175,14 @@ class Settings {
 		$value   = $this->sanitize_ai_model( (string) get_option( 'wttba_ai_model', '' ) );
 		$options = self::get_ai_model_options();
 		?>
-		<select id="wttba_ai_model" name="wttba_ai_model">
+		<select id="wttba_ai_model" name="wttba_ai_model" aria-describedby="wttba_ai_model_description">
 			<?php foreach ( $options as $model_id => $label ) : ?>
 				<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $value, $model_id ); ?>>
 					<?php echo esc_html( $label ); ?>
 				</option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description">
+		<p id="wttba_ai_model_description" class="description">
 			<?php esc_html_e( 'This is a preference passed to the WordPress AI Client. If the selected model is unavailable, the AI Client can use another compatible configured model.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
@@ -1176,30 +1200,32 @@ class Settings {
 		}
 		?>
 		<p><?php esc_html_e( 'Recent AI generations are recorded to help administrators review feature usage and token consumption.', 'creatorstack-ai' ); ?></p>
-		<table class="widefat striped">
-			<thead>
-				<tr>
-					<th><?php esc_html_e( 'Date', 'creatorstack-ai' ); ?></th>
-					<th><?php esc_html_e( 'Source', 'creatorstack-ai' ); ?></th>
-					<th><?php esc_html_e( 'Status', 'creatorstack-ai' ); ?></th>
-					<th><?php esc_html_e( 'Provider', 'creatorstack-ai' ); ?></th>
-					<th><?php esc_html_e( 'Model', 'creatorstack-ai' ); ?></th>
-					<th><?php esc_html_e( 'Tokens', 'creatorstack-ai' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach ( $entries as $entry ) : ?>
+		<div class="wttba-usage-table-wrap">
+			<table class="widefat striped" aria-label="<?php esc_attr_e( 'Recent AI generations', 'creatorstack-ai' ); ?>">
+				<thead>
 					<tr>
-						<td><?php echo esc_html( (string) ( $entry['generated_at'] ?? '' ) ); ?></td>
-						<td><?php echo esc_html( (string) ( $entry['source_type'] ?? '' ) ); ?></td>
-						<td><?php echo esc_html( (string) ( $entry['status'] ?? '' ) ); ?></td>
-						<td><?php echo esc_html( (string) ( $entry['provider']['name'] ?? $entry['provider']['id'] ?? '' ) ); ?></td>
-						<td><?php echo esc_html( (string) ( $entry['model']['name'] ?? $entry['model']['id'] ?? '' ) ); ?></td>
-						<td><?php echo esc_html( isset( $entry['token_usage']['totalTokens'] ) ? number_format_i18n( (int) $entry['token_usage']['totalTokens'] ) : '-' ); ?></td>
+						<th scope="col"><?php esc_html_e( 'Date', 'creatorstack-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Source', 'creatorstack-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'creatorstack-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Provider', 'creatorstack-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Model', 'creatorstack-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Tokens', 'creatorstack-ai' ); ?></th>
 					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					<?php foreach ( $entries as $entry ) : ?>
+						<tr>
+							<td><?php echo esc_html( (string) ( $entry['generated_at'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $entry['source_type'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $entry['status'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $entry['provider']['name'] ?? $entry['provider']['id'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $entry['model']['name'] ?? $entry['model']['id'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( isset( $entry['token_usage']['totalTokens'] ) ? number_format_i18n( (int) $entry['token_usage']['totalTokens'] ) : '-' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
 		<?php
 	}
 
@@ -1259,8 +1285,9 @@ class Settings {
 			name="<?php echo esc_attr( YouTube_Connector::CHANNEL_ID_OPTION ); ?>"
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
+			aria-describedby="wttba_youtube_channel_id_description"
 		/>
-		<p class="description">
+		<p id="wttba_youtube_channel_id_description" class="description">
 			<?php esc_html_e( 'Your YouTube Channel ID (e.g., UCxxxxxxxxxxxxxxxx).', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
@@ -1279,8 +1306,9 @@ class Settings {
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
 			autocomplete="off"
+			aria-describedby="wttba_youtube_oauth_client_id_description"
 		/>
-		<p class="description">
+		<p id="wttba_youtube_oauth_client_id_description" class="description">
 			<?php esc_html_e( 'Create a Web application OAuth client in Google Cloud and paste its client ID here.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
@@ -1299,8 +1327,9 @@ class Settings {
 			value="<?php echo esc_attr( $value ); ?>"
 			class="regular-text"
 			autocomplete="off"
+			aria-describedby="wttba_youtube_oauth_client_secret_description"
 		/>
-		<p class="description">
+		<p id="wttba_youtube_oauth_client_secret_description" class="description">
 			<?php esc_html_e( 'Store this only on trusted WordPress environments. Google shows the client secret only when the OAuth client is created.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php
@@ -1341,8 +1370,9 @@ class Settings {
 			value="<?php echo esc_attr( YouTube_OAuth::get_redirect_uri() ); ?>"
 			class="large-text code"
 			readonly
+			aria-describedby="wttba_youtube_oauth_redirect_uri_description"
 		/>
-		<p class="description">
+		<p id="wttba_youtube_oauth_redirect_uri_description" class="description">
 			<?php esc_html_e( 'Add this exact URI to the OAuth client in Google Cloud before connecting.', 'creatorstack-ai' ); ?>
 		</p>
 		<p>
@@ -1381,8 +1411,9 @@ class Settings {
 			name="wttba_default_persona"
 			rows="6"
 			class="large-text"
+			aria-describedby="wttba_default_persona_description"
 		><?php echo esc_textarea( $value ); ?></textarea>
-		<p class="description">
+		<p id="wttba_default_persona_description" class="description">
 			<?php esc_html_e( 'Describe the writing style for generated posts (e.g., tone, structure, audience). This will be used as default guidance for the AI. Leave empty for a generic professional tone.', 'creatorstack-ai' ); ?>
 		</p>
 		<?php

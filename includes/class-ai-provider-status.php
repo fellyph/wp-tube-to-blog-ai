@@ -32,6 +32,13 @@ class AI_Provider_Status {
 	private const MINIMUM_WORDPRESS_VERSION = '7.0';
 
 	/**
+	 * Per-request memoization cache for provider capability checks.
+	 *
+	 * @var array<string, bool>
+	 */
+	private static array $support_cache = array();
+
+	/**
 	 * Check whether AI features are enabled for this site.
 	 *
 	 * @return bool
@@ -101,19 +108,27 @@ class AI_Provider_Status {
 			return false;
 		}
 
+		if ( array_key_exists( 'audio_input', self::$support_cache ) ) {
+			return self::$support_cache['audio_input'];
+		}
+
 		$prompt = wp_ai_client_prompt( 'Return a one sentence summary of this audio.' );
 
 		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'with_file' ) ) ) {
+			self::$support_cache['audio_input'] = false;
 			return false;
 		}
 
 		$prompt = $prompt->with_file( self::DUMMY_AUDIO_DATA_URI, 'audio/wav' );
 
 		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'is_supported_for_text_generation' ) ) ) {
+			self::$support_cache['audio_input'] = false;
 			return false;
 		}
 
-		return true === $prompt->is_supported_for_text_generation();
+		self::$support_cache['audio_input'] = true === $prompt->is_supported_for_text_generation();
+
+		return self::$support_cache['audio_input'];
 	}
 
 	/**
@@ -144,19 +159,27 @@ class AI_Provider_Status {
 			return false;
 		}
 
+		if ( array_key_exists( 'image_reference', self::$support_cache ) ) {
+			return self::$support_cache['image_reference'];
+		}
+
 		$prompt = wp_ai_client_prompt( 'Create a simple editorial thumbnail from this reference.' );
 
 		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'with_file' ) ) ) {
+			self::$support_cache['image_reference'] = false;
 			return false;
 		}
 
 		$prompt = $prompt->with_file( self::DUMMY_IMAGE_DATA_URI, 'image/png' );
 
 		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, 'is_supported_for_image_generation' ) ) ) {
+			self::$support_cache['image_reference'] = false;
 			return false;
 		}
 
-		return true === $prompt->is_supported_for_image_generation();
+		self::$support_cache['image_reference'] = true === $prompt->is_supported_for_image_generation();
+
+		return self::$support_cache['image_reference'];
 	}
 
 	/**
@@ -301,12 +324,19 @@ class AI_Provider_Status {
 			return false;
 		}
 
+		if ( array_key_exists( $method, self::$support_cache ) ) {
+			return self::$support_cache[ $method ];
+		}
+
 		$prompt = wp_ai_client_prompt( 'test' );
 
 		if ( is_wp_error( $prompt ) || ! is_object( $prompt ) || ! is_callable( array( $prompt, $method ) ) ) {
+			self::$support_cache[ $method ] = false;
 			return false;
 		}
 
-		return true === $prompt->{$method}();
+		self::$support_cache[ $method ] = true === $prompt->{$method}();
+
+		return self::$support_cache[ $method ];
 	}
 }

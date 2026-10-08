@@ -1,0 +1,183 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "build\/editor.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "es_ES",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Audio to Post": [
+                "Audio a entrada"
+            ],
+            "CreatorStack AI": [
+                "CreatorStack AI"
+            ],
+            "Configure AI Provider": [
+                "Configurar proveedor de IA"
+            ],
+            "Generate Audio": [
+                "Generar audio"
+            ],
+            "Post to Audio": [
+                "Entrada a audio"
+            ],
+            "An unexpected error occurred.": [
+                "Se ha producido un error inesperado."
+            ],
+            "Regenerate": [
+                "Regenerar"
+            ],
+            "Requesting microphone access\u2026": [
+                "Solicitando acceso al micr\u00f3fono\u2026"
+            ],
+            "Recording %s": [
+                "Grabando %s"
+            ],
+            "Recording ready: %1$s, %2$s": [
+                "Grabaci\u00f3n lista: %1$s, %2$s"
+            ],
+            "Record Again": [
+                "Grabar de nuevo"
+            ],
+            "Stop Recording": [
+                "Detener grabaci\u00f3n"
+            ],
+            "Generating\u2026": [
+                "Generando\u2026"
+            ],
+            "Audio recording is not available in this browser.": [
+                "La grabaci\u00f3n de audio no est\u00e1 disponible en este navegador."
+            ],
+            "No audio was captured. Try recording again.": [
+                "No se captur\u00f3 ning\u00fan audio. Intenta grabar de nuevo."
+            ],
+            "Microphone access was blocked. Allow microphone access and try again.": [
+                "Se bloque\u00f3 el acceso al micr\u00f3fono. Permite el acceso al micr\u00f3fono e int\u00e9ntalo de nuevo."
+            ],
+            "The microphone could not be started.": [
+                "No se pudo iniciar el micr\u00f3fono."
+            ],
+            "This recording is larger than the %s upload limit.": [
+                "Esta grabaci\u00f3n supera el l\u00edmite de subida de %s."
+            ],
+            "Output language": [
+                "Idioma de salida"
+            ],
+            "Writing persona": [
+                "Persona de escritura"
+            ],
+            "The recording is too large. The maximum size is %s.": [
+                "La grabaci\u00f3n es demasiado grande. El tama\u00f1o m\u00e1ximo es %s."
+            ],
+            "Selected image": [
+                "Imagen seleccionada"
+            ],
+            "Dismiss notice": [
+                "Descartar aviso"
+            ],
+            "No secondary style": [
+                "Sin estilo secundario"
+            ],
+            "Generate Thumbnail": [
+                "Generar miniatura"
+            ],
+            "Configure an AI provider with audio input support.": [
+                "Configura un proveedor de IA con soporte de entrada de audio."
+            ],
+            "Change Audio": [
+                "Cambiar audio"
+            ],
+            "Select Audio": [
+                "Seleccionar audio"
+            ],
+            "Record audio from your microphone.": [
+                "Graba audio desde tu micr\u00f3fono."
+            ],
+            "Record Audio": [
+                "Grabar audio"
+            ],
+            "Discard": [
+                "Descartar"
+            ],
+            "Recorded audio": [
+                "Audio grabado"
+            ],
+            "(%s)": [
+                "(%s)"
+            ],
+            "Editor audio recording": [
+                "Grabaci\u00f3n de audio del editor"
+            ],
+            "Draft updated from audio.": [
+                "Borrador actualizado desde audio."
+            ],
+            "Select or record audio first.": [
+                "Selecciona o graba audio primero."
+            ],
+            "Generate Draft": [
+                "Generar borrador"
+            ],
+            "Thumbnail": [
+                "Miniatura"
+            ],
+            "Configure an AI provider with image generation support.": [
+                "Configura un proveedor de IA con soporte de generaci\u00f3n de im\u00e1genes."
+            ],
+            "Style": [
+                "Estilo"
+            ],
+            "Blend style": [
+                "Combinar estilo"
+            ],
+            "This AI provider does not support author, logo, or object reference images.": [
+                "Este proveedor de IA no admite im\u00e1genes de referencia de autor, logotipo u objeto."
+            ],
+            "Change Author Image": [
+                "Cambiar imagen del autor"
+            ],
+            "Select Author Image": [
+                "Seleccionar imagen del autor"
+            ],
+            "Remove": [
+                "Eliminar"
+            ],
+            "Change Logos or Objects": [
+                "Cambiar logotipos u objetos"
+            ],
+            "Select Logos or Objects": [
+                "Seleccionar logotipos u objetos"
+            ],
+            "Generated thumbnail preview": [
+                "Vista previa de la miniatura generada"
+            ],
+            "Thumbnail preview generated.": [
+                "Vista previa de miniatura generada."
+            ],
+            "The configured AI provider does not support image references.": [
+                "El proveedor de IA configurado no admite referencias de imagen."
+            ],
+            "Featured image updated.": [
+                "Imagen destacada actualizada."
+            ],
+            "Setting\u2026": [
+                "Estableciendo\u2026"
+            ],
+            "Set Featured Image": [
+                "Establecer imagen destacada"
+            ],
+            "Configure an AI provider with text-to-speech support.": [
+                "Configura un proveedor de IA con soporte de texto a voz."
+            ],
+            "Voice": [
+                "Voz"
+            ],
+            "Audio generated for this post.": [
+                "Audio generado para esta entrada."
+            ]
+        }
+    }
+}

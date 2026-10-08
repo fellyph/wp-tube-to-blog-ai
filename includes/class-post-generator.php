@@ -124,11 +124,24 @@ class Post_Generator {
 	 * @return array{post_id: int, edit_url: string, warnings: string[]}|\WP_Error
 	 */
 	public function save_draft( string $video_id, string $title, string $content, array $metadata = array() ): array|\WP_Error {
-		$youtube = new YouTube_API();
-		$video   = $youtube->get_video( $video_id );
+		$title   = sanitize_text_field( $title );
+		$content = wp_kses_post( $content );
+
+		if ( '' === trim( $title ) || '' === trim( wp_strip_all_tags( $content ) ) ) {
+			return new \WP_Error(
+				'wttba_invalid_content',
+				__( 'A non-empty post title and content are required to save a draft.', 'creatorstack-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$extra_warnings = array();
+		$youtube        = new YouTube_API();
+		$video          = $youtube->get_video( $video_id );
 
 		if ( is_wp_error( $video ) ) {
-			return $video;
+			$video            = array( 'thumbnail' => '' );
+			$extra_warnings[] = __( 'The post was created, but video details could not be fetched to set the featured image.', 'creatorstack-ai' );
 		}
 
 		$ai_result = array(
@@ -145,7 +158,7 @@ class Post_Generator {
 		return array(
 			'post_id'  => $draft_result['post_id'],
 			'edit_url' => get_edit_post_link( $draft_result['post_id'], 'raw' ),
-			'warnings' => $draft_result['warnings'],
+			'warnings' => array_values( array_merge( $extra_warnings, $draft_result['warnings'] ) ),
 		);
 	}
 
@@ -182,10 +195,6 @@ https://www.youtube.com/watch?v=%1$s
 			),
 		);
 
-		if ( ! empty( $metadata ) ) {
-			$post_data['meta_input'][ Generation_Logger::META_KEY ] = Generation_Logger::sanitize_metadata( $metadata );
-		}
-
 		$post_id = wp_insert_post( $post_data, true );
 
 		if ( is_wp_error( $post_id ) ) {
@@ -198,13 +207,15 @@ https://www.youtube.com/watch?v=%1$s
 
 		$warnings = array();
 
-		// Set featured image from YouTube thumbnail.
-		if ( ! empty( $video['thumbnail'] ) ) {
+		// Set the featured image only for users who may create media items.
+		if ( ! empty( $video['thumbnail'] ) && current_user_can( 'upload_files' ) ) {
 			$image_error = $this->set_featured_image( $post_id, $video['thumbnail'], $ai_result['title'] );
 
 			if ( null !== $image_error ) {
 				$warnings[] = $image_error->get_error_message();
 			}
+		} elseif ( ! empty( $video['thumbnail'] ) ) {
+			$warnings[] = __( 'The post was created without a featured image because your account cannot upload files.', 'creatorstack-ai' );
 		}
 
 		return array(

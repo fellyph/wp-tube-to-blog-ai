@@ -1,0 +1,114 @@
+{
+    "translation-revision-date": "2026-05-26 18:00+0100",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "build\/dashboard-widget.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "pt_BR",
+                "plural-forms": "nplurals=2; plural=(n > 1);"
+            },
+            "Configure AI Provider": [
+                "Configurar provedor de IA"
+            ],
+            "An unexpected error occurred.": [
+                "Ocorreu um erro inesperado."
+            ],
+            "Generate Blog Post": [
+                "Gerar post do blog"
+            ],
+            "Output Language:": [
+                "Idioma de sa\u00edda:"
+            ],
+            "Writing Persona:": [
+                "Persona de escrita:"
+            ],
+            "e.g., Conversational tone, short paragraphs, humor, actionable tips\u2026": [
+                "por exemplo, tom conversacional, par\u00e1grafos curtos, humor, dicas acion\u00e1veis\u2026"
+            ],
+            "Use a custom transcript instead of fetching captions": [
+                "Usar uma transcri\u00e7\u00e3o personalizada em vez de buscar legendas"
+            ],
+            "Manual Transcript:": [
+                "Transcri\u00e7\u00e3o manual:"
+            ],
+            "Paste the transcript text for this video.": [
+                "Cole o texto da transcri\u00e7\u00e3o deste v\u00eddeo."
+            ],
+            "Paste at least 50 characters. When provided, this transcript is used as the source material and YouTube captions are not fetched.": [
+                "Cole pelo menos 50 caracteres. Quando informada, esta transcri\u00e7\u00e3o \u00e9 usada como material de origem e as legendas do YouTube n\u00e3o s\u00e3o buscadas."
+            ],
+            "Cancel": [
+                "Cancelar"
+            ],
+            "Generate": [
+                "Gerar"
+            ],
+            "Draft Preview": [
+                "Pr\u00e9via do rascunho"
+            ],
+            "Regenerating\u2026": [
+                "Gerando novamente\u2026"
+            ],
+            "Regenerate": [
+                "Gerar novamente"
+            ],
+            "Saving\u2026": [
+                "Salvando\u2026"
+            ],
+            "Save as Draft": [
+                "Salvar como rascunho"
+            ],
+            "Go to Settings": [
+                "Ir para Configura\u00e7\u00f5es"
+            ],
+            "This video needs captions or subtitles before it can be converted into a post.": [
+                "Este v\u00eddeo precisa de legendas antes de poder ser convertido em post."
+            ],
+            "Please wait a moment and try again.": [
+                "Aguarde um momento e tente novamente."
+            ],
+            "This may be a temporary issue with an external service.": [
+                "Isso pode ser um problema tempor\u00e1rio com um servi\u00e7o externo."
+            ],
+            "Retry": [
+                "Tentar novamente"
+            ],
+            "Dismiss this notice": [
+                "Dispensar este aviso"
+            ],
+            "Configure the YouTube connector API key.": [
+                "Configure a chave de API do conector do YouTube."
+            ],
+            "Configure your YouTube channel settings.": [
+                "Configure as op\u00e7\u00f5es do seu canal do YouTube."
+            ],
+            "Loading videos\u2026": [
+                "Carregando v\u00eddeos\u2026"
+            ],
+            "Post generated successfully!": [
+                "Post gerado."
+            ],
+            "Edit Draft": [
+                "Editar rascunho"
+            ],
+            "Configure an AI provider before generating posts.": [
+                "Configure um provedor de IA antes de gerar posts."
+            ],
+            "Generating\u2026": [
+                "Gerando\u2026"
+            ],
+            "Generate Post": [
+                "Gerar post"
+            ],
+            "AI unavailable": [
+                "IA indispon\u00edvel"
+            ],
+            "See More \u2192": [
+                "Ver mais \u2192"
+            ]
+        }
+    }
+}

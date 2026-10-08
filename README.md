@@ -48,6 +48,11 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 4.  Activate the plugin through the 'Plugins' menu in WordPress.
 
+TypeScript is pinned to 5.3.3 to stay within the supported range of the
+TypeScript ESLint parser bundled with `@wordpress/scripts` 30. Update the pin
+alongside the lint toolchain; TypeScript 7 causes its `ts-api-utils` dependency
+to crash while loading ESLint.
+
 ## 📦 Releases
 
 CreatorStack AI uses a two-branch release model: `develop` for staging builds and `main` for production-ready releases. See the full [release strategy](docs/release-strategy.md).
@@ -152,6 +157,13 @@ User guides are available in:
 Implementation article:
 
 *   [Implementing CreatorStack AI With WordPress AI Client And Connectors](docs/implementing-creatorstack-ai-with-ai-connectors.md)
+
+## Abilities API
+
+CreatorStack AI exposes 11 workflows through the WordPress Abilities API, including
+YouTube and audio drafts, narration, thumbnails and capability discovery. See the
+[ability catalog and PHP/REST examples](docs/abilities-api.md) for inputs, permissions
+and side effects.
 
 ## 🔒 Security
 

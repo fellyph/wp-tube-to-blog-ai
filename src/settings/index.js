@@ -105,6 +105,8 @@ if ( wizard ) {
 				),
 				'error'
 			);
+		} finally {
+			copyButton.focus();
 		}
 	} );
 
@@ -325,6 +327,7 @@ if ( root ) {
 			renderError( err );
 		} finally {
 			setBusy( false );
+			button.focus();
 		}
 	} );
 }
