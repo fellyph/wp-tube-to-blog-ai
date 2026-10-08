@@ -28,7 +28,7 @@
 	border-radius: 8px;
 	background:
 		radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.42) 0, rgba(255, 255, 255, 0) 26%),
-		linear-gradient(105deg, #fff3ef 0%, #ffd7d3 42%, #ff5a5f 100%);
+		linear-gradient(105deg, #fff3ef 0%, #ffd7d3 55%, #ffaba8 100%);
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 }
 
@@ -86,6 +86,12 @@
 	font-size: 14px;
 	font-weight: 600;
 	line-height: 1.2;
+}
+
+.wttba-settings-page .button.button-small {
+	min-height: 30px;
+	padding: 4px 10px;
+	font-size: 12px;
 }
 
 .wttba-settings-page .button-primary {
@@ -154,7 +160,14 @@
 	color: #3858e9;
 }
 
-.wttba-settings-page .wttba-admin-tabs .nav-tab-active {
+.wttba-settings-page .wttba-admin-tabs .nav-tab:focus-visible {
+	outline: 2px solid transparent;
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3858e9;
+}
+
+.wttba-settings-page .wttba-admin-tabs .nav-tab-active,
+.wttba-settings-page .wttba-admin-tabs .nav-tab-active:hover,
+.wttba-settings-page .wttba-admin-tabs .nav-tab-active:focus {
 	border-color: #1d2327;
 	background: #1d2327;
 	color: #fff;
@@ -268,7 +281,7 @@
 .wttba-settings-page textarea {
 	max-width: 100%;
 	min-height: 40px;
-	border: 1px solid #c3c4c7;
+	border: 1px solid #8c8f94;
 	border-radius: 4px;
 	box-shadow: none;
 	color: #1d2327;
@@ -306,7 +319,7 @@
 
 .wttba-feature-toggles {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(220px, 1fr));
 	gap: 14px;
 	max-width: 920px;
 }
@@ -342,6 +355,13 @@
 	border-color: #72aee6;
 	background: #f0f6fc;
 	box-shadow: inset 0 0 0 1px rgba(34, 113, 177, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.wttba-feature-toggle {
+		transition: none;
+	}
 }
 
 .wttba-feature-toggle input[type="checkbox"] {
@@ -517,7 +537,7 @@
 
 .wttba-auth-checklist__item--missing .wttba-auth-checklist__icon,
 .wttba-auth-checklist__item--missing .wttba-auth-checklist__status {
-	color: #d63638;
+	color: #b32d2e;
 }
 
 .wttba-auth-checklist__description {
@@ -543,6 +563,10 @@
 .wttba-ai-test .spinner {
 	float: none;
 	margin-top: 7px;
+}
+
+.wttba-usage-table-wrap {
+	overflow-x: auto;
 }
 
 .wttba-settings-section .widefat {
@@ -571,11 +595,6 @@
 }
 
 @media (max-width: 960px) {
-
-	.wttba-feature-toggles {
-		grid-template-columns: 1fr;
-		max-width: 720px;
-	}
 
 	.wttba-settings-hero {
 		align-items: flex-start;
@@ -634,6 +653,11 @@
 	.wttba-settings-section .form-table td {
 		padding: 0 0 18px;
 		border-bottom: 1px solid #f0f0f1;
+	}
+
+	.wttba-feature-toggles {
+		grid-template-columns: 1fr;
+		max-width: 720px;
 	}
 
 	.wttba-auth-checklist {

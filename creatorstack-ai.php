@@ -60,7 +60,7 @@ function wttba_migrate_active_plugin_basename(): void {
 		}
 	}
 
-	if ( is_multisite() ) {
+	if ( is_admin() && is_multisite() ) {
 		$network_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
 		$updated         = false;
 
@@ -124,8 +124,11 @@ add_action( 'plugins_loaded', 'wttba_init' );
  * Plugin activation hook.
  */
 function wttba_activate() {
-	if ( ! get_option( 'wttba_default_language' ) ) {
-		add_option( 'wttba_default_language', 'en' );
-	}
+	add_option( 'wttba_default_language', 'en' );
+	add_option( 'wttba_post_length', 'standard' );
+	add_option( 'wttba_feature_youtube_to_post', \WTTBA\Settings::is_youtube_to_post_enabled() );
+	add_option( 'wttba_feature_audio_to_post', \WTTBA\Settings::is_audio_to_post_enabled() );
+	add_option( 'wttba_feature_post_to_audio', \WTTBA\Settings::is_post_to_audio_enabled() );
+	add_option( 'wttba_feature_thumbnail_generator', \WTTBA\Settings::is_thumbnail_generator_enabled() );
 }
 register_activation_hook( __FILE__, 'wttba_activate' );

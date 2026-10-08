@@ -1,6 +1,7 @@
 /**
  * Shared state and actions for the YouTube-to-post generation flow.
  */
+import { speak } from '@wordpress/a11y';
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { parseError, previewPost, saveDraft } from './api';
@@ -30,8 +31,15 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 	const [ lastGeneration, setLastGeneration ] = useState( null );
 	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
 
+	const openLanguageModal = ( video ) => {
+		if ( null !== generating ) {
+			return;
+		}
+		setModalVideo( video );
+	};
+
 	const handleGenerate = ( language, persona, manualTranscript = '' ) => {
-		if ( ! modalVideo ) {
+		if ( ! modalVideo || null !== generating ) {
 			return;
 		}
 
@@ -66,11 +74,19 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 			persona,
 			manualTranscript,
 		} );
+		speak(
+			__( 'Generating blog post preview…', 'creatorstack-ai' ),
+			'polite'
+		);
 
 		previewPost( video.id, language, persona, manualTranscript )
 			.then( ( result ) => {
 				setGenerating( null );
 				setPreview( result );
+				speak(
+					__( 'Draft preview ready.', 'creatorstack-ai' ),
+					'polite'
+				);
 			} )
 			.catch( ( requestError ) => {
 				setGenerating( null );
@@ -93,6 +109,7 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 
 		setSaving( true );
 		setSavingMode( mode );
+		setError( null );
 		saveDraft(
 			preview.video_id,
 			preview.title,
@@ -115,7 +132,6 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 			.catch( ( requestError ) => {
 				setSaving( false );
 				setSavingMode( null );
-				setPreview( null );
 				setError( parseError( requestError ) );
 			} );
 	};
@@ -130,6 +146,7 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 		}
 
 		setRegenerating( true );
+		setError( null );
 		previewPost(
 			lastGeneration.videoId,
 			lastGeneration.language,
@@ -142,7 +159,6 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 			} )
 			.catch( ( requestError ) => {
 				setRegenerating( false );
-				setPreview( null );
 				setError( parseError( requestError ) );
 			} );
 	};
@@ -171,6 +187,7 @@ export default function useVideoPostGeneration( { ai, settingsUrl } ) {
 		generating,
 		isTextGenerationSupported,
 		modalVideo,
+		openLanguageModal,
 		preview,
 		regenerating,
 		retryFailedVideo,

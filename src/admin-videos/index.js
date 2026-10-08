@@ -1,12 +1,15 @@
 /**
  * Admin videos page entry point.
  */
+import { speak } from '@wordpress/a11y';
 import {
 	createElement,
+	createRoot,
 	render,
 	useState,
 	useEffect,
 	useCallback,
+	useRef,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import {
@@ -35,17 +38,61 @@ import {
 import './style.scss';
 
 /**
- * Recorder controls used on the standalone audio page.
+ * Mount a React element using React 18 createRoot with legacy render fallback.
  *
- * @param {Object}  props          Component props.
- * @param {Object}  props.recorder Recorder state/actions.
- * @param {boolean} props.disabled Whether controls are disabled.
+ * @param {Element}     element       React element.
+ * @param {HTMLElement} containerNode DOM container node.
+ */
+function mountApp( element, containerNode ) {
+	if ( ! containerNode ) {
+		return;
+	}
+
+	if ( 'function' === typeof createRoot ) {
+		createRoot( containerNode ).render( element );
+		return;
+	}
+
+	render( element, containerNode );
+}
+
+/**
+ * Recorder and audio selection controls used on the standalone audio page.
+ *
+ * @param {Object}      props                      Component props.
+ * @param {Object}      props.recorder             Recorder state/actions.
+ * @param {boolean}     props.disabled             Whether controls are disabled.
+ * @param {Function}    props.onDiscard            Callback when recording is discarded.
+ * @param {Function}    props.onSelectFile         Callback when a local audio file is chosen.
+ * @param {Function}    props.onOpenMediaLibrary   Callback to open the WP Media Library modal.
+ * @param {Object|null} props.selectedAudio        Selected audio file or attachment metadata.
+ * @param {Function}    props.onClearSelectedAudio Callback to clear the selected audio file.
  * @return {Element} Recorder UI.
  */
-function AudioRecorderCard( { recorder, disabled } ) {
+function AudioRecorderCard( {
+	recorder,
+	disabled,
+	onDiscard,
+	onSelectFile,
+	onOpenMediaLibrary,
+	selectedAudio,
+	onClearSelectedAudio,
+} ) {
+	const startButtonRef = useRef( null );
+	const fileInputRef = useRef( null );
 	const statusClass = recorder.isRecording
 		? 'wttba-audio-recorder__status wttba-audio-recorder__status--recording'
 		: 'wttba-audio-recorder__status';
+
+	const idleStatusMessage = selectedAudio?.name
+		? sprintf(
+				/* translators: %s: selected audio file name. */
+				__( 'Selected audio: %s', 'creatorstack-ai' ),
+				selectedAudio.name
+		  )
+		: __( 'Ready to record from your microphone.', 'creatorstack-ai' );
+
+	const previewUrl = recorder.recordedUrl || selectedAudio?.url || '';
 
 	return createElement(
 		'div',
@@ -63,13 +110,7 @@ function AudioRecorderCard( { recorder, disabled } ) {
 			createElement(
 				'span',
 				null,
-				getRecorderStatusText(
-					recorder,
-					__(
-						'Ready to record from your microphone.',
-						'creatorstack-ai'
-					)
-				)
+				getRecorderStatusText( recorder, idleStatusMessage )
 			),
 			createElement(
 				'span',
@@ -89,6 +130,7 @@ function AudioRecorderCard( { recorder, disabled } ) {
 				createElement(
 					'button',
 					{
+						ref: startButtonRef,
 						type: 'button',
 						className: 'button button-primary',
 						onClick: recorder.start,
@@ -116,18 +158,82 @@ function AudioRecorderCard( { recorder, disabled } ) {
 					{
 						type: 'button',
 						className: 'button button-secondary',
-						onClick: recorder.reset,
+						onClick: () => {
+							onDiscard?.();
+							recorder.reset();
+							speak(
+								__( 'Recording discarded.', 'creatorstack-ai' ),
+								'polite'
+							);
+							startButtonRef.current?.focus();
+						},
 						disabled,
 					},
 					__( 'Discard Recording', 'creatorstack-ai' )
-				)
+				),
+			! recorder.isRecording &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: () => fileInputRef.current?.click(),
+						disabled,
+					},
+					__( 'Upload Audio File', 'creatorstack-ai' )
+				),
+			! recorder.isRecording &&
+				'function' === typeof window.wp?.media &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: onOpenMediaLibrary,
+						disabled,
+					},
+					__( 'Select from Media Library', 'creatorstack-ai' )
+				),
+			selectedAudio &&
+				! recorder.hasRecording &&
+				! recorder.isRecording &&
+				createElement(
+					'button',
+					{
+						type: 'button',
+						className: 'button button-secondary',
+						onClick: () => {
+							onClearSelectedAudio?.();
+							startButtonRef.current?.focus();
+						},
+						disabled,
+					},
+					__( 'Clear Selection', 'creatorstack-ai' )
+				),
+			createElement( 'input', {
+				ref: fileInputRef,
+				type: 'file',
+				accept: 'audio/*',
+				className: 'screen-reader-text',
+				tabIndex: -1,
+				'aria-hidden': true,
+				onChange: ( event ) => {
+					const file = event.target.files?.[ 0 ];
+					if ( file ) {
+						onSelectFile?.( file );
+					}
+					event.target.value = '';
+				},
+			} )
 		),
-		recorder.recordedUrl &&
+		previewUrl &&
 			createElement( 'audio', {
 				className: 'wttba-audio-recorder__preview',
 				controls: true,
-				src: recorder.recordedUrl,
-				'aria-label': __( 'Recorded audio preview', 'creatorstack-ai' ),
+				src: previewUrl,
+				'aria-label': recorder.recordedUrl
+					? __( 'Recorded audio preview', 'creatorstack-ai' )
+					: __( 'Selected audio preview', 'creatorstack-ai' ),
 			} )
 	);
 }
@@ -153,17 +259,113 @@ function AudioToPost() {
 	const [ notice, setNotice ] = useState( null );
 	const [ success, setSuccess ] = useState( null );
 	const [ dismissedAiNotice, setDismissedAiNotice ] = useState( false );
+	const [ uploadedAttachment, setUploadedAttachment ] = useState( null );
+	const [ selectedAudio, setSelectedAudio ] = useState( null );
+	const selectedObjectUrlRef = useRef( '' );
+
+	const revokeSelectedObjectUrl = useCallback( () => {
+		if ( selectedObjectUrlRef.current ) {
+			window.URL.revokeObjectURL( selectedObjectUrlRef.current );
+			selectedObjectUrlRef.current = '';
+		}
+	}, [] );
+
+	useEffect( () => {
+		return () => {
+			revokeSelectedObjectUrl();
+		};
+	}, [ revokeSelectedObjectUrl ] );
+
 	const recorder = useAudioRecorder( {
 		onRecorded: () => {
+			revokeSelectedObjectUrl();
+			setSelectedAudio( null );
+			setUploadedAttachment( null );
 			setNotice( null );
 			setSuccess( null );
 		},
 	} );
+
+	const handleSelectFile = ( file ) => {
+		recorder.reset();
+		revokeSelectedObjectUrl();
+		const objectUrl = window.URL.createObjectURL( file );
+		selectedObjectUrlRef.current = objectUrl;
+		setSelectedAudio( {
+			type: 'file',
+			file,
+			name: file.name,
+			url: objectUrl,
+			size: file.size,
+		} );
+		setUploadedAttachment( null );
+		setNotice( null );
+		setSuccess( null );
+	};
+
+	const handleOpenMediaLibrary = () => {
+		if ( 'function' !== typeof window.wp?.media ) {
+			return;
+		}
+
+		const frame = window.wp.media( {
+			title: __( 'Select or Upload Audio', 'creatorstack-ai' ),
+			button: {
+				text: __( 'Use this audio', 'creatorstack-ai' ),
+			},
+			library: {
+				type: 'audio',
+			},
+			multiple: false,
+		} );
+
+		frame.on( 'select', () => {
+			const attachment = frame
+				.state()
+				.get( 'selection' )
+				?.first()
+				?.toJSON();
+
+			if ( ! attachment?.id ) {
+				return;
+			}
+
+			recorder.reset();
+			revokeSelectedObjectUrl();
+			setSelectedAudio( {
+				type: 'media',
+				id: attachment.id,
+				name: attachment.filename || attachment.title || '',
+				url: attachment.url || '',
+				size: attachment.filesizeInBytes || 0,
+			} );
+			setUploadedAttachment( {
+				id: attachment.id,
+				url: attachment.url || '',
+			} );
+			setNotice( null );
+			setSuccess( null );
+		} );
+
+		frame.open();
+	};
+
+	const handleClearSelectedAudio = () => {
+		revokeSelectedObjectUrl();
+		setSelectedAudio( null );
+		setUploadedAttachment( null );
+		setNotice( null );
+	};
+
 	const maxAudioBytes = Number( config.maxAudioBytes || 0 );
+	const activeAudioBlob =
+		recorder.recordedBlob ||
+		( 'file' === selectedAudio?.type ? selectedAudio.file : null );
 	const recordingTooLarge = isRecordingTooLarge(
-		recorder.recordedBlob,
+		activeAudioBlob,
 		maxAudioBytes
 	);
+	const hasAudioSource = recorder.hasRecording || !! selectedAudio;
 	const isDisabled = busy || recorder.isRecording || ! canGenerateFromAudio;
 
 	const handleCreateDraft = async () => {
@@ -181,7 +383,7 @@ function AudioToPost() {
 			return;
 		}
 
-		if ( ! recorder.recordedBlob ) {
+		if ( ! hasAudioSource ) {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -212,14 +414,24 @@ function AudioToPost() {
 		setSuccess( null );
 
 		try {
-			const audioFile = createAudioFileFromBlob(
-				recorder.recordedBlob,
-				'wttba-audio-to-post'
-			);
-			const attachment = await uploadAudioAttachment(
-				audioFile,
-				__( 'Audio to Post recording', 'creatorstack-ai' )
-			);
+			let attachment = uploadedAttachment;
+
+			if ( ! attachment?.id ) {
+				const audioFile =
+					'file' === selectedAudio?.type
+						? selectedAudio.file
+						: createAudioFileFromBlob(
+								recorder.recordedBlob,
+								'wttba-audio-to-post'
+						  );
+				attachment = await uploadAudioAttachment(
+					audioFile,
+					selectedAudio?.name ||
+						__( 'Audio to Post recording', 'creatorstack-ai' )
+				);
+				setUploadedAttachment( attachment );
+			}
+
 			const draft = await createAudioDraft(
 				attachment.id,
 				language,
@@ -346,11 +558,22 @@ function AudioToPost() {
 			createElement( AudioRecorderCard, {
 				recorder,
 				disabled: busy || ! canGenerateFromAudio,
+				onDiscard: () => {
+					setUploadedAttachment( null );
+					setNotice( null );
+				},
+				onSelectFile: handleSelectFile,
+				onOpenMediaLibrary: handleOpenMediaLibrary,
+				selectedAudio,
+				onClearSelectedAudio: handleClearSelectedAudio,
 			} ),
 			recordingTooLarge &&
 				createElement(
 					'p',
-					{ className: 'description wttba-audio-to-post__limit' },
+					{
+						className: 'description wttba-audio-to-post__limit',
+						role: 'alert',
+					},
 					sprintf(
 						/* translators: %s: maximum upload size. */
 						__(
@@ -404,9 +627,7 @@ function AudioToPost() {
 						className: 'button button-primary',
 						onClick: handleCreateDraft,
 						disabled:
-							isDisabled ||
-							! recorder.hasRecording ||
-							recordingTooLarge,
+							isDisabled || ! hasAudioSource || recordingTooLarge,
 					},
 					busy
 						? __( 'Creating draft…', 'creatorstack-ai' )
@@ -472,6 +693,7 @@ function AdminVideos() {
 		handleSaveDraft,
 		isTextGenerationSupported,
 		modalVideo,
+		openLanguageModal,
 		preview,
 		regenerating,
 		retryFailedVideo,
@@ -484,6 +706,8 @@ function AdminVideos() {
 		setSuccess,
 		success,
 	} = generation;
+
+	const isGenerating = null !== generating;
 
 	const loadVideos = useCallback(
 		( pageToken = '' ) => {
@@ -505,6 +729,10 @@ function AdminVideos() {
 							...prev,
 							...( data.items || [] ),
 						] );
+						speak(
+							__( 'More videos loaded.', 'creatorstack-ai' ),
+							'polite'
+						);
 					} else {
 						setVideos( data.items || [] );
 					}
@@ -601,7 +829,7 @@ function AdminVideos() {
 		{ className: 'wttba-videos' },
 		createElement( VideoGenerationFeedback, {
 			ai,
-			error,
+			error: preview ? null : error,
 			success,
 			isTextGenerationSupported,
 			dismissedAiNotice,
@@ -611,57 +839,77 @@ function AdminVideos() {
 			onDismissWarnings: () => setSuccess( { ...success, warnings: [] } ),
 			onDismissAiNotice: () => setDismissedAiNotice( true ),
 		} ),
-		createElement(
-			'div',
-			{ className: 'wttba-videos__grid' },
-			videos.map( ( video ) =>
-				createElement(
-					'div',
-					{ key: video.id, className: 'wttba-videos__card' },
-					createElement( 'img', {
-						src: video.thumbnail,
-						alt: '',
-						className: 'wttba-videos__thumb',
-					} ),
+		0 === videos.length &&
+			! error &&
+			createElement(
+				'p',
+				{ className: 'wttba-videos__empty' },
+				__(
+					'No videos found for this YouTube channel.',
+					'creatorstack-ai'
+				)
+			),
+		videos.length > 0 &&
+			createElement(
+				'div',
+				{ className: 'wttba-videos__grid' },
+				videos.map( ( video ) =>
 					createElement(
 						'div',
-						{ className: 'wttba-videos__card-body' },
+						{ key: video.id, className: 'wttba-videos__card' },
+						createElement( 'img', {
+							src: video.thumbnail,
+							alt: '',
+							className: 'wttba-videos__thumb',
+							loading: 'lazy',
+							decoding: 'async',
+							width: 480,
+							height: 270,
+						} ),
 						createElement(
-							'h3',
-							{ className: 'wttba-videos__card-title' },
-							video.title
-						),
-						createElement(
-							'span',
-							{ className: 'wttba-videos__card-date' },
-							formatDate( video.publishedAt )
-						),
-						createElement(
-							'button',
-							{
-								className: 'button button-primary',
-								onClick: () => {
-									if ( generating !== video.id ) {
-										setModalVideo( video );
-									}
+							'div',
+							{ className: 'wttba-videos__card-body' },
+							createElement(
+								'h2',
+								{
+									className: 'wttba-videos__card-title',
+									title: video.title,
 								},
-								disabled: ! isTextGenerationSupported,
-								'aria-disabled':
-									generating === video.id || undefined,
-								'aria-label': sprintf(
-									/* translators: 1: action label, 2: video title. */
-									__( '%1$s: %2$s', 'creatorstack-ai' ),
-									getGenerateButtonLabel( video ),
-									video.title
-								),
-								type: 'button',
-							},
-							getGenerateButtonLabel( video )
+								video.title
+							),
+							createElement(
+								'span',
+								{ className: 'wttba-videos__card-date' },
+								formatDate( video.publishedAt )
+							),
+							createElement(
+								'button',
+								{
+									className: 'button button-primary',
+									onClick: () => {
+										if ( ! isGenerating ) {
+											openLanguageModal( video );
+										}
+									},
+									disabled:
+										! isTextGenerationSupported ||
+										( isGenerating &&
+											generating !== video.id ),
+									'aria-disabled': isGenerating || undefined,
+									'aria-label': sprintf(
+										/* translators: 1: action label, 2: video title. */
+										__( '%1$s: %2$s', 'creatorstack-ai' ),
+										getGenerateButtonLabel( video ),
+										video.title
+									),
+									type: 'button',
+								},
+								getGenerateButtonLabel( video )
+							)
 						)
 					)
 				)
-			)
-		),
+			),
 		nextPageToken &&
 			createElement(
 				'div',
@@ -695,10 +943,16 @@ function AdminVideos() {
 			isRegenerating: regenerating,
 			isSaving: saving,
 			savingMode,
+			error,
+			onDismissError: () => setError( null ),
+			settingsUrl: config.settingsUrl,
 			onSaveAsDraft: handleSaveDraft,
 			onSaveAndEdit: handleSaveAndEdit,
 			onRegenerate: handleRegenerate,
-			onCancel: () => setPreview( null ),
+			onCancel: () => {
+				setPreview( null );
+				setError( null );
+			},
 		} )
 	);
 }
@@ -706,10 +960,10 @@ function AdminVideos() {
 // Mount the app.
 const container = document.getElementById( 'wttba-admin-videos' );
 if ( container ) {
-	render( createElement( AdminVideos ), container );
+	mountApp( createElement( AdminVideos ), container );
 }
 
 const audioContainer = document.getElementById( 'wttba-audio-to-post' );
 if ( audioContainer ) {
-	render( createElement( AudioToPost ), audioContainer );
+	mountApp( createElement( AudioToPost ), audioContainer );
 }

@@ -176,6 +176,18 @@ class Content_Generator {
 			);
 		}
 
+		$user_id  = get_current_user_id();
+		$lock_key = 'wttba_audio_generating_' . $user_id;
+
+		if ( get_transient( $lock_key ) ) {
+			return new \WP_Error(
+				'wttba_rate_limited',
+				__( 'An audio post is already being generated. Please wait for it to complete.', 'creatorstack-ai' )
+			);
+		}
+
+		set_transient( $lock_key, true, 60 );
+
 		$language_name = Settings::LANGUAGES[ $language ] ?? 'English';
 		$persona       = $this->get_persona( $persona );
 		$post_length   = Settings::get_post_length_generation_config();
@@ -221,6 +233,7 @@ class Content_Generator {
 			$result = $this->generate_article_from_builder( $builder, 'audio_upload' );
 		} finally {
 			$this->remove_ai_request_timeout_filter();
+			delete_transient( $lock_key );
 		}
 
 		if ( is_wp_error( $result ) ) {

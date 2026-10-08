@@ -44,15 +44,17 @@ function wttba_delete_site_data(): void {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk uninstall cleanup by transient prefix has no option API equivalent.
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-			$wpdb->esc_like( '_transient_wttba_' ) . '%'
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_wttba_' ) . '%',
+			$wpdb->esc_like( '_transient_wttba_tr_' ) . '%'
 		)
 	);
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk uninstall cleanup by transient timeout prefix has no option API equivalent.
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-			$wpdb->esc_like( '_transient_timeout_wttba_' ) . '%'
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_timeout_wttba_' ) . '%',
+			$wpdb->esc_like( '_transient_timeout_wttba_tr_' ) . '%'
 		)
 	);
 

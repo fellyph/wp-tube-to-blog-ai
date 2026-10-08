@@ -2,7 +2,7 @@
 
 	&__video-title {
 		margin: 0 0 16px;
-		color: #757575;
+		color: #646970;
 		font-style: italic;
 	}
 
@@ -67,5 +67,10 @@
 		background: #fafafa;
 		border: 1px solid #ddd;
 		border-radius: 4px;
+
+		&:focus-visible {
+			outline: 2px solid #3858e9;
+			outline-offset: -2px;
+		}
 	}
 }

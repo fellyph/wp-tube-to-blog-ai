@@ -327,6 +327,7 @@ if ( root ) {
 			renderError( err );
 		} finally {
 			setBusy( false );
+			button.focus();
 		}
 	} );
 }

@@ -48,6 +48,11 @@ The **CreatorStack AI** plugin is a WordPress content workflow suite for creator
 
 4.  Activate the plugin through the 'Plugins' menu in WordPress.
 
+TypeScript is pinned to 5.3.3 to stay within the supported range of the
+TypeScript ESLint parser bundled with `@wordpress/scripts` 30. Update the pin
+alongside the lint toolchain; TypeScript 7 causes its `ts-api-utils` dependency
+to crash while loading ESLint.
+
 ## 📦 Releases
 
 CreatorStack AI uses a two-branch release model: `develop` for staging builds and `main` for production-ready releases. See the full [release strategy](docs/release-strategy.md).

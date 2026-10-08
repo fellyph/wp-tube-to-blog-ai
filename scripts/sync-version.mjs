@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const rawVersion = process.argv[2];
@@ -17,6 +17,10 @@ if ( ! versionPattern.test( version ) ) {
 }
 
 const root = process.cwd();
+
+function hasProjectFile( path ) {
+	return existsSync( resolve( root, path ) );
+}
 
 function readProjectFile( path ) {
 	return readFileSync( resolve( root, path ), 'utf8' );
@@ -51,7 +55,37 @@ pluginFile = replaceOrFail(
 	'WTTBA_VERSION constant'
 );
 
+let connectorFile = null;
+if ( hasProjectFile( 'creatorstack-youtube-connector.php' ) ) {
+	connectorFile = readProjectFile( 'creatorstack-youtube-connector.php' );
+	connectorFile = replaceOrFail(
+		connectorFile,
+		/^ \* Version:\s+.+$/m,
+		` * Version:           ${ version }`,
+		'connector plugin header version'
+	);
+}
+
+let readmeFile = null;
+if ( hasProjectFile( 'readme.txt' ) ) {
+	readmeFile = readProjectFile( 'readme.txt' );
+	readmeFile = replaceOrFail(
+		readmeFile,
+		/^Stable tag:\s+.+$/m,
+		`Stable tag: ${ version }`,
+		'readme stable tag'
+	);
+}
+
 writeProjectFile( 'package.json', updatedPackageJson );
 writeProjectFile( 'creatorstack-ai.php', pluginFile );
+
+if ( null !== connectorFile ) {
+	writeProjectFile( 'creatorstack-youtube-connector.php', connectorFile );
+}
+
+if ( null !== readmeFile ) {
+	writeProjectFile( 'readme.txt', readmeFile );
+}
 
 console.log( `Synced CreatorStack AI version to ${ version }.` );

@@ -56,13 +56,16 @@ class REST_Controller {
 					'page_token'  => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value );
+						},
 						'default'           => '',
 					),
 					'max_results' => array(
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 						'validate_callback' => function ( $value ) {
-							return $value >= 1 && $value <= 50;
+							return is_numeric( $value ) && (int) $value >= 1 && (int) $value <= 50;
 						},
 						'default'           => 5,
 					),
@@ -83,7 +86,7 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 				),
@@ -103,14 +106,14 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 					'language' => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -141,7 +144,7 @@ class REST_Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
+							return is_string( $value ) && 1 === preg_match( '/^[a-zA-Z0-9_-]+$/', $value );
 						},
 					),
 					'title'    => array(
@@ -185,7 +188,7 @@ class REST_Controller {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -215,7 +218,7 @@ class REST_Controller {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							return array_key_exists( $value, Settings::LANGUAGES );
+							return is_string( $value ) && ( '' === $value || array_key_exists( $value, Settings::LANGUAGES ) );
 						},
 						'default'           => '',
 					),
@@ -330,6 +333,7 @@ class REST_Controller {
 		'wttba_ai_not_supported'    => array( 'status' => 422, 'category' => 'configuration' ),
 		'wttba_rate_limited'        => array( 'status' => 429, 'category' => 'rate_limit' ),
 		'wttba_invalid_video_id'    => array( 'status' => 400, 'category' => 'validation' ),
+		'wttba_invalid_content'     => array( 'status' => 400, 'category' => 'validation' ),
 		'wttba_manual_transcript_too_short' => array( 'status' => 400, 'category' => 'validation' ),
 		'wttba_video_not_found'     => array( 'status' => 404, 'category' => 'not_found' ),
 		'wttba_no_captions'         => array( 'status' => 404, 'category' => 'not_found' ),
@@ -442,9 +446,22 @@ class REST_Controller {
 	public function can_generate_post_thumbnail( \WP_REST_Request $request ): bool {
 		$post_id = absint( $request->get_param( 'id' ) );
 
-		return $post_id > 0
-			&& current_user_can( 'edit_post', $post_id )
-			&& current_user_can( 'upload_files' );
+		if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) || ! current_user_can( 'upload_files' ) ) {
+			return false;
+		}
+
+		$author_attachment_id = absint( $request->get_param( 'author_attachment_id' ) );
+		if ( $author_attachment_id > 0 && ! current_user_can( 'edit_post', $author_attachment_id ) ) {
+			return false;
+		}
+
+		foreach ( $this->sanitize_attachment_ids_arg( $request->get_param( 'reference_attachment_ids' ) ) as $ref_id ) {
+			if ( ! current_user_can( 'edit_post', $ref_id ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -760,6 +777,18 @@ class REST_Controller {
 		$language      = (string) ( $request->get_param( 'language' ) ?? '' );
 		$persona       = (string) ( $request->get_param( 'persona' ) ?? '' );
 
+		$post = get_post( $post_id );
+
+		if ( ! $post || 'post' !== $post->post_type ) {
+			return $this->prepare_error_response(
+				new \WP_Error(
+					'wttba_post_not_found',
+					__( 'The post could not be found.', 'creatorstack-ai' ),
+					array( 'status' => 404 )
+				)
+			);
+		}
+
 		if ( empty( $language ) ) {
 			$language = get_option( 'wttba_default_language', 'en' );
 		}
@@ -823,7 +852,6 @@ class REST_Controller {
 				'meta_input'   => array(
 					'_wttba_source_type'          => 'audio_upload',
 					'_wttba_source_attachment_id' => $attachment_id,
-					Generation_Logger::META_KEY  => $metadata,
 				),
 			),
 			true

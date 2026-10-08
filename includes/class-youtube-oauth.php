@@ -590,11 +590,14 @@ class YouTube_OAuth {
 	 */
 	public static function consume_status_notice(): string {
 		$key    = self::NOTICE_PREFIX . get_current_user_id();
-		$status = sanitize_key( (string) get_transient( $key ) );
+		$status = get_transient( $key );
 
-		delete_transient( $key );
+		if ( false !== $status && '' !== $status ) {
+			delete_transient( $key );
+			return sanitize_key( (string) $status );
+		}
 
-		return $status;
+		return '';
 	}
 
 	/**

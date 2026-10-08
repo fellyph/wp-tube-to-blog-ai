@@ -57,6 +57,10 @@ class Plugin {
 	 * Check for required dependencies and show admin notice if missing.
 	 */
 	private function check_dependencies(): void {
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		if ( ! AI_Provider_Status::is_supported_wordpress_version() || ! AI_Provider_Status::is_ai_client_available() ) {
 			add_action( 'admin_notices', array( $this, 'missing_ai_client_notice' ) );
 		}

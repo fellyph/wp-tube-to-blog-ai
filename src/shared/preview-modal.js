@@ -4,21 +4,25 @@
 import { createElement, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import AccessibleModal from './accessible-modal';
+import ErrorNotice from './error-notice';
 
 /**
  * Preview modal for AI-generated blog post content.
  *
- * @param {Object}   props
- * @param {boolean}  props.isOpen         Whether the modal is visible.
- * @param {string}   props.title          The generated post title.
- * @param {string}   props.content        The generated HTML content.
- * @param {boolean}  props.isRegenerating Whether a regeneration is in progress.
- * @param {boolean}  props.isSaving       Whether the draft is being saved.
- * @param {string}   props.savingMode     Which save action is running: 'draft' or 'edit'.
- * @param {Function} props.onSaveAsDraft  Callback to save the content as a draft.
- * @param {Function} props.onSaveAndEdit  Callback to save the draft and open the editor.
- * @param {Function} props.onRegenerate   Callback to regenerate the content.
- * @param {Function} props.onCancel       Callback to close the modal.
+ * @param {Object}        props
+ * @param {boolean}       props.isOpen         Whether the modal is visible.
+ * @param {string}        props.title          The generated post title.
+ * @param {string}        props.content        The generated HTML content.
+ * @param {boolean}       props.isRegenerating Whether a regeneration is in progress.
+ * @param {boolean}       props.isSaving       Whether the draft is being saved.
+ * @param {string}        props.savingMode     Which save action is running: 'draft' or 'edit'.
+ * @param {Object|null}   props.error          Optional error object to display in the modal.
+ * @param {Function|null} props.onDismissError Optional callback to dismiss the error notice.
+ * @param {string}        props.settingsUrl    Optional settings URL for error actions.
+ * @param {Function}      props.onSaveAsDraft  Callback to save the content as a draft.
+ * @param {Function}      props.onSaveAndEdit  Callback to save the draft and open the editor.
+ * @param {Function}      props.onRegenerate   Callback to regenerate the content.
+ * @param {Function}      props.onCancel       Callback to close the modal.
  * @return {Element|null} The modal element or null.
  */
 export default function PreviewModal( {
@@ -28,27 +32,30 @@ export default function PreviewModal( {
 	isRegenerating,
 	isSaving,
 	savingMode,
+	error = null,
+	onDismissError,
+	settingsUrl,
 	onSaveAsDraft,
 	onSaveAndEdit,
 	onRegenerate,
 	onCancel,
 } ) {
-	const statusRef = useRef( null );
-	const wasRegenerating = useRef( false );
+	const primaryButtonRef = useRef( null );
+	const wasRegeneratingRef = useRef( false );
 	const [ statusMessage, setStatusMessage ] = useState( '' );
 
 	useEffect( () => {
 		if ( isRegenerating ) {
-			wasRegenerating.current = true;
+			wasRegeneratingRef.current = true;
 			setStatusMessage(
 				__( 'Regenerating draft preview…', 'creatorstack-ai' )
 			);
-			statusRef.current?.focus();
-		} else if ( wasRegenerating.current ) {
-			wasRegenerating.current = false;
+		} else if ( wasRegeneratingRef.current ) {
+			wasRegeneratingRef.current = false;
 			setStatusMessage(
 				__( 'Draft preview regenerated.', 'creatorstack-ai' )
 			);
+			primaryButtonRef.current?.focus();
 		}
 	}, [ isRegenerating ] );
 
@@ -62,7 +69,6 @@ export default function PreviewModal( {
 					  )
 					: __( 'Saving draft…', 'creatorstack-ai' )
 			);
-			statusRef.current?.focus();
 		}
 	}, [ isSaving, savingMode ] );
 
@@ -86,22 +92,36 @@ export default function PreviewModal( {
 		createElement(
 			'p',
 			{
-				ref: statusRef,
 				className: 'wttba-modal__status',
 				role: 'status',
 				'aria-live': 'polite',
 				'aria-atomic': true,
-				tabIndex: -1,
 			},
 			statusMessage
 		),
+		error &&
+			createElement( ErrorNotice, {
+				code: error.code,
+				message: error.message,
+				category: error.category,
+				configurationUrl: error.configurationUrl,
+				configurationLabel: error.configurationLabel,
+				onDismiss: onDismissError,
+				settingsUrl,
+			} ),
 		createElement(
-			'h4',
+			'h2',
 			{ className: 'wttba-modal__preview-title' },
 			title
 		),
 		createElement( 'div', {
 			className: 'wttba-modal__preview-content',
+			role: 'region',
+			'aria-label': __(
+				'Generated post content preview',
+				'creatorstack-ai'
+			),
+			tabIndex: 0,
 			dangerouslySetInnerHTML: { __html: content },
 		} ),
 		createElement(
@@ -111,8 +131,13 @@ export default function PreviewModal( {
 				'button',
 				{
 					className: 'button button-secondary',
-					onClick: onCancel,
-					disabled: isDisabled,
+					onClick: () => {
+						if ( isDisabled ) {
+							return;
+						}
+						onCancel();
+					},
+					'aria-disabled': isDisabled,
 					type: 'button',
 				},
 				__( 'Cancel', 'creatorstack-ai' )
@@ -121,8 +146,13 @@ export default function PreviewModal( {
 				'button',
 				{
 					className: 'button button-secondary',
-					onClick: onRegenerate,
-					disabled: isDisabled,
+					onClick: () => {
+						if ( isDisabled ) {
+							return;
+						}
+						onRegenerate();
+					},
+					'aria-disabled': isDisabled,
 					type: 'button',
 				},
 				isRegenerating
@@ -133,8 +163,13 @@ export default function PreviewModal( {
 				'button',
 				{
 					className: 'button button-secondary',
-					onClick: onSaveAsDraft,
-					disabled: isDisabled,
+					onClick: () => {
+						if ( isDisabled ) {
+							return;
+						}
+						onSaveAsDraft();
+					},
+					'aria-disabled': isDisabled,
 					type: 'button',
 				},
 				isSaving && 'draft' === savingMode
@@ -144,9 +179,15 @@ export default function PreviewModal( {
 			createElement(
 				'button',
 				{
+					ref: primaryButtonRef,
 					className: 'button button-primary',
-					onClick: onSaveAndEdit,
-					disabled: isDisabled,
+					onClick: () => {
+						if ( isDisabled ) {
+							return;
+						}
+						onSaveAndEdit();
+					},
+					'aria-disabled': isDisabled,
 					type: 'button',
 				},
 				isSaving && 'edit' === savingMode

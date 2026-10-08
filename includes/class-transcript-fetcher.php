@@ -29,9 +29,19 @@ class Transcript_Fetcher {
 	 * @return string|\WP_Error The transcript text or an error.
 	 */
 	public function fetch( string $video_id, string $lang = 'en' ): string|\WP_Error {
+		$normalized_lang = strtolower( trim( $lang ) ) ?: 'en';
+		$cache_key       = 'wttba_tr_' . md5( $video_id . '_' . $normalized_lang );
+		$cached          = get_transient( $cache_key );
+
+		if ( is_string( $cached ) && '' !== $cached ) {
+			return $cached;
+		}
+
 		$official_transcript = YouTube_OAuth::fetch_transcript( $video_id, $lang );
 		if ( ! is_wp_error( $official_transcript ) ) {
-			return $this->truncate_transcript( $official_transcript );
+			$truncated = $this->truncate_transcript( $official_transcript );
+			set_transient( $cache_key, $truncated, 15 * MINUTE_IN_SECONDS );
+			return $truncated;
 		}
 
 		if ( ! in_array( $official_transcript->get_error_code(), $this->get_oauth_fallback_error_codes(), true ) ) {
@@ -87,9 +97,15 @@ class Transcript_Fetcher {
 		// Step 4: Fetch and parse the transcript data.
 		$transcript = $this->fetch_transcript_xml( $track_url );
 
-		if ( is_wp_error( $transcript ) && $this->should_prompt_for_oauth( $official_transcript, $transcript ) ) {
-			return $this->build_oauth_required_error();
+		if ( is_wp_error( $transcript ) ) {
+			if ( $this->should_prompt_for_oauth( $official_transcript, $transcript ) ) {
+				return $this->build_oauth_required_error();
+			}
+
+			return $transcript;
 		}
+
+		set_transient( $cache_key, $transcript, 15 * MINUTE_IN_SECONDS );
 
 		return $transcript;
 	}
@@ -275,7 +291,7 @@ class Transcript_Fetcher {
 				continue;
 			}
 
-			if ( ! empty( $track['baseUrl'] ) && isset( $track['languageCode'] ) && $track['languageCode'] === $lang ) {
+			if ( ! empty( $track['baseUrl'] ) && is_string( $track['baseUrl'] ) && $this->is_valid_caption_url( $track['baseUrl'] ) && isset( $track['languageCode'] ) && $track['languageCode'] === $lang ) {
 				return $track['baseUrl'];
 			}
 		}
@@ -286,7 +302,7 @@ class Transcript_Fetcher {
 				continue;
 			}
 
-			if ( ! empty( $track['baseUrl'] ) && isset( $track['languageCode'] ) && str_starts_with( $track['languageCode'], $lang ) ) {
+			if ( ! empty( $track['baseUrl'] ) && is_string( $track['baseUrl'] ) && $this->is_valid_caption_url( $track['baseUrl'] ) && isset( $track['languageCode'] ) && str_starts_with( $track['languageCode'], $lang ) ) {
 				return $track['baseUrl'];
 			}
 		}
@@ -298,7 +314,7 @@ class Transcript_Fetcher {
 					continue;
 				}
 
-				if ( ! empty( $track['baseUrl'] ) && isset( $track['languageCode'] ) && str_starts_with( $track['languageCode'], 'en' ) ) {
+				if ( ! empty( $track['baseUrl'] ) && is_string( $track['baseUrl'] ) && $this->is_valid_caption_url( $track['baseUrl'] ) && isset( $track['languageCode'] ) && str_starts_with( $track['languageCode'], 'en' ) ) {
 					return $track['baseUrl'];
 				}
 			}
@@ -306,12 +322,34 @@ class Transcript_Fetcher {
 
 		// Fallback to the first available track.
 		foreach ( $tracks as $track ) {
-			if ( is_array( $track ) && ! empty( $track['baseUrl'] ) ) {
+			if ( is_array( $track ) && ! empty( $track['baseUrl'] ) && is_string( $track['baseUrl'] ) && $this->is_valid_caption_url( $track['baseUrl'] ) ) {
 				return $track['baseUrl'];
 			}
 		}
 
 		return new \WP_Error( 'wttba_no_track_url', __( 'Could not find a usable caption track.', 'creatorstack-ai' ) );
+	}
+
+	/**
+	 * Validate that a caption track URL is an HTTPS YouTube URL.
+	 *
+	 * @param string $url Candidate URL.
+	 * @return bool
+	 */
+	private function is_valid_caption_url( string $url ): bool {
+		$parsed = wp_parse_url( $url );
+		if ( ! is_array( $parsed ) ) {
+			return false;
+		}
+
+		$scheme = strtolower( (string) ( $parsed['scheme'] ?? '' ) );
+		$host   = strtolower( (string) ( $parsed['host'] ?? '' ) );
+
+		if ( 'https' !== $scheme || '' === $host ) {
+			return false;
+		}
+
+		return 'youtube.com' === $host || str_ends_with( $host, '.youtube.com' );
 	}
 
 	/**
@@ -321,16 +359,23 @@ class Transcript_Fetcher {
 	 * @return string|\WP_Error The transcript text or error.
 	 */
 	private function fetch_transcript_xml( string $url ): string|\WP_Error {
-		$formats       = array( 'json3', 'srv3', '' );
-		$last_error    = null;
+		if ( ! $this->is_valid_caption_url( $url ) ) {
+			return new \WP_Error(
+				'wttba_no_track_url',
+				__( 'Could not find a usable caption track.', 'creatorstack-ai' )
+			);
+		}
+
+		$formats        = array( 'json3', 'srv3', '' );
+		$last_error     = null;
 		$empty_response = false;
 
 		foreach ( $formats as $format ) {
 			$request_url = '' === $format ? $url : add_query_arg( 'fmt', $format, $url );
-			$response    = wp_remote_get(
+			$response    = wp_safe_remote_get(
 				$request_url,
 				array(
-					'timeout'    => 20,
+					'timeout'    => 10,
 					'user-agent' => 'Mozilla/5.0 (compatible; WordPress/' . get_bloginfo( 'version' ) . ')',
 					'headers'    => array(
 						'Accept' => 'application/json, text/xml, application/xml, text/vtt, text/plain, */*',
@@ -437,6 +482,7 @@ class Transcript_Fetcher {
 	private function parse_xml_transcript( string $body ): string|\WP_Error {
 		libxml_use_internal_errors( true );
 		$xml = simplexml_load_string( $body );
+		libxml_clear_errors();
 
 		if ( false === $xml ) {
 			return $this->transcript_parse_error( 'XML' );

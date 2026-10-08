@@ -136,6 +136,10 @@ class YouTube_Connector {
 			return $db_value;
 		}
 
+		if ( ! array_key_exists( self::LEGACY_API_OPTION, wp_load_alloptions() ) ) {
+			return '';
+		}
+
 		return (string) get_option( self::LEGACY_API_OPTION, '' );
 	}
 
@@ -168,7 +172,7 @@ class YouTube_Connector {
 			return 'database';
 		}
 
-		if ( '' !== (string) get_option( self::LEGACY_API_OPTION, '' ) ) {
+		if ( array_key_exists( self::LEGACY_API_OPTION, wp_load_alloptions() ) && '' !== (string) get_option( self::LEGACY_API_OPTION, '' ) ) {
 			return 'legacy';
 		}
 
@@ -413,6 +417,11 @@ class YouTube_Connector {
 	 * Migrate the legacy plugin API key option into the connector setting.
 	 */
 	public static function migrate_legacy_api_key(): void {
+		$alloptions = wp_load_alloptions();
+		if ( ! array_key_exists( self::LEGACY_API_OPTION, $alloptions ) ) {
+			return;
+		}
+
 		$legacy_key = trim( (string) get_option( self::LEGACY_API_OPTION, '' ) );
 
 		if ( '' === $legacy_key || ! self::is_valid_api_key( $legacy_key ) ) {
@@ -441,7 +450,7 @@ class YouTube_Connector {
 			return $response;
 		}
 
-		if ( 'POST' !== $request->get_method() && 'PUT' !== $request->get_method() ) {
+		if ( ! in_array( $request->get_method(), array( 'POST', 'PUT', 'PATCH' ), true ) ) {
 			return $response;
 		}
 

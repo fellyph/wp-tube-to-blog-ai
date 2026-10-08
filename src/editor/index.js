@@ -1,6 +1,7 @@
 /**
  * Block editor CreatorStack AI panel.
  */
+import { speak } from '@wordpress/a11y';
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginDocumentSettingPanel } from '@wordpress/editor';
 import {
@@ -17,8 +18,8 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import { createBlock } from '@wordpress/blocks';
-import { useDispatch, useSelect } from '@wordpress/data';
-import { createElement, useState } from '@wordpress/element';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
+import { createElement, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	generatePostAudio,
@@ -43,15 +44,16 @@ const GENERATED_AUDIO_CLASS = 'wttba-generated-audio';
 /**
  * Get a readable attachment label from media responses.
  *
- * @param {Object} media Media object.
+ * @param {Object} media    Media object.
+ * @param {string} fallback Fallback label.
  * @return {string} Attachment label.
  */
-function getAudioAttachmentLabel( media ) {
+function getAttachmentLabel( media, fallback ) {
 	if ( media?.filename ) {
 		return media.filename;
 	}
 
-	if ( 'string' === typeof media?.title ) {
+	if ( 'string' === typeof media?.title && media.title ) {
 		return media.title;
 	}
 
@@ -63,7 +65,20 @@ function getAudioAttachmentLabel( media ) {
 		return media.title.rendered.replace( /<[^>]+>/g, '' );
 	}
 
-	return __( 'Recorded audio', 'creatorstack-ai' );
+	return fallback;
+}
+
+/**
+ * Get a readable audio attachment label from media responses.
+ *
+ * @param {Object} media Media object.
+ * @return {string} Attachment label.
+ */
+function getAudioAttachmentLabel( media ) {
+	return getAttachmentLabel(
+		media,
+		__( 'Recorded audio', 'creatorstack-ai' )
+	);
 }
 
 /**
@@ -73,23 +88,29 @@ function getAudioAttachmentLabel( media ) {
  * @return {string} Attachment label.
  */
 function getImageAttachmentLabel( media ) {
-	if ( media?.filename ) {
-		return media.filename;
+	return getAttachmentLabel(
+		media,
+		__( 'Selected image', 'creatorstack-ai' )
+	);
+}
+
+/**
+ * Check whether a URL points to an external origin.
+ *
+ * @param {string} url URL to inspect.
+ * @return {boolean} True when external.
+ */
+function isExternalUrl( url ) {
+	if ( ! url ) {
+		return false;
 	}
 
-	if ( 'string' === typeof media?.title ) {
-		return media.title;
+	try {
+		const parsed = new URL( url, window.location.origin );
+		return parsed.origin !== window.location.origin;
+	} catch {
+		return false;
 	}
-
-	if ( media?.title?.raw ) {
-		return media.title.raw;
-	}
-
-	if ( media?.title?.rendered ) {
-		return media.title.rendered.replace( /<[^>]+>/g, '' );
-	}
-
-	return __( 'Selected image', 'creatorstack-ai' );
 }
 
 /**
@@ -120,6 +141,9 @@ function getImageAttachmentUrl( media ) {
  */
 function CompactPanelNotice( { notice, onDismiss } ) {
 	const status = notice.status || 'info';
+	const configurationLabel =
+		notice.configurationLabel ||
+		__( 'Configure AI Provider', 'creatorstack-ai' );
 
 	return createElement(
 		'div',
@@ -137,15 +161,24 @@ function CompactPanelNotice( { notice, onDismiss } ) {
 				notice.message
 			),
 			notice.configurationUrl &&
-				createElement(
-					ExternalLink,
-					{
-						href: notice.configurationUrl,
-						className: 'wttba-editor-panel__notice-link',
-					},
-					notice.configurationLabel ||
-						__( 'Configure AI Provider', 'creatorstack-ai' )
-				)
+				( isExternalUrl( notice.configurationUrl )
+					? createElement(
+							ExternalLink,
+							{
+								href: notice.configurationUrl,
+								className: 'wttba-editor-panel__notice-link',
+							},
+							configurationLabel
+					  )
+					: createElement(
+							'a',
+							{
+								href: notice.configurationUrl,
+								className:
+									'components-external-link wttba-editor-panel__notice-link',
+							},
+							configurationLabel
+					  ) )
 		),
 		createElement(
 			'button',
@@ -177,6 +210,7 @@ function ContentSuitePanel() {
 	const isPostToAudioEnabled = features.postToAudio === true;
 	const isThumbnailGeneratorEnabled = features.thumbnailGenerator !== false;
 	const [ selectedAudio, setSelectedAudio ] = useState( null );
+	const [ pendingAudioDraft, setPendingAudioDraft ] = useState( null );
 	const [ language, setLanguage ] = useState(
 		config.defaultLanguage || 'en'
 	);
@@ -195,13 +229,18 @@ function ContentSuitePanel() {
 	const [ thumbnailBusy, setThumbnailBusy ] = useState( false );
 	const [ thumbnailSaving, setThumbnailSaving ] = useState( false );
 	const [ panelNotice, setPanelNotice ] = useState( null );
+	const audioSelectButtonRef = useRef( null );
+	const authorSelectButtonRef = useRef( null );
+	const referencesSelectButtonRef = useRef( null );
 	const recorder = useAudioRecorder( {
 		onRecorded: () => {
 			setSelectedAudio( null );
+			setPendingAudioDraft( null );
 			setPanelNotice( null );
 		},
 	} );
 
+	const registry = useRegistry();
 	const { editPost, savePost } = useDispatch( 'core/editor' );
 	const { createSuccessNotice, createErrorNotice } =
 		useDispatch( 'core/notices' );
@@ -213,14 +252,8 @@ function ContentSuitePanel() {
 			id: editor.getCurrentPostId(),
 			type: editor.getCurrentPostType(),
 			isSaving: editor.isSavingPost(),
-			isDirty: editor.isEditedPostDirty(),
 		};
 	}, [] );
-
-	const blocks = useSelect(
-		( select ) => select( blockEditorStore ).getBlocks(),
-		[]
-	);
 
 	if (
 		'post' !== post.type ||
@@ -292,6 +325,57 @@ function ContentSuitePanel() {
 			configurationLabel: parsed.configurationLabel,
 		} );
 		createErrorNotice( parsed.message, { type: 'snackbar' } );
+		speak( parsed.message, 'assertive' );
+	};
+
+	const hasExistingPostContent = () => {
+		const editor = registry.select( 'core/editor' );
+		const currentTitle = (
+			editor.getEditedPostAttribute?.( 'title' ) || ''
+		).trim();
+		const currentContent = ( editor.getEditedPostContent?.() || '' )
+			.replace( /<!--[\s\S]*?-->/g, '' )
+			.replace( /<[^>]+>/g, '' )
+			.trim();
+
+		return Boolean(
+			( currentTitle && 'Auto Draft' !== currentTitle ) || currentContent
+		);
+	};
+
+	const applyAudioDraft = async ( draft ) => {
+		setAudioToPostBusy( true );
+		setPanelNotice( null );
+
+		try {
+			editPost( {
+				title: draft.title,
+				content: draft.content,
+				meta: {
+					_wttba_source_type: 'audio_upload',
+					_wttba_source_attachment_id: draft.sourceAttachmentId,
+				},
+			} );
+
+			await savePost();
+			setPendingAudioDraft( null );
+			const successMessage = __(
+				'Draft updated from audio.',
+				'creatorstack-ai'
+			);
+			createSuccessNotice( successMessage, {
+				type: 'snackbar',
+			} );
+			setPanelNotice( {
+				status: 'success',
+				message: successMessage,
+			} );
+			speak( successMessage, 'polite' );
+		} catch ( err ) {
+			showError( err );
+		} finally {
+			setAudioToPostBusy( false );
+		}
 	};
 
 	const handleAudioToPost = async () => {
@@ -326,7 +410,12 @@ function ContentSuitePanel() {
 		}
 
 		setAudioToPostBusy( true );
+		setPendingAudioDraft( null );
 		setPanelNotice( null );
+		speak(
+			__( 'Generating draft from audio…', 'creatorstack-ai' ),
+			'polite'
+		);
 
 		try {
 			let audioAttachment = selectedAudio;
@@ -350,27 +439,28 @@ function ContentSuitePanel() {
 				persona
 			);
 
-			editPost( {
+			const nextDraft = {
 				title: result.title,
 				content: result.content,
-				meta: {
-					_wttba_source_type: 'audio_upload',
-					_wttba_source_attachment_id:
-						result.source_attachment_id || audioAttachment.id,
-				},
-			} );
+				sourceAttachmentId:
+					result.source_attachment_id || audioAttachment.id,
+			};
 
-			await savePost();
-			createSuccessNotice(
-				__( 'Draft updated from audio.', 'creatorstack-ai' ),
-				{
-					type: 'snackbar',
-				}
-			);
-			setPanelNotice( {
-				status: 'success',
-				message: __( 'Draft updated from audio.', 'creatorstack-ai' ),
-			} );
+			if ( hasExistingPostContent() ) {
+				setPendingAudioDraft( nextDraft );
+				const confirmMessage = __(
+					'Audio draft ready. Confirm replacing the current post title and content.',
+					'creatorstack-ai'
+				);
+				setPanelNotice( {
+					status: 'info',
+					message: confirmMessage,
+				} );
+				speak( confirmMessage, 'polite' );
+				return;
+			}
+
+			await applyAudioDraft( nextDraft );
 		} catch ( err ) {
 			showError( err );
 		} finally {
@@ -385,13 +475,18 @@ function ContentSuitePanel() {
 
 		setPostToAudioBusy( true );
 		setPanelNotice( null );
+		speak(
+			__( 'Generating audio for this post…', 'creatorstack-ai' ),
+			'polite'
+		);
 
 		try {
-			if ( post.isDirty ) {
+			if ( registry.select( 'core/editor' ).isEditedPostDirty() ) {
 				await savePost();
 			}
 
 			const result = await generatePostAudio( post.id, voice, true );
+			const blocks = registry.select( blockEditorStore ).getBlocks();
 			const existingAudioBlocks = blocks.filter( ( block ) =>
 				( block.attributes?.className || '' )
 					.split( ' ' )
@@ -420,17 +515,16 @@ function ContentSuitePanel() {
 			} );
 
 			await savePost();
-			createSuccessNotice(
-				__( 'Audio generated for this post.', 'creatorstack-ai' ),
-				{ type: 'snackbar' }
+			const successMessage = __(
+				'Audio generated for this post.',
+				'creatorstack-ai'
 			);
+			createSuccessNotice( successMessage, { type: 'snackbar' } );
 			setPanelNotice( {
 				status: 'success',
-				message: __(
-					'Audio generated for this post.',
-					'creatorstack-ai'
-				),
+				message: successMessage,
 			} );
+			speak( successMessage, 'polite' );
 		} catch ( err ) {
 			showError( err );
 		} finally {
@@ -452,6 +546,7 @@ function ContentSuitePanel() {
 			current.filter( ( item ) => item.id !== attachmentId )
 		);
 		setThumbnailPreview( null );
+		referencesSelectButtonRef.current?.focus();
 	};
 
 	const handleThumbnailGenerate = async () => {
@@ -498,9 +593,13 @@ function ContentSuitePanel() {
 
 		setThumbnailBusy( true );
 		setPanelNotice( null );
+		speak(
+			__( 'Generating thumbnail preview…', 'creatorstack-ai' ),
+			'polite'
+		);
 
 		try {
-			if ( post.isDirty ) {
+			if ( registry.select( 'core/editor' ).isEditedPostDirty() ) {
 				await savePost();
 			}
 
@@ -515,13 +614,15 @@ function ContentSuitePanel() {
 			);
 
 			setThumbnailPreview( result );
+			const successMessage = __(
+				'Thumbnail preview generated.',
+				'creatorstack-ai'
+			);
 			setPanelNotice( {
 				status: 'success',
-				message: __(
-					'Thumbnail preview generated.',
-					'creatorstack-ai'
-				),
+				message: successMessage,
 			} );
+			speak( successMessage, 'polite' );
 		} catch ( err ) {
 			showError( err );
 		} finally {
@@ -536,6 +637,7 @@ function ContentSuitePanel() {
 
 		setThumbnailSaving( true );
 		setPanelNotice( null );
+		speak( __( 'Setting featured image…', 'creatorstack-ai' ), 'polite' );
 
 		try {
 			const result = await setGeneratedThumbnail(
@@ -552,23 +654,28 @@ function ContentSuitePanel() {
 			} );
 
 			await savePost();
-			createSuccessNotice(
-				__( 'Featured image updated.', 'creatorstack-ai' ),
-				{
-					type: 'snackbar',
-				}
+			const successMessage = __(
+				'Featured image updated.',
+				'creatorstack-ai'
 			);
+			createSuccessNotice( successMessage, {
+				type: 'snackbar',
+			} );
 			setThumbnailPreview( null );
 			setPanelNotice( {
 				status: 'success',
-				message: __( 'Featured image updated.', 'creatorstack-ai' ),
+				message: successMessage,
 			} );
+			speak( successMessage, 'polite' );
 		} catch ( err ) {
 			showError( err );
 		} finally {
 			setThumbnailSaving( false );
 		}
 	};
+
+	const selectedAudioUrl =
+		selectedAudio?.url || selectedAudio?.source_url || '';
 
 	return createElement(
 		PluginDocumentSettingPanel,
@@ -609,11 +716,13 @@ function ContentSuitePanel() {
 						onSelect: ( media ) => {
 							recorder.reset();
 							setSelectedAudio( media );
+							setPendingAudioDraft( null );
 						},
 						render: ( { open } ) =>
 							createElement(
 								Button,
 								{
+									ref: audioSelectButtonRef,
 									variant: 'secondary',
 									onClick: open,
 									disabled: isBusy || ! canGenerateFromAudio,
@@ -716,21 +825,66 @@ function ContentSuitePanel() {
 				),
 				selectedAudio &&
 					createElement(
-						'p',
-						{ className: 'wttba-editor-panel__file' },
-						getAudioAttachmentLabel( selectedAudio ),
-						selectedAudio.filesizeInBytes
-							? sprintf(
-									/* translators: %s: formatted file size. */
-									__( '(%s)', 'creatorstack-ai' ),
-									formatBytes( selectedAudio.filesizeInBytes )
-							  )
-							: ''
+						'div',
+						{ className: 'wttba-editor-panel__selected-audio' },
+						createElement(
+							'div',
+							{
+								className:
+									'wttba-editor-panel__selected-audio-header',
+							},
+							createElement(
+								'p',
+								{ className: 'wttba-editor-panel__file' },
+								getAudioAttachmentLabel( selectedAudio ),
+								selectedAudio.filesizeInBytes
+									? sprintf(
+											/* translators: %s: formatted file size. */
+											__( '(%s)', 'creatorstack-ai' ),
+											formatBytes(
+												selectedAudio.filesizeInBytes
+											)
+									  )
+									: ''
+							),
+							createElement(
+								Button,
+								{
+									variant: 'tertiary',
+									onClick: () => {
+										setSelectedAudio( null );
+										setPendingAudioDraft( null );
+										audioSelectButtonRef.current?.focus();
+									},
+									disabled: isBusy,
+									'aria-label': sprintf(
+										/* translators: %s: audio attachment label. */
+										__( 'Remove %s', 'creatorstack-ai' ),
+										getAudioAttachmentLabel( selectedAudio )
+									),
+								},
+								__( 'Remove', 'creatorstack-ai' )
+							)
+						),
+						selectedAudioUrl &&
+							createElement( 'audio', {
+								className:
+									'wttba-editor-panel__recorder-preview',
+								controls: true,
+								src: selectedAudioUrl,
+								'aria-label': __(
+									'Selected audio preview',
+									'creatorstack-ai'
+								),
+							} )
 					),
 				recordingTooLarge &&
 					createElement(
 						'p',
-						{ className: 'wttba-editor-panel__muted is-error' },
+						{
+							className: 'wttba-editor-panel__muted is-error',
+							role: 'alert',
+						},
 						sprintf(
 							/* translators: %s: maximum upload size. */
 							__(
@@ -759,6 +913,62 @@ function ContentSuitePanel() {
 					rows: 4,
 					disabled: isBusy || ! canGenerateFromAudio,
 				} ),
+				pendingAudioDraft &&
+					createElement(
+						'div',
+						{
+							className: 'wttba-editor-panel__confirm',
+							role: 'region',
+							'aria-label': __(
+								'Confirm replacing post content',
+								'creatorstack-ai'
+							),
+						},
+						createElement(
+							'p',
+							{
+								className:
+									'wttba-editor-panel__confirm-message',
+							},
+							sprintf(
+								/* translators: %s: generated draft title. */
+								__(
+									'Replace current post content with "%s"?',
+									'creatorstack-ai'
+								),
+								pendingAudioDraft.title
+							)
+						),
+						createElement(
+							'div',
+							{
+								className:
+									'wttba-editor-panel__confirm-actions',
+							},
+							createElement(
+								Button,
+								{
+									variant: 'primary',
+									onClick: () =>
+										applyAudioDraft( pendingAudioDraft ),
+									disabled: isBusy,
+								},
+								__( 'Replace Post Content', 'creatorstack-ai' )
+							),
+							createElement(
+								Button,
+								{
+									variant: 'tertiary',
+									onClick: () => {
+										setPendingAudioDraft( null );
+										setPanelNotice( null );
+									},
+									disabled: isBusy,
+								},
+								__( 'Cancel', 'creatorstack-ai' )
+							)
+						)
+					),
 				createElement(
 					Button,
 					{
@@ -843,6 +1053,7 @@ function ContentSuitePanel() {
 							createElement(
 								Button,
 								{
+									ref: authorSelectButtonRef,
 									variant: 'secondary',
 									onClick: open,
 									disabled:
@@ -888,8 +1099,14 @@ function ContentSuitePanel() {
 								onClick: () => {
 									setThumbnailAuthor( null );
 									setThumbnailPreview( null );
+									authorSelectButtonRef.current?.focus();
 								},
 								disabled: isBusy,
+								'aria-label': sprintf(
+									/* translators: %s: image attachment label. */
+									__( 'Remove %s', 'creatorstack-ai' ),
+									getImageAttachmentLabel( thumbnailAuthor )
+								),
 							},
 							__( 'Remove', 'creatorstack-ai' )
 						)
@@ -907,6 +1124,7 @@ function ContentSuitePanel() {
 							createElement(
 								Button,
 								{
+									ref: referencesSelectButtonRef,
 									variant: 'secondary',
 									onClick: open,
 									disabled:
@@ -961,6 +1179,14 @@ function ContentSuitePanel() {
 										onClick: () =>
 											clearThumbnailReference( media.id ),
 										disabled: isBusy,
+										'aria-label': sprintf(
+											/* translators: %s: image attachment label. */
+											__(
+												'Remove %s',
+												'creatorstack-ai'
+											),
+											getImageAttachmentLabel( media )
+										),
 									},
 									__( 'Remove', 'creatorstack-ai' )
 								)
@@ -1031,6 +1257,14 @@ function ContentSuitePanel() {
 				createElement( TextControl, {
 					label: __( 'Voice', 'creatorstack-ai' ),
 					value: voice,
+					placeholder: __(
+						'Default provider voice',
+						'creatorstack-ai'
+					),
+					help: __(
+						'Optional. Leave empty to use the provider default voice.',
+						'creatorstack-ai'
+					),
 					onChange: setVoice,
 					disabled: isBusy || ! canGeneratePostAudio,
 				} ),

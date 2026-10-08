@@ -181,6 +181,7 @@ class Abilities {
 				'method'      => 'POST',
 				'route'       => '/save-draft',
 				'permission'  => 'can_edit_posts',
+				'destructive' => true,
 				'input'       => $this->object_schema( array( 'video_id' => $video_id, 'title' => $string, 'content' => $string, 'ai_metadata' => array( 'type' => 'object' ) ), array( 'video_id', 'title', 'content' ) ),
 				'output'      => $draft_output,
 			),

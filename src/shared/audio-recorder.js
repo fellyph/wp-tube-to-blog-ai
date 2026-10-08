@@ -224,6 +224,8 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	const timerRef = useRef( null );
 	const startedAtRef = useRef( 0 );
 	const urlRef = useRef( '' );
+	const isMountedRef = useRef( true );
+	const cancelPendingRef = useRef( false );
 	const onRecordedRef = useRef( onRecorded );
 
 	useEffect( () => {
@@ -245,6 +247,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	const reset = () => {
+		cancelPendingRef.current = true;
 		clearTimer();
 		stopStream( streamRef.current );
 		streamRef.current = null;
@@ -271,12 +274,25 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 		}
 
 		reset();
+		cancelPendingRef.current = false;
 		setStatus( 'requesting' );
 
 		try {
 			const stream = await window.navigator.mediaDevices.getUserMedia( {
 				audio: true,
 			} );
+
+			if ( ! isMountedRef.current ) {
+				stopStream( stream );
+				return;
+			}
+
+			if ( cancelPendingRef.current ) {
+				stopStream( stream );
+				setStatus( 'idle' );
+				return;
+			}
+
 			const mimeType = getPreferredAudioMimeType();
 			const recorder = new window.MediaRecorder(
 				stream,
@@ -297,6 +313,11 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 				clearTimer();
 				stopStream( streamRef.current );
 				streamRef.current = null;
+
+				if ( ! isMountedRef.current ) {
+					stopStream( stream );
+					return;
+				}
 
 				const blob = new window.Blob( chunksRef.current, {
 					type: recorder.mimeType || mimeType || 'audio/webm',
@@ -339,10 +360,13 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 				setDuration(
 					Math.floor( ( Date.now() - startedAtRef.current ) / 1000 )
 				);
-			}, 500 );
+			}, 1000 );
 		} catch ( err ) {
 			stopStream( streamRef.current );
 			streamRef.current = null;
+			if ( ! isMountedRef.current ) {
+				return;
+			}
 			setStatus( 'error' );
 			setError(
 				err?.name === 'NotAllowedError'
@@ -359,6 +383,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	const stop = () => {
+		cancelPendingRef.current = true;
 		const recorder = mediaRecorderRef.current;
 
 		if ( recorder && 'inactive' !== recorder.state ) {
@@ -367,7 +392,9 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 	};
 
 	useEffect( () => {
+		isMountedRef.current = true;
 		return () => {
+			isMountedRef.current = false;
 			clearTimer();
 			stopStream( streamRef.current );
 			revokeRecordedUrl();
@@ -381,6 +408,7 @@ export function useAudioRecorder( { onRecorded } = {} ) {
 		recordedUrl,
 		duration,
 		isSupported: isAudioRecordingSupported(),
+		isRequesting: 'requesting' === status,
 		isRecording: 'recording' === status || 'requesting' === status,
 		hasRecording: !! recordedBlob,
 		start,

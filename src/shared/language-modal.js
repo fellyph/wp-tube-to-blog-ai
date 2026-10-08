@@ -33,6 +33,7 @@ export default function LanguageModal( {
 	const [ persona, setPersona ] = useState( defaultPersona || '' );
 	const [ useManualTranscript, setUseManualTranscript ] = useState( false );
 	const [ manualTranscript, setManualTranscript ] = useState( '' );
+	const [ transcriptTouched, setTranscriptTouched ] = useState( false );
 
 	useEffect( () => {
 		if ( isOpen ) {
@@ -40,8 +41,9 @@ export default function LanguageModal( {
 			setPersona( defaultPersona || '' );
 			setUseManualTranscript( false );
 			setManualTranscript( '' );
+			setTranscriptTouched( false );
 		}
-	}, [ isOpen, defaultLang, defaultPersona ] );
+	}, [ isOpen, defaultLang, defaultPersona, videoTitle ] );
 
 	if ( ! isOpen ) {
 		return null;
@@ -109,7 +111,10 @@ export default function LanguageModal( {
 			createElement( 'input', {
 				type: 'checkbox',
 				checked: useManualTranscript,
-				onChange: ( e ) => setUseManualTranscript( e.target.checked ),
+				onChange: ( e ) => {
+					setUseManualTranscript( e.target.checked );
+					setTranscriptTouched( false );
+				},
 			} ),
 			__(
 				'Use a custom transcript instead of fetching captions',
@@ -132,11 +137,12 @@ export default function LanguageModal( {
 					id: 'wttba-manual-transcript-textarea',
 					className: 'wttba-modal__textarea',
 					'aria-describedby': TRANSCRIPT_DESCRIPTION_ID,
-					'aria-invalid':
-						manualTranscript.length > 0 && isGenerateDisabled,
+					'aria-invalid': transcriptTouched && isGenerateDisabled,
+					required: true,
 					rows: 8,
 					value: manualTranscript,
 					onChange: ( e ) => setManualTranscript( e.target.value ),
+					onBlur: () => setTranscriptTouched( true ),
 					placeholder: __(
 						'Paste the transcript text for this video.',
 						'creatorstack-ai'

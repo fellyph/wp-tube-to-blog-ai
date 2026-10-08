@@ -1,7 +1,13 @@
 /**
  * Dashboard widget entry point.
  */
-import { createElement, render, useState, useEffect } from '@wordpress/element';
+import {
+	createElement,
+	createRoot,
+	render,
+	useState,
+	useEffect,
+} from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { fetchVideos, parseError } from '../shared/api';
 import LanguageModal from '../shared/language-modal';
@@ -39,6 +45,7 @@ function DashboardWidget() {
 		handleSaveDraft,
 		isTextGenerationSupported,
 		modalVideo,
+		openLanguageModal,
 		preview,
 		regenerating,
 		retryFailedVideo,
@@ -51,6 +58,8 @@ function DashboardWidget() {
 		setSuccess,
 		success,
 	} = generation;
+
+	const isGenerating = null !== generating;
 
 	useEffect( () => {
 		if ( ! config.isConfigured ) {
@@ -108,7 +117,7 @@ function DashboardWidget() {
 		{ className: 'wttba-widget' },
 		createElement( VideoGenerationFeedback, {
 			ai,
-			error,
+			error: preview ? null : error,
 			success,
 			isTextGenerationSupported,
 			dismissedAiNotice,
@@ -118,65 +127,86 @@ function DashboardWidget() {
 			onDismissWarnings: () => setSuccess( { ...success, warnings: [] } ),
 			onDismissAiNotice: () => setDismissedAiNotice( true ),
 		} ),
-		createElement(
-			'ul',
-			{ className: 'wttba-widget__list', role: 'list' },
-			videos.map( ( video ) =>
-				createElement(
-					'li',
-					{ key: video.id, className: 'wttba-widget__item' },
-					createElement( 'img', {
-						src: video.thumbnail,
-						alt: '',
-						className: 'wttba-widget__thumb',
-					} ),
+		0 === videos.length &&
+			! error &&
+			createElement(
+				'p',
+				{ className: 'wttba-widget__empty' },
+				__(
+					'No videos found for this YouTube channel.',
+					'creatorstack-ai'
+				)
+			),
+		videos.length > 0 &&
+			createElement(
+				'ul',
+				{ className: 'wttba-widget__list', role: 'list' },
+				videos.map( ( video ) =>
 					createElement(
-						'div',
-						{ className: 'wttba-widget__info' },
+						'li',
+						{ key: video.id, className: 'wttba-widget__item' },
+						createElement( 'img', {
+							src: video.thumbnail,
+							alt: '',
+							className: 'wttba-widget__thumb',
+							loading: 'lazy',
+							decoding: 'async',
+							width: 120,
+							height: 68,
+						} ),
 						createElement(
-							'strong',
-							{ className: 'wttba-widget__title' },
-							video.title
-						),
-						createElement(
-							'span',
-							{ className: 'wttba-widget__date' },
-							formatDate( video.publishedAt )
-						),
-						createElement(
-							'button',
-							{
-								className:
-									'button button-small button-primary wttba-widget__generate',
-								onClick: () => {
-									if ( generating !== video.id ) {
-										setModalVideo( video );
-									}
+							'div',
+							{ className: 'wttba-widget__info' },
+							createElement(
+								'h3',
+								{
+									className: 'wttba-widget__title',
+									title: video.title,
 								},
-								disabled: ! isTextGenerationSupported,
-								'aria-disabled':
-									generating === video.id || undefined,
-								'aria-label': sprintf(
-									/* translators: 1: action label, 2: video title. */
-									__( '%1$s: %2$s', 'creatorstack-ai' ),
-									getGenerateButtonLabel( video ),
-									video.title
-								),
-								type: 'button',
-							},
-							getGenerateButtonLabel( video )
+								video.title
+							),
+							createElement(
+								'span',
+								{ className: 'wttba-widget__date' },
+								formatDate( video.publishedAt )
+							),
+							createElement(
+								'button',
+								{
+									className:
+										'button button-small button-primary wttba-widget__generate',
+									onClick: () => {
+										if ( ! isGenerating ) {
+											openLanguageModal( video );
+										}
+									},
+									disabled:
+										! isTextGenerationSupported ||
+										( isGenerating &&
+											generating !== video.id ),
+									'aria-disabled': isGenerating || undefined,
+									'aria-label': sprintf(
+										/* translators: 1: action label, 2: video title. */
+										__( '%1$s: %2$s', 'creatorstack-ai' ),
+										getGenerateButtonLabel( video ),
+										video.title
+									),
+									type: 'button',
+								},
+								getGenerateButtonLabel( video )
+							)
 						)
 					)
 				)
-			)
-		),
+			),
 		createElement(
 			'p',
 			{ className: 'wttba-widget__footer' },
 			createElement(
 				'a',
 				{ href: config.adminVideosUrl },
-				__( 'See More →', 'creatorstack-ai' )
+				__( 'See all YouTube videos', 'creatorstack-ai' ),
+				createElement( 'span', { 'aria-hidden': true }, ' →' )
 			)
 		),
 		createElement( LanguageModal, {
@@ -195,10 +225,16 @@ function DashboardWidget() {
 			isRegenerating: regenerating,
 			isSaving: saving,
 			savingMode,
+			error,
+			onDismissError: () => setError( null ),
+			settingsUrl: config.settingsUrl,
 			onSaveAsDraft: handleSaveDraft,
 			onSaveAndEdit: handleSaveAndEdit,
 			onRegenerate: handleRegenerate,
-			onCancel: () => setPreview( null ),
+			onCancel: () => {
+				setPreview( null );
+				setError( null );
+			},
 		} )
 	);
 }
@@ -206,5 +242,9 @@ function DashboardWidget() {
 // Mount the widget.
 const container = document.getElementById( 'wttba-dashboard-widget' );
 if ( container ) {
-	render( createElement( DashboardWidget ), container );
+	if ( 'function' === typeof createRoot ) {
+		createRoot( container ).render( createElement( DashboardWidget ) );
+	} else {
+		render( createElement( DashboardWidget ), container );
+	}
 }

@@ -32,6 +32,11 @@ class Post_Audio_Generator {
 	private const AUDIO_BLOCK_CLASS = 'wttba-generated-audio';
 
 	/**
+	 * Timeout for AI Client text-to-speech requests in seconds.
+	 */
+	private const AI_REQUEST_TIMEOUT = 120;
+
+	/**
 	 * Generate audio for a post and insert/update the audio block.
 	 *
 	 * @param int    $post_id         Post ID.
@@ -68,72 +73,90 @@ class Post_Audio_Generator {
 			);
 		}
 
-		$builder = wp_ai_client_prompt( $narration )
-			->using_system_instruction( __( 'Convert the supplied WordPress article into clear, natural narration audio.', 'creatorstack-ai' ) );
+		$user_id  = get_current_user_id();
+		$lock_key = 'wttba_tts_generating_' . $user_id;
 
-		if ( '' !== trim( $voice ) ) {
-			$builder = $builder->as_output_speech_voice( sanitize_key( $voice ) );
+		if ( get_transient( $lock_key ) ) {
+			return new \WP_Error(
+				'wttba_rate_limited',
+				__( 'Audio is already being generated. Please wait for it to complete.', 'creatorstack-ai' )
+			);
 		}
 
-		$result = $builder->convert_text_to_speech_result();
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
+		set_transient( $lock_key, true, 60 );
+		$this->add_ai_request_timeout_filter();
 
 		try {
-			$file = $result->toAudioFile();
-		} catch ( \Throwable $throwable ) {
-			return new \WP_Error(
-				'wttba_audio_generation_failed',
-				__( 'The AI provider did not return a usable audio file.', 'creatorstack-ai' ),
-				array( 'status' => 502 )
+			$builder = wp_ai_client_prompt( $narration )
+				->using_system_instruction( __( 'Convert the supplied WordPress article into clear, natural narration audio.', 'creatorstack-ai' ) );
+
+			if ( '' !== trim( $voice ) ) {
+				$builder = $builder->as_output_speech_voice( sanitize_key( $voice ) );
+			}
+
+			$result = $builder->convert_text_to_speech_result();
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			try {
+				$file = $result->toAudioFile();
+			} catch ( \Throwable $throwable ) {
+				return new \WP_Error(
+					'wttba_audio_generation_failed',
+					__( 'The AI provider did not return a usable audio file.', 'creatorstack-ai' ),
+					array( 'status' => 502 )
+				);
+			}
+
+			$attachment_id = $this->save_audio_file( $file, $post );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			$audio_url = wp_get_attachment_url( $attachment_id );
+
+			if ( ! $audio_url ) {
+				return new \WP_Error(
+					'wttba_audio_save_failed',
+					__( 'The generated audio attachment could not be loaded.', 'creatorstack-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$audio_block  = $this->build_audio_block( $attachment_id, $audio_url );
+			$post_content = $this->insert_or_update_audio_block( $post->post_content, $audio_block, $overwrite_block );
+			$updated      = wp_update_post(
+				array(
+					'ID'           => $post_id,
+					'post_content' => $post_content,
+				),
+				true
 			);
-		}
 
-		$attachment_id = $this->save_audio_file( $file, $post );
+			if ( is_wp_error( $updated ) ) {
+				return $updated;
+			}
 
-		if ( is_wp_error( $attachment_id ) ) {
-			return $attachment_id;
-		}
+			update_post_meta( $post_id, self::AUDIO_ATTACHMENT_META_KEY, $attachment_id );
 
-		$audio_url = wp_get_attachment_url( $attachment_id );
+			$metadata = Generation_Logger::metadata_from_result( $result, 'post_audio' );
+			Generation_Logger::record( $post_id, $metadata );
 
-		if ( ! $audio_url ) {
-			return new \WP_Error(
-				'wttba_audio_save_failed',
-				__( 'The generated audio attachment could not be loaded.', 'creatorstack-ai' ),
-				array( 'status' => 500 )
+			return array(
+				'attachment_id' => $attachment_id,
+				'audio_url'     => $audio_url,
+				'edit_url'      => get_edit_post_link( $post_id, 'raw' ),
+				'audio_block'   => $audio_block,
+				'post_content'  => $post_content,
+				'ai_metadata'   => $metadata,
 			);
+		} finally {
+			$this->remove_ai_request_timeout_filter();
+			delete_transient( $lock_key );
 		}
-
-		$audio_block  = $this->build_audio_block( $attachment_id, $audio_url );
-		$post_content = $this->insert_or_update_audio_block( $post->post_content, $audio_block, $overwrite_block );
-		$updated      = wp_update_post(
-			array(
-				'ID'           => $post_id,
-				'post_content' => $post_content,
-			),
-			true
-		);
-
-		if ( is_wp_error( $updated ) ) {
-			return $updated;
-		}
-
-		update_post_meta( $post_id, self::AUDIO_ATTACHMENT_META_KEY, $attachment_id );
-
-		$metadata = Generation_Logger::metadata_from_result( $result, 'post_audio' );
-		Generation_Logger::record( $post_id, $metadata );
-
-		return array(
-			'attachment_id' => $attachment_id,
-			'audio_url'     => $audio_url,
-			'edit_url'      => get_edit_post_link( $post_id, 'raw' ),
-			'audio_block'   => $audio_block,
-			'post_content'  => $post_content,
-			'ai_metadata'   => $metadata,
-		);
 	}
 
 	/**
@@ -144,7 +167,7 @@ class Post_Audio_Generator {
 	 */
 	private function get_narration_text( \WP_Post $post ): string {
 		$title   = get_the_title( $post );
-		$content = do_blocks( $post->post_content );
+		$content = excerpt_remove_blocks( $post->post_content );
 		$content = strip_shortcodes( $content );
 		$content = wp_strip_all_tags( $content, true );
 		$content = trim( preg_replace( '/\s+/', ' ', $content ) ?? '' );
@@ -177,7 +200,7 @@ class Post_Audio_Generator {
 		}
 
 		if ( is_object( $file ) && method_exists( $file, 'getUrl' ) && $file->getUrl() ) {
-			return $this->save_remote_audio_file( (string) $file->getUrl(), $post );
+			return $this->save_remote_audio_file( (string) $file->getUrl(), $mime_type, $post );
 		}
 
 		return new \WP_Error(
@@ -246,19 +269,21 @@ class Post_Audio_Generator {
 	/**
 	 * Save remote audio.
 	 *
-	 * @param string   $url  Remote URL.
-	 * @param \WP_Post $post Parent post.
+	 * @param string   $url       Remote URL.
+	 * @param string   $mime_type MIME type.
+	 * @param \WP_Post $post      Parent post.
 	 * @return int|\WP_Error Attachment ID or error.
 	 */
-	private function save_remote_audio_file( string $url, \WP_Post $post ): int|\WP_Error {
+	private function save_remote_audio_file( string $url, string $mime_type, \WP_Post $post ): int|\WP_Error {
 		$tmp = download_url( $url );
 
 		if ( is_wp_error( $tmp ) ) {
 			return $tmp;
 		}
 
-		$file = array(
-			'name'     => sanitize_file_name( sprintf( '%s-audio.mp3', $post->post_name ?: 'post-' . $post->ID ) ),
+		$extension = $this->get_extension_for_mime_type( $mime_type );
+		$file      = array(
+			'name'     => sanitize_file_name( sprintf( '%s-audio.%s', $post->post_name ?: 'post-' . $post->ID, $extension ) ),
 			'tmp_name' => $tmp,
 		);
 
@@ -335,5 +360,29 @@ class Post_Audio_Generator {
 			'audio/webm' => 'webm',
 			default => 'mp3',
 		};
+	}
+
+	/**
+	 * Increase AI Client HTTP timeout while this plugin is issuing a generation request.
+	 */
+	private function add_ai_request_timeout_filter(): void {
+		add_filter( 'wp_ai_client_default_request_timeout', array( $this, 'filter_ai_request_timeout' ) );
+	}
+
+	/**
+	 * Remove the scoped AI Client HTTP timeout filter.
+	 */
+	private function remove_ai_request_timeout_filter(): void {
+		remove_filter( 'wp_ai_client_default_request_timeout', array( $this, 'filter_ai_request_timeout' ) );
+	}
+
+	/**
+	 * Filter the AI Client request timeout.
+	 *
+	 * @param mixed $timeout Current timeout in seconds.
+	 * @return int
+	 */
+	public function filter_ai_request_timeout( $timeout = 0 ): int {
+		return max( (int) $timeout, self::AI_REQUEST_TIMEOUT );
 	}
 }

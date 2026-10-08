@@ -124,11 +124,24 @@ class Post_Generator {
 	 * @return array{post_id: int, edit_url: string, warnings: string[]}|\WP_Error
 	 */
 	public function save_draft( string $video_id, string $title, string $content, array $metadata = array() ): array|\WP_Error {
-		$youtube = new YouTube_API();
-		$video   = $youtube->get_video( $video_id );
+		$title   = sanitize_text_field( $title );
+		$content = wp_kses_post( $content );
+
+		if ( '' === trim( $title ) || '' === trim( wp_strip_all_tags( $content ) ) ) {
+			return new \WP_Error(
+				'wttba_invalid_content',
+				__( 'A non-empty post title and content are required to save a draft.', 'creatorstack-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$extra_warnings = array();
+		$youtube        = new YouTube_API();
+		$video          = $youtube->get_video( $video_id );
 
 		if ( is_wp_error( $video ) ) {
-			return $video;
+			$video            = array( 'thumbnail' => '' );
+			$extra_warnings[] = __( 'The post was created, but video details could not be fetched to set the featured image.', 'creatorstack-ai' );
 		}
 
 		$ai_result = array(
@@ -145,7 +158,7 @@ class Post_Generator {
 		return array(
 			'post_id'  => $draft_result['post_id'],
 			'edit_url' => get_edit_post_link( $draft_result['post_id'], 'raw' ),
-			'warnings' => $draft_result['warnings'],
+			'warnings' => array_values( array_merge( $extra_warnings, $draft_result['warnings'] ) ),
 		);
 	}
 
@@ -181,10 +194,6 @@ https://www.youtube.com/watch?v=%1$s
 				'_wttba_source_type'     => 'youtube_video',
 			),
 		);
-
-		if ( ! empty( $metadata ) ) {
-			$post_data['meta_input'][ Generation_Logger::META_KEY ] = Generation_Logger::sanitize_metadata( $metadata );
-		}
 
 		$post_id = wp_insert_post( $post_data, true );
 

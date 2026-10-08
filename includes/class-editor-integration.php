@@ -124,9 +124,18 @@ class Editor_Integration {
 			'wttba_generate_post_audio_' . $post->ID
 		);
 
+		$title = _draft_or_post_title( $post );
+
 		$actions['wttba_generate_audio'] = sprintf(
-			'<a href="%1$s">%2$s</a>',
+			'<a href="%1$s" aria-label="%2$s">%3$s</a>',
 			esc_url( $url ),
+			esc_attr(
+				sprintf(
+					/* translators: %s: post title. */
+					__( 'Generate audio for &#8220;%s&#8221;', 'creatorstack-ai' ),
+					$title
+				)
+			),
 			esc_html__( 'Generate Audio', 'creatorstack-ai' )
 		);
 
@@ -205,7 +214,9 @@ class Editor_Integration {
 		$key    = self::AUDIO_NOTICE_PREFIX . get_current_user_id();
 		$notice = get_transient( $key );
 
-		delete_transient( $key );
+		if ( false !== $notice ) {
+			delete_transient( $key );
+		}
 
 		if ( ! is_array( $notice ) || empty( $notice['status'] ) || empty( $notice['message'] ) ) {
 			return array();
